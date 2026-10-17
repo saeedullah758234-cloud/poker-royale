@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand History — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition);
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .ms-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.35rem; font-weight:900; }
+
+        /* Filters */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:20px;
+            display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+        }
+        .filters-left { display:flex; gap:12px; align-items:center; flex-wrap:wrap; flex:1; }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:240px; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        
+        .filter-select {
+            padding:10px 32px 10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--primary); color:var(--text); }
+
+        /* Table */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 14px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none;
+        }
+        .admin-table th:hover { color:var(--gold); }
+        .admin-table td { padding:14px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle; }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .id-cell { font-family:'Orbitron',sans-serif; font-size:.75rem; font-weight:700; color:var(--text-muted); }
+        .pot-cell { font-family:'Orbitron',sans-serif; font-weight:700; color:var(--gold); }
+        .rake-cell { color:var(--green); }
+        
+        .winner-cell { display:flex; align-items:center; gap:8px; font-weight:600; }
+        .winner-cell img { width:24px; height:24px; border-radius:50%; border:1px solid var(--gold); }
+        
+        .hand-badge {
+            display:inline-flex; padding:3px 8px; border-radius:6px; font-size:.7rem; font-weight:600;
+            background:rgba(255,255,255,.05); border:1px solid var(--border);
+        }
+
+        .action-btns { display:flex; gap:4px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+        .action-btn.flag:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+
+        .pagination-bar {
+            padding:14px 20px; border-top:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .page-info { font-size:.82rem; color:var(--text-muted); }
+        .page-btns { display:flex; gap:4px; }
+        .page-btn {
+            min-width:36px; height:36px; padding:0 10px; border-radius:8px;
+            background:var(--glass); border:1px solid var(--border); color:var(--text-muted);
+            font-size:.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .page-btn:hover { border-color:var(--primary); color:var(--text); }
+        .page-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .page-btn.disabled { opacity:.4; pointer-events:none; }
+
+        /* Modal / Hand Replayer */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:700px; width:100%; max-height:90vh; display:flex; flex-direction:column;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+
+        .modal-body { padding:0; overflow-y:auto; flex:1; }
+
+        .replayer-top {
+            background:radial-gradient(ellipse at center, #0d5e35, #073d22);
+            padding:30px 20px; text-align:center; border-bottom:1px solid var(--border);
+            position:relative; overflow:hidden;
+        }
+        .replayer-top::before {
+            content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            width:90%; height:80%; border:2px dashed rgba(255,215,0,.15); border-radius:100px;
+        }
+        .replayer-pot {
+            position:relative; z-index:2; margin-bottom:16px;
+        }
+        .replayer-pot .lbl { font-size:.65rem; color:rgba(255,215,0,.7); text-transform:uppercase; letter-spacing:1px; }
+        .replayer-pot .amt { font-family:'Orbitron',sans-serif; font-size:1.6rem; font-weight:900; color:var(--gold); text-shadow:0 2px 10px rgba(0,0,0,.5); }
+
+        .board-cards {
+            display:flex; justify-content:center; gap:8px; position:relative; z-index:2; margin-bottom:20px;
+        }
+        
+        /* CSS Playing Cards */
+        .p-card {
+            width:46px; height:66px; border-radius:6px; background:#fff;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            box-shadow:0 4px 10px rgba(0,0,0,.4); border:1px solid #ddd;
+            position:relative;
+        }
+        .p-card.red { color:#e74c3c; }
+        .p-card.black { color:#1a1a2e; }
+        .p-card .val { font-family:'Cinzel',serif; font-size:1rem; font-weight:900; line-height:1; }
+        .p-card .suit { font-size:1.2rem; line-height:1; }
+        .p-card .corner-tl { position:absolute; top:3px; left:4px; font-size:.55rem; font-weight:900; line-height:1.1; text-align:center; }
+        .p-card .corner-br { position:absolute; bottom:3px; right:4px; font-size:.55rem; font-weight:900; line-height:1.1; text-align:center; transform:rotate(180deg); }
+        .p-card.hidden { background:linear-gradient(135deg, #1a237e, #283593); border-color:#3949ab; color:transparent; }
+        .p-card.hidden::after { content:'♠'; position:absolute; font-size:1.2rem; color:rgba(255,255,255,.1); }
+
+        .winner-banner {
+            position:relative; z-index:2;
+            display:inline-flex; align-items:center; gap:10px;
+            background:rgba(0,0,0,.6); backdrop-filter:blur(5px); border:1px solid rgba(255,215,0,.3);
+            padding:8px 20px; border-radius:50px;
+        }
+        .winner-banner img { width:30px; height:30px; border-radius:50%; border:1px solid var(--gold); }
+        .winner-banner .name { font-size:.85rem; font-weight:700; color:#fff; }
+        .winner-banner .hand { font-size:.75rem; color:var(--gold); }
+
+        .action-log {
+            padding:20px;
+        }
+        .log-street {
+            font-size:.75rem; font-weight:700; color:var(--gold);
+            text-transform:uppercase; letter-spacing:1px;
+            margin:16px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border);
+        }
+        .log-street:first-child { margin-top:0; }
+        
+        .log-entry {
+            display:flex; align-items:center; gap:10px;
+            padding:8px 10px; border-radius:8px; font-size:.82rem;
+            margin-bottom:4px; background:var(--glass);
+        }
+        .log-entry:hover { background:rgba(255,255,255,.06); }
+        .le-time { font-size:.7rem; color:var(--text-muted); width:50px; }
+        .le-user { font-weight:600; width:100px; }
+        .le-act { flex:1; }
+        .le-act.raise { color:var(--accent); font-weight:600; }
+        .le-act.call { color:var(--green); }
+        .le-act.fold { color:var(--text-muted); }
+        .le-act.win { color:var(--gold); font-weight:700; }
+
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:space-between; align-items:center;
+        }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .filters-bar { grid-template-columns:1fr; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr 1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .admin-table { font-size:.78rem; }
+            .admin-table th, .admin-table td { padding:10px; }
+            .board-cards { gap:4px; }
+            .p-card { width:38px; height:56px; }
+            .p-card .val { font-size:.85rem; }
+            .p-card .suit { font-size:1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span></a>
+                <a href="hand-history.html" class="nav-link active"><i class="fas fa-history"></i><span class="nav-text">Hand History</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Hand History</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="games.html">Games</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Hand History</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="renderTable()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <div class="ms-icon blue"><i class="fas fa-hands"></i></div>
+                    <div><div class="ms-label">Hands Played (24h)</div><div class="ms-value">34,892</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-coins"></i></div>
+                    <div><div class="ms-label">Biggest Pot (24h)</div><div class="ms-value">$45,200</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon green"><i class="fas fa-percentage"></i></div>
+                    <div><div class="ms-label">Total Rake (24h)</div><div class="ms-value">$12,450</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon red"><i class="fas fa-flag"></i></div>
+                    <div><div class="ms-label">Flagged / Suspicious</div><div class="ms-value" style="color:var(--danger)">12</div></div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filters-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search Hand ID, User, Table..." oninput="applyFilters()">
+                    </div>
+                    <select class="filter-select" id="filterGame" onchange="applyFilters()">
+                        <option value="">All Game Types</option>
+                        <option value="Hold'em">Texas Hold'em</option>
+                        <option value="Omaha">Omaha</option>
+                        <option value="Short Deck">Short Deck</option>
+                    </select>
+                    <select class="filter-select" id="filterFlag" onchange="applyFilters()">
+                        <option value="">All Hands</option>
+                        <option value="flagged">Flagged / Suspicious</option>
+                        <option value="large">Large Pots (>$1k)</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
+                </div>
+                <div>
+                    <button class="btn btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i> Export CSV</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-history"></i> Global Hand Log <span style="color:var(--text-muted);font-weight:400;font-size:.82rem;" id="resultCount"></span></h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="admin-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="id">Hand ID</th>
+                                <th data-sort="table">Table Name</th>
+                                <th data-sort="stakes">Stakes</th>
+                                <th data-sort="pot">Total Pot</th>
+                                <th data-sort="rake">Rake</th>
+                                <th data-sort="winner">Winner</th>
+                                <th data-sort="hand">Winning Hand</th>
+                                <th data-sort="date">Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-bar">
+                    <div class="page-info" id="pageInfo">Showing 0 of 0</div>
+                    <div class="page-btns" id="pageBtns"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: HAND REPLAYER -->
+<div class="modal-overlay" id="replayModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-play-circle" style="color:var(--gold);margin-right:8px;"></i>Hand Replay <span id="modHandId" style="font-size:.85rem;color:var(--text-muted);margin-left:8px;font-weight:400;">#0000</span></h3>
+            <button class="modal-close" onclick="closeModal('replayModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            
+            <div class="replayer-top">
+                <div class="replayer-pot">
+                    <div class="lbl">Total Pot</div>
+                    <div class="amt" id="modPot">$0</div>
+                    <div style="font-size:.7rem;color:var(--green);margin-top:2px;">Rake: <span id="modRake">$0</span></div>
+                </div>
+
+                <div class="board-cards" id="modBoard">
+                    <!-- Cards injected by JS -->
+                </div>
+
+                <div class="winner-banner" id="modWinnerBanner">
+                    <img src="" id="modWinnerImg" alt="">
+                    <div>
+                        <div class="name" id="modWinnerName">Name</div>
+                        <div class="hand" id="modWinnerHand">Winning Hand</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-log">
+                <div id="modActionLog">
+                    <!-- Log injected by JS -->
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" style="margin-right:auto;color:var(--danger);border-color:var(--danger);" onclick="flagHand()"><i class="fas fa-flag"></i> Flag as Suspicious</button>
+            <button class="btn btn-outline" onclick="closeModal('replayModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  HAND HISTORY DATA
+// ═══════════════════════════════════════
+const HANDS = [
+    { id: 89241, table: 'Royal Flush Lounge', game: "Hold'em", stakes: '$50/$100', pot: 12500, rake: 50, winner: 'Ali Khan', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80', hand: 'Full House (Aces full of Kings)', date: '2025-01-20 14:32:15', flagged: false, 
+      board: [{v:'A',s:'♥',c:'red'},{v:'K',s:'♠',c:'black'},{v:'10',s:'♦',c:'red'},{v:'A',s:'♣',c:'black'},{v:'7',s:'♥',c:'red'}],
+      log: [
+          { s: 'Preflop', actions: [ {t:'14:30:05', u:'Sara M.', a:'Fold'}, {t:'14:30:08', u:'Ali K.', a:'Raise to $300', cls:'raise'}, {t:'14:30:15', u:'Ahmed R.', a:'Call $300', cls:'call'} ] },
+          { s: 'Flop (A♥ K♠ 10♦)', actions: [ {t:'14:30:22', u:'Ahmed R.', a:'Check'}, {t:'14:30:28', u:'Ali K.', a:'Bet $500', cls:'raise'}, {t:'14:30:35', u:'Ahmed R.', a:'Call $500', cls:'call'} ] },
+          { s: 'Turn (A♣)', actions: [ {t:'14:30:42', u:'Ahmed R.', a:'Check'}, {t:'14:30:50', u:'Ali K.', a:'Bet $1,200', cls:'raise'}, {t:'14:30:58', u:'Ahmed R.', a:'Call $1,200', cls:'call'} ] },
+          { s: 'River (7♥)', actions: [ {t:'14:31:05', u:'Ahmed R.', a:'Check'}, {t:'14:31:12', u:'Ali K.', a:'All-in $9,400', cls:'raise'}, {t:'14:31:40', u:'Ahmed R.', a:'Call $9,400', cls:'call'} ] },
+          { s: 'Showdown', actions: [ {t:'14:31:45', u:'Ahmed R.', a:'Shows A♦ Q♠ (Three of a Kind)'}, {t:'14:31:47', u:'Ali K.', a:'Shows A♠ K♥ (Full House)'}, {t:'14:31:50', u:'Ali K.', a:'Wins $12,500 pot', cls:'win'} ] }
+      ]
+    },
+    { id: 89240, table: 'Diamond Players', game: "Hold'em", stakes: '$250/$500', pot: 45200, rake: 100, winner: 'Sara Malik', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80', hand: 'Flush (Hearts)', date: '2025-01-20 14:30:05', flagged: true,
+      board: [{v:'2',s:'♥',c:'red'},{v:'J',s:'♥',c:'red'},{v:'Q',s:'♠',c:'black'},{v:'9',s:'♥',c:'red'},{v:'5',s:'♥',c:'red'}],
+      log: [
+          { s: 'Preflop', actions: [ {t:'14:28:10', u:'John S.', a:'Raise to $1,500', cls:'raise'}, {t:'14:28:15', u:'Sara M.', a:'Call $1,500', cls:'call'} ] },
+          { s: 'Flop (2♥ J♥ Q♠)', actions: [ {t:'14:28:30', u:'John S.', a:'Bet $3,000', cls:'raise'}, {t:'14:28:40', u:'Sara M.', a:'Call $3,000', cls:'call'} ] },
+          { s: 'Turn (9♥)', actions: [ {t:'14:28:55', u:'John S.', a:'All-in $18,100', cls:'raise'}, {t:'14:29:10', u:'Sara M.', a:'Call $18,100', cls:'call'} ] },
+          { s: 'River (5♥)', actions: [ {t:'14:29:15', u:'—', a:'No action (All-in)'} ] },
+          { s: 'Showdown', actions: [ {t:'14:29:20', u:'John S.', a:'Shows Q♦ Q♣ (Three of a Kind)'}, {t:'14:29:22', u:'Sara M.', a:'Shows A♥ 4♥ (Flush)'}, {t:'14:29:25', u:'Sara M.', a:'Wins $45,200 pot', cls:'win'} ] }
+      ]
+    },
+    { id: 89239, table: 'Omaha Masters', game: "Omaha", stakes: '$5/$10', pot: 320, rake: 16, winner: 'Ahmed Raza', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80', hand: 'Straight (8 to Q)', date: '2025-01-20 14:25:40', flagged: false,
+      board: [{v:'10',s:'♣',c:'black'},{v:'J',s:'♦',c:'red'},{v:'2',s:'♠',c:'black'},{v:'Q',s:'♥',c:'red'},{v:'4',s:'♣',c:'black'}],
+      log: [
+          { s: 'Preflop', actions: [ {t:'14:24:00', u:'Ahmed R.', a:'Raise to $30', cls:'raise'}, {t:'14:24:05', u:'Lisa C.', a:'Call $30', cls:'call'} ] },
+          { s: 'Flop (10♣ J♦ 2♠)', actions: [ {t:'14:24:20', u:'Ahmed R.', a:'Bet $45', cls:'raise'}, {t:'14:24:35', u:'Lisa C.', a:'Call $45', cls:'call'} ] },
+          { s: 'Turn (Q♥)', actions: [ {t:'14:24:50', u:'Ahmed R.', a:'Bet $85', cls:'raise'}, {t:'14:25:05', u:'Lisa C.', a:'Call $85', cls:'call'} ] },
+          { s: 'River (4♣)', actions: [ {t:'14:25:20', u:'Ahmed R.', a:'Check'}, {t:'14:25:25', u:'Lisa C.', a:'Check'} ] },
+          { s: 'Showdown', actions: [ {t:'14:25:30', u:'Ahmed R.', a:'Shows 8♠ 9♠ A♥ K♦ (Straight)'}, {t:'14:25:35', u:'Lisa C.', a:'Mucks'} , {t:'14:25:38', u:'Ahmed R.', a:'Wins $320 pot', cls:'win'} ] }
+      ]
+    },
+    { id: 89238, table: 'Beginner Friendly', game: "Hold'em", stakes: '$0.5/$1', pot: 45, rake: 2.25, winner: 'Fatima Noor', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80', hand: 'Two Pair', date: '2025-01-20 14:20:11', flagged: false,
+      board: [{v:'K',s:'♦',c:'red'},{v:'9',s:'♣',c:'black'},{v:'4',s:'♥',c:'red'},{v:'K',s:'♠',c:'black'},{v:'2',s:'♦',c:'red'}],
+      log: [
+          { s: 'Preflop', actions: [ {t:'14:19:00', u:'Mike W.', a:'Call $1', cls:'call'}, {t:'14:19:05', u:'Fatima N.', a:'Raise to $4', cls:'raise'}, {t:'14:19:10', u:'Mike W.', a:'Call $3', cls:'call'} ] },
+          { s: 'Flop (K♦ 9♣ 4♥)', actions: [ {t:'14:19:25', u:'Mike W.', a:'Check'}, {t:'14:19:30', u:'Fatima N.', a:'Bet $6', cls:'raise'}, {t:'14:19:35', u:'Mike W.', a:'Call $6', cls:'call'} ] },
+          { s: 'Turn (K♠)', actions: [ {t:'14:19:45', u:'Mike W.', a:'Check'}, {t:'14:19:50', u:'Fatima N.', a:'Bet $12.50', cls:'raise'}, {t:'14:20:00', u:'Mike W.', a:'Call $12.50', cls:'call'} ] },
+          { s: 'River (2♦)', actions: [ {t:'14:20:05', u:'Mike W.', a:'Check'}, {t:'14:20:08', u:'Fatima N.', a:'Check'} ] },
+          { s: 'Showdown', actions: [ {t:'14:20:10', u:'Fatima N.', a:'Shows 9♠ 10♠ (Two Pair, K & 9)'}, {t:'14:20:12', u:'Mike W.', a:'Mucks'} , {t:'14:20:15', u:'Fatima N.', a:'Wins $45 pot', cls:'win'} ] }
+      ]
+    },
+    { id: 89237, table: 'High Roller VIP', game: "Hold'em", stakes: '$50/$100', pot: 28400, rake: 100, winner: 'James Wilson', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', hand: 'Four of a Kind (Jacks)', date: '2025-01-20 14:10:05', flagged: true,
+      board: [{v:'J',s:'♠',c:'black'},{v:'J',s:'♦',c:'red'},{v:'7',s:'♣',c:'black'},{v:'J',s:'♥',c:'red'},{v:'A',s:'♠',c:'black'}],
+      log: [
+          { s: 'Preflop', actions: [ {t:'14:08:00', u:'James W.', a:'Raise to $300', cls:'raise'}, {t:'14:08:15', u:'Ali K.', a:'3-Bet to $1,000', cls:'raise'}, {t:'14:08:30', u:'James W.', a:'Call $1,000', cls:'call'} ] },
+          { s: 'Flop (J♠ J♦ 7♣)', actions: [ {t:'14:08:45', u:'James W.', a:'Check'}, {t:'14:09:00', u:'Ali K.', a:'Bet $1,500', cls:'raise'}, {t:'14:09:10', u:'James W.', a:'Call $1,500', cls:'call'} ] },
+          { s: 'Turn (J♥)', actions: [ {t:'14:09:20', u:'James W.', a:'Check'}, {t:'14:09:35', u:'Ali K.', a:'Bet $4,000', cls:'raise'}, {t:'14:09:45', u:'James W.', a:'All-in $11,700', cls:'raise'}, {t:'14:09:55', u:'Ali K.', a:'Call $7,700', cls:'call'} ] },
+          { s: 'River (A♠)', actions: [ {t:'14:10:00', u:'—', a:'No action (All-in)'} ] },
+          { s: 'Showdown', actions: [ {t:'14:10:02', u:'Ali K.', a:'Shows A♦ A♣ (Full House)'}, {t:'14:10:04', u:'James W.', a:'Shows J♣ 10♣ (Four of a Kind)'} , {t:'14:10:06', u:'James W.', a:'Wins $28,400 pot', cls:'win'} ] }
+      ]
+    }
+];
+
+let filtered = [...HANDS];
+let currentPage = 1;
+const perPage = 10;
+let currentHandId = null;
+
+// ─── RENDER ───
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+
+    if (page.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No hands found matching criteria.</td></tr>`;
+        document.getElementById('resultCount').textContent = '';
+        renderPagination();
+        return;
+    }
+
+    tbody.innerHTML = page.map(h => {
+        const flagHTML = h.flagged ? `<span class="hand-badge" style="color:var(--danger);border-color:rgba(239,68,68,.3);"><i class="fas fa-flag"></i> Flagged</span>` : '';
+        return `
+        <tr>
+            <td class="id-cell">#${h.id}</td>
+            <td><strong>${h.table}</strong> <span style="font-size:.7rem;color:var(--text-muted);display:block;">${h.game}</span></td>
+            <td>${h.stakes}</td>
+            <td class="pot-cell">$${h.pot.toLocaleString()}</td>
+            <td class="rake-cell">$${h.rake}</td>
+            <td>
+                <div class="winner-cell">
+                    <img src="${h.avatar}" alt="">
+                    <span>${h.winner}</span>
+                </div>
+            </td>
+            <td>
+                <div style="font-size:.8rem;">${h.hand}</div>
+                ${flagHTML}
+            </td>
+            <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;">${h.date}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn view" title="Replay Hand" onclick="openReplay(${h.id})"><i class="fas fa-play-circle"></i></button>
+                    <button class="action-btn flag" title="Flag Hand" onclick="toggleFlag(${h.id})"><i class="fas fa-flag"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('resultCount').textContent = `(${filtered.length} hands)`;
+    renderPagination();
+}
+
+function renderPagination() {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    const start = filtered.length ? (currentPage - 1) * perPage + 1 : 0;
+    const end = Math.min(currentPage * perPage, filtered.length);
+    document.getElementById('pageInfo').textContent = `Showing ${start}–${end} of ${filtered.length}`;
+
+    let html = `<button class="page-btn ${currentPage===1?'disabled':''}" onclick="goPage(${currentPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= total; i++) {
+        if (i===1 || i===total || Math.abs(i-currentPage)<=2) {
+            html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+        } else if (Math.abs(i-currentPage)===3) {
+            html += `<span style="color:var(--text-muted);padding:0 4px;">…</span>`;
+        }
+    }
+    html += `<button class="page-btn ${currentPage===total?'disabled':''}" onclick="goPage(${currentPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+    document.getElementById('pageBtns').innerHTML = html;
+}
+
+function goPage(p) {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    if (p < 1 || p > total) return;
+    currentPage = p;
+    renderTable();
+}
+
+// ─── FILTERS ───
+function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const game = document.getElementById('filterGame').value;
+    const flag = document.getElementById('filterFlag').value;
+
+    filtered = HANDS.filter(h => {
+        if (q && !(`${h.id} ${h.table} ${h.winner}`).toLowerCase().includes(q)) return false;
+        if (game && h.game !== game) return false;
+        if (flag === 'flagged' && !h.flagged) return false;
+        if (flag === 'large' && h.pot < 1000) return false;
+        return true;
+    });
+    currentPage = 1;
+    renderTable();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterGame').value = '';
+    document.getElementById('filterFlag').value = '';
+    applyFilters();
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 250));
+
+// ─── REPLAY MODAL ───
+function openReplay(id) {
+    const h = HANDS.find(x => x.id === id);
+    if (!h) return;
+    currentHandId = id;
+
+    document.getElementById('modHandId').textContent = '#' + h.id;
+    document.getElementById('modPot').textContent = '$' + h.pot.toLocaleString();
+    document.getElementById('modRake').textContent = '$' + h.rake;
+
+    // Board Cards
+    const boardHtml = h.board.map(c => `
+        <div class="p-card ${c.c}">
+            <div class="corner-tl">${c.v}<br>${c.s}</div>
+            <div class="val">${c.v}</div>
+            <div class="suit">${c.s}</div>
+            <div class="corner-br">${c.v}<br>${c.s}</div>
+        </div>
+    `).join('');
+    document.getElementById('modBoard').innerHTML = boardHtml;
+
+    // Winner Banner
+    document.getElementById('modWinnerImg').src = h.avatar;
+    document.getElementById('modWinnerName').textContent = h.winner + ' Won Pot';
+    document.getElementById('modWinnerHand').textContent = h.hand;
+
+    // Action Log
+    let logHtml = '';
+    h.log.forEach(street => {
+        logHtml += `<div class="log-street">${street.s}</div>`;
+        street.actions.forEach(a => {
+            logHtml += `
+            <div class="log-entry">
+                <div class="le-time">${a.t}</div>
+                <div class="le-user">${a.u}</div>
+                <div class="le-act ${a.cls || 'fold'}">${a.a}</div>
+            </div>`;
+        });
+    });
+    document.getElementById('modActionLog').innerHTML = logHtml;
+
+    openModal('replayModal');
+}
+
+function toggleFlag(id) {
+    const h = HANDS.find(x => x.id === id);
+    if (!h) return;
+    h.flagged = !h.flagged;
+    renderTable();
+    showToast(h.flagged ? `Hand #${id} flagged for review` : `Flag removed from Hand #${id}`, h.flagged ? 'warning' : 'success');
+}
+
+function flagHand() {
+    if (currentHandId) {
+        toggleFlag(currentHandId);
+        closeModal('replayModal');
+    }
+}
+
+function exportCSV() {
+    const headers = ['Hand ID','Table Name','Game Type','Stakes','Pot','Rake','Winner','Winning Hand','Date','Flagged'];
+    const rows = filtered.map(h => [h.id, h.table, h.game, h.stakes, h.pot, h.rake, h.winner, h.hand, h.date, h.flagged]);
+    const csv = headers.join(',') + '\n' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+    a.download = `hand_history_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV exported successfully', 'success');
+}
+
+// ─── UTILS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => { o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
+
+function showToast(msg, type='success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+function debounce(fn, wait) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; }
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => { sidebar.classList.toggle('mobile-open'); });
+function adminLogout() { if(confirm('Logout?')) { localStorage.removeItem('pr_admin_token'); window.location.href='login.html'; } }
+
+// Sorting
+document.querySelectorAll('#dataTable th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        const asc = th.classList.contains('sort-asc');
+        document.querySelectorAll('#dataTable th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+        
+        filtered.sort((a, b) => {
+            let av = a[key], bv = b[key];
+            if (typeof av === 'string') av = av.toLowerCase();
+            if (typeof bv === 'string') bv = bv.toLowerCase();
+            if (av < bv) return asc ? 1 : -1;
+            if (av > bv) return asc ? -1 : 1;
+            return 0;
+        });
+        renderTable();
+    });
+});
+
+// Init
+renderTable();
+console.log('🃏 PokerRoyale Admin — Hand History Loaded');
+</script>
+
+<script src="../currency-override.js"></script>
+</body>
+</html>

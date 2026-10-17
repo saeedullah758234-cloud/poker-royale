@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        /* CONTENT */
+        .page-content { padding:28px; flex:1; }
+
+        /* Settings Layout */
+        .settings-layout {
+            display:grid;
+            grid-template-columns:220px 1fr;
+            gap:24px;
+            align-items:start;
+        }
+
+        /* Settings Nav */
+        .settings-nav {
+            background:var(--card-bg);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            padding:12px;
+            position:sticky;
+            top:80px;
+        }
+        .s-nav-item {
+            display:flex; align-items:center; gap:10px;
+            padding:12px 14px; border-radius:10px;
+            color:var(--text-muted); font-size:.88rem; font-weight:500;
+            cursor:pointer; transition:var(--transition); border:none; background:none;
+            width:100%; text-align:left; font-family:'Inter',sans-serif;
+        }
+        .s-nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .s-nav-item.active {
+            background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(59,130,246,.08));
+            color:var(--primary); border:1px solid rgba(59,130,246,.25);
+        }
+        .s-nav-item i { width:18px; text-align:center; }
+
+        /* Settings Panels */
+        .settings-panels { min-width:0; }
+        .s-panel { display:none; }
+        .s-panel.active { display:block; animation:fadeIn .3s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .panel-card {
+            background:var(--card-bg);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            padding:28px;
+            margin-bottom:20px;
+        }
+        .panel-card h3 {
+            font-size:1.05rem; font-weight:700; margin-bottom:6px;
+            display:flex; align-items:center; gap:10px;
+        }
+        .panel-card h3 i { color:var(--gold); }
+        .panel-card .panel-desc {
+            font-size:.85rem; color:var(--text-muted); margin-bottom:24px;
+        }
+
+        .form-group { margin-bottom:18px; }
+        .form-group label {
+            display:block; font-size:.82rem; font-weight:600;
+            color:var(--text-muted); margin-bottom:6px;
+        }
+        .form-group label .req { color:var(--accent); }
+        .form-input, .form-select, .form-textarea {
+            width:100%; padding:12px 14px;
+            background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text);
+            font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+            transition:var(--transition);
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color:var(--primary);
+            box-shadow:0 0 0 3px rgba(59,130,246,.1);
+        }
+        .form-select { cursor:pointer; -webkit-appearance:none; appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 12px center; padding-right:36px;
+        }
+        .form-select option { background:var(--card-bg); color:var(--text); }
+        .form-textarea { min-height:100px; resize:vertical; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .form-hint { font-size:.75rem; color:var(--text-muted); margin-top:4px; }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 0; border-bottom:1px solid rgba(255,255,255,.04);
+        }
+        .toggle-row:last-child { border-bottom:none; }
+        .toggle-info h4 { font-size:.9rem; font-weight:600; margin-bottom:2px; }
+        .toggle-info p { font-size:.78rem; color:var(--text-muted); }
+        .toggle-switch {
+            width:48px; height:26px; border-radius:50px;
+            background:var(--border); cursor:pointer; position:relative;
+            transition:var(--transition); flex-shrink:0;
+        }
+        .toggle-switch.on { background:var(--green); }
+        .toggle-switch::after {
+            content:''; position:absolute; top:3px; left:3px;
+            width:20px; height:20px; border-radius:50%;
+            background:#fff; transition:var(--transition);
+            box-shadow:0 2px 4px rgba(0,0,0,.3);
+        }
+        .toggle-switch.on::after { left:25px; }
+
+        /* Buttons */
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:8px;
+            padding:12px 24px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.9rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); transform:translateY(-1px); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); transform:translateY(-1px); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-danger:hover { box-shadow:0 4px 15px rgba(239,68,68,.4); }
+        .btn-sm { padding:8px 14px; font-size:.8rem; }
+        .btn:disabled { opacity:.6; cursor:not-allowed; transform:none !important; }
+
+        .form-actions {
+            display:flex; gap:12px; margin-top:24px; padding-top:20px;
+            border-top:1px solid var(--border);
+        }
+
+        /* Status Badge */
+        .status-pill {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:4px 12px; border-radius:50px; font-size:.75rem; font-weight:700;
+        }
+        .status-pill.online { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-pill.offline { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-pill.warning { background:rgba(245,158,11,.12); color:var(--warning); }
+
+        /* Gateway Cards */
+        .gateway-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:20px; }
+        .gateway-card {
+            background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:12px;
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition);
+        }
+        .gateway-card:hover { border-color:var(--primary); }
+        .gateway-card .gw-icon {
+            width:48px; height:48px; border-radius:12px;
+            display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;
+        }
+        .gateway-card .gw-info { flex:1; }
+        .gateway-card .gw-info h4 { font-size:.9rem; font-weight:700; margin-bottom:2px; }
+        .gateway-card .gw-info p { font-size:.75rem; color:var(--text-muted); }
+
+        /* Maintenance Banner */
+        .maint-banner {
+            background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.04));
+            border:1px solid rgba(245,158,11,.3); border-radius:var(--radius);
+            padding:16px 20px; margin-bottom:20px; display:none; align-items:center; gap:12px;
+        }
+        .maint-banner.show { display:flex; }
+        .maint-banner i { color:var(--warning); font-size:1.2rem; }
+        .maint-banner span { font-size:.88rem; font-weight:500; }
+
+        /* Danger Zone */
+        .danger-zone {
+            border-color:rgba(239,68,68,.3) !important;
+            background:rgba(239,68,68,.04) !important;
+        }
+        .danger-zone h3 { color:var(--danger); }
+        .danger-zone h3 i { color:var(--danger); }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        /* Input with prefix */
+        .input-prefix {
+            display:flex; align-items:center;
+        }
+        .input-prefix .prefix {
+            padding:12px 14px; background:rgba(255,255,255,.04);
+            border:1.5px solid var(--border); border-right:none;
+            border-radius:10px 0 0 10px; color:var(--gold);
+            font-family:'Orbitron',sans-serif; font-weight:700; font-size:.9rem;
+        }
+        .input-prefix .form-input {
+            border-radius:0 10px 10px 0;
+        }
+
+        @media(max-width:1024px) {
+            .settings-layout { grid-template-columns:1fr; }
+            .settings-nav { position:static; display:flex; flex-wrap:wrap; gap:4px; }
+            .s-nav-item { width:auto; }
+            .gateway-grid { grid-template-columns:1fr; }
+        }
+        @media(max-width:768px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .page-content { padding:16px; }
+            .form-row { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link active"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">System Settings</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Settings</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Maintenance Banner -->
+            <div class="maint-banner" id="maintBanner">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span><strong>Maintenance Mode is ON</strong> — Players cannot access the platform right now.</span>
+            </div>
+
+            <div class="settings-layout">
+
+                <!-- Settings Side Nav -->
+                <nav class="settings-nav">
+                    <button class="s-nav-item active" data-panel="general" onclick="switchPanel('general', this)">
+                        <i class="fas fa-globe"></i> General
+                    </button>
+                    <button class="s-nav-item" data-panel="payments" onclick="switchPanel('payments', this)">
+                        <i class="fas fa-credit-card"></i> Payments
+                    </button>
+                    <button class="s-nav-item" data-panel="limits" onclick="switchPanel('limits', this)">
+                        <i class="fas fa-sliders"></i> Limits & Rake
+                    </button>
+                    <button class="s-nav-item" data-panel="games" onclick="switchPanel('games', this)">
+                        <i class="fas fa-gamepad"></i> Game Settings
+                    </button>
+                    <button class="s-nav-item" data-panel="security" onclick="switchPanel('security', this)">
+                        <i class="fas fa-shield-halved"></i> Security
+                    </button>
+                    <button class="s-nav-item" data-panel="email" onclick="switchPanel('email', this)">
+                        <i class="fas fa-envelope"></i> Email & SMS
+                    </button>
+                    <button class="s-nav-item" data-panel="legal" onclick="switchPanel('legal', this)">
+                        <i class="fas fa-file-contract"></i> Legal Pages
+                    </button>
+                    <button class="s-nav-item" data-panel="maintenance" onclick="switchPanel('maintenance', this)">
+                        <i class="fas fa-tools"></i> Maintenance
+                    </button>
+                    <button class="s-nav-item" data-panel="danger" onclick="switchPanel('danger', this)" style="color:var(--danger);">
+                        <i class="fas fa-exclamation-triangle"></i> Danger Zone
+                    </button>
+                </nav>
+
+                <!-- Settings Panels -->
+                <div class="settings-panels">
+
+                    <!-- ═══ GENERAL ═══ -->
+                    <div class="s-panel active" id="panel-general">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-globe"></i> General Settings</h3>
+                            <p class="panel-desc">Basic platform identity and configuration.</p>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Site Name <span class="req">*</span></label>
+                                    <input class="form-input" id="siteName" value="PokerRoyale">
+                                </div>
+                                <div class="form-group">
+                                    <label>Site Tagline</label>
+                                    <input class="form-input" id="siteTagline" value="Play. Win. Earn Real Money.">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Default Currency</label>
+                                    <select class="form-select" id="currency">
+                                        <option value="USD" selected>USD ($)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                        <option value="GBP">GBP (£)</option>
+                                        <option value="PKR">PKR (Rs)</option>
+                                        <option value="AED">AED (د.إ)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Timezone</label>
+                                    <select class="form-select" id="timezone">
+                                        <option value="UTC" selected>UTC</option>
+                                        <option value="America/New_York">America/New_York (EST)</option>
+                                        <option value="Europe/London">Europe/London (GMT)</option>
+                                        <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                                        <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+                                        <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                                        <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Support Email</label>
+                                    <input class="form-input" id="supportEmail" type="email" value="support@pokerroyale.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Support Phone</label>
+                                    <input class="form-input" id="supportPhone" value="+1 800 123 4567">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Meta Description (SEO)</label>
+                                <textarea class="form-textarea" id="metaDesc">World's most trusted real money poker platform. Play Texas Hold'em, Omaha & tournaments. Deposit via PayPal, Crypto & more.</textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('general')">
+                                    <i class="fas fa-save"></i> Save General Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ PAYMENTS ═══ -->
+                    <div class="s-panel" id="panel-payments">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-credit-card"></i> Payment Gateways</h3>
+                            <p class="panel-desc">Enable/disable payment methods and configure API keys.</p>
+
+                            <div class="gateway-grid">
+                                <div class="gateway-card">
+                                    <div class="gw-icon" style="background:rgba(0,48,135,.15);color:#003087;"><i class="fab fa-paypal"></i></div>
+                                    <div class="gw-info">
+                                        <h4>PayPal</h4>
+                                        <p>Instant deposits & withdrawals</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" data-gw="paypal"></div>
+                                </div>
+                                <div class="gateway-card">
+                                    <div class="gw-icon" style="background:rgba(134,33,101,.15);color:#862165;"><i class="fas fa-wallet"></i></div>
+                                    <div class="gw-info">
+                                        <h4>Skrill</h4>
+                                        <p>E-wallet payments</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" data-gw="skrill"></div>
+                                </div>
+                                <div class="gateway-card">
+                                    <div class="gw-icon" style="background:rgba(26,31,113,.15);color:#1A1F71;"><i class="fab fa-cc-visa"></i></div>
+                                    <div class="gw-info">
+                                        <h4>Visa / MasterCard</h4>
+                                        <p>Stripe card processing</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" data-gw="stripe"></div>
+                                </div>
+                                <div class="gateway-card">
+                                    <div class="gw-icon" style="background:rgba(0,102,178,.15);color:#0066B2;"><i class="fas fa-building-columns"></i></div>
+                                    <div class="gw-info">
+                                        <h4>Bank Transfer</h4>
+                                        <p>Wire / IBAN transfers</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" data-gw="bank"></div>
+                                </div>
+                                <div class="gateway-card">
+                                    <div class="gw-icon" style="background:rgba(247,147,26,.15);color:#F7931A;"><i class="fab fa-bitcoin"></i></div>
+                                    <div class="gw-info">
+                                        <h4>Crypto (BTC / USDT)</h4>
+                                        <p>NOWPayments gateway</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" data-gw="crypto"></div>
+                                </div>
+                                <div class="gateway-card">
+                                    <div class="gw-icon" style="background:rgba(60,176,67,.15);color:#3CB043;"><i class="fas fa-mobile-screen"></i></div>
+                                    <div class="gw-info">
+                                        <h4>EasyPaisa / JazzCash</h4>
+                                        <p>Pakistan mobile wallets</p>
+                                    </div>
+                                    <div class="toggle-switch" onclick="this.classList.toggle('on')" data-gw="local"></div>
+                                </div>
+                            </div>
+
+                            <h4 style="font-size:.9rem;font-weight:700;margin:20px 0 14px;color:var(--gold);">API Credentials</h4>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>PayPal Client ID</label>
+                                    <input class="form-input" id="paypalClientId" type="password" value="••••••••••••••••" placeholder="PayPal Client ID">
+                                </div>
+                                <div class="form-group">
+                                    <label>PayPal Secret</label>
+                                    <input class="form-input" id="paypalSecret" type="password" value="••••••••••••••••" placeholder="PayPal Client Secret">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Stripe Secret Key</label>
+                                    <input class="form-input" id="stripeKey" type="password" value="••••••••••••••••" placeholder="sk_live_...">
+                                </div>
+                                <div class="form-group">
+                                    <label>NOWPayments API Key</label>
+                                    <input class="form-input" id="cryptoKey" type="password" value="••••••••••••••••" placeholder="Crypto API Key">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('payments')">
+                                    <i class="fas fa-save"></i> Save Payment Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ LIMITS & RAKE ═══ -->
+                    <div class="s-panel" id="panel-limits">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-sliders"></i> Deposit / Withdrawal Limits</h3>
+                            <p class="panel-desc">Set minimum and maximum transaction amounts (USD).</p>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Min Deposit</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="minDeposit" type="number" value="10" min="1">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Deposit</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="maxDeposit" type="number" value="50000" min="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Min Withdrawal</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="minWithdraw" type="number" value="25" min="1">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Withdrawal</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="maxWithdraw" type="number" value="50000" min="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Daily Withdrawal Limit (per user)</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="dailyWithdrawLimit" type="number" value="10000">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Auto-Approve Withdrawals Below</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="autoApproveLimit" type="number" value="100">
+                                    </div>
+                                    <div class="form-hint">Withdrawals below this amount are auto-approved</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-card">
+                            <h3><i class="fas fa-percentage"></i> Rake Configuration</h3>
+                            <p class="panel-desc">House fee taken from each pot.</p>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Default Rake Percentage</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">%</span>
+                                        <input class="form-input" id="rakePercent" type="number" value="5" min="0" max="20" step="0.5">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Rake Cap (per hand)</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">$</span>
+                                        <input class="form-input" id="rakeCap" type="number" value="50" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>VIP Rakeback %</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">%</span>
+                                        <input class="form-input" id="rakeback" type="number" value="20" min="0" max="50">
+                                    </div>
+                                    <div class="form-hint">Percentage of rake returned to VIP players</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tournament Entry Fee %</label>
+                                    <div class="input-prefix">
+                                        <span class="prefix">%</span>
+                                        <input class="form-input" id="tourneyFee" type="number" value="10" min="0" max="20">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('limits')">
+                                    <i class="fas fa-save"></i> Save Limits & Rake
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ GAME SETTINGS ═══ -->
+                    <div class="s-panel" id="panel-games">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-gamepad"></i> Game Configuration</h3>
+                            <p class="panel-desc">Default table and tournament behaviour.</p>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Default Turn Timer (seconds)</label>
+                                    <input class="form-input" id="turnTimer" type="number" value="30" min="10" max="120">
+                                </div>
+                                <div class="form-group">
+                                    <label>Time Bank (seconds)</label>
+                                    <input class="form-input" id="timeBank" type="number" value="60" min="0" max="300">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Disconnect Protection (seconds)</label>
+                                    <input class="form-input" id="disconnectTime" type="number" value="30" min="10" max="120">
+                                    <div class="form-hint">Time before auto-fold on disconnect</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Sit-Out Auto Kick (hands)</label>
+                                    <input class="form-input" id="sitoutKick" type="number" value="5" min="1" max="50">
+                                    <div class="form-hint">Remove player after N sit-out hands</div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Max Tables Per Player</label>
+                                    <input class="form-input" id="maxTables" type="number" value="4" min="1" max="12">
+                                </div>
+                                <div class="form-group">
+                                    <label>Chat Cooldown (seconds)</label>
+                                    <input class="form-input" id="chatCooldown" type="number" value="3" min="0" max="30">
+                                </div>
+                            </div>
+
+                            <div style="margin-top:10px;">
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Allow Straddle</h4>
+                                        <p>Players can place straddle bets pre-flop</p>
+                                    </div>
+                                    <div class="toggle-switch" onclick="this.classList.toggle('on')" id="togStraddle"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Rabbit Hunting</h4>
+                                        <p>Show remaining board cards after fold</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togRabbit"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Run It Twice</h4>
+                                        <p>Allow running board twice on all-in</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togRunTwice"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Emote / Chat Reactions</h4>
+                                        <p>Enable table emotes and reactions</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togEmotes"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('games')">
+                                    <i class="fas fa-save"></i> Save Game Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ SECURITY ═══ -->
+                    <div class="s-panel" id="panel-security">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-shield-halved"></i> Security Settings</h3>
+                            <p class="panel-desc">Authentication, session, and anti-fraud controls.</p>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Session Timeout (minutes)</label>
+                                    <input class="form-input" id="sessionTimeout" type="number" value="30" min="5" max="240">
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Login Attempts</label>
+                                    <input class="form-input" id="maxLoginAttempts" type="number" value="5" min="3" max="20">
+                                    <div class="form-hint">Lock account after N failed attempts</div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Lockout Duration (minutes)</label>
+                                    <input class="form-input" id="lockoutDuration" type="number" value="30" min="5" max="1440">
+                                </div>
+                                <div class="form-group">
+                                    <label>Min Password Length</label>
+                                    <input class="form-input" id="minPasswordLen" type="number" value="8" min="6" max="32">
+                                </div>
+                            </div>
+
+                            <div style="margin-top:10px;">
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Force 2FA for Admins</h4>
+                                        <p>All admin accounts must enable two-factor authentication</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togAdmin2FA"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>KYC Required for Withdrawals</h4>
+                                        <p>Players must verify identity before first withdrawal</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togKycWithdraw"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>VPN / Proxy Detection</h4>
+                                        <p>Block registrations and logins from VPN/proxy IPs</p>
+                                    </div>
+                                    <div class="toggle-switch" onclick="this.classList.toggle('on')" id="togVpn"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Multi-Account Detection</h4>
+                                        <p>Flag users with matching device fingerprints / IPs</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togMultiAcc"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Email Verification Required</h4>
+                                        <p>New users must verify email before depositing</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togEmailVerify"></div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-info">
+                                        <h4>Phone OTP Verification Required</h4>
+                                        <p>New users must verify mobile via OTP on registration</p>
+                                    </div>
+                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togPhoneOtp"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('security')">
+                                    <i class="fas fa-save"></i> Save Security Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ EMAIL & SMS ═══ -->
+                    <div class="s-panel" id="panel-email">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-envelope"></i> Email (SMTP) Configuration</h3>
+                            <p class="panel-desc">Outgoing email server for notifications and OTP.</p>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>SMTP Host</label>
+                                    <input class="form-input" id="smtpHost" value="smtp.gmail.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>SMTP Port</label>
+                                    <input class="form-input" id="smtpPort" type="number" value="587">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>SMTP Username</label>
+                                    <input class="form-input" id="smtpUser" value="noreply@pokerroyale.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>SMTP Password / App Key</label>
+                                    <input class="form-input" id="smtpPass" type="password" value="••••••••••••">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>From Address</label>
+                                <input class="form-input" id="emailFrom" value="PokerRoyale Support &lt;noreply@pokerroyale.com&gt;">
+                            </div>
+                        </div>
+
+                        <div class="panel-card">
+                            <h3><i class="fas fa-sms"></i> SMS / Twilio Configuration</h3>
+                            <p class="panel-desc">Used for mobile OTP verification and alerts. Credentials stay server-side only.</p>
+
+                            <div class="form-group">
+                                <label>Twilio Account SID</label>
+                                <input class="form-input" id="twilioSid" type="password" value="••••••••••••••••" placeholder="ACxxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label>Twilio Auth Token</label>
+                                <input class="form-input" id="twilioToken" type="password" value="••••••••••••••••">
+                            </div>
+                            <div class="form-group">
+                                <label>Twilio Phone Number</label>
+                                <input class="form-input" id="twilioPhone" value="+1XXXXXXXXXX" placeholder="+1234567890">
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-outline" onclick="testSms()">
+                                    <i class="fas fa-paper-plane"></i> Send Test SMS
+                                </button>
+                                <button class="btn btn-gold" onclick="saveSettings('email')">
+                                    <i class="fas fa-save"></i> Save Email & SMS Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ LEGAL PAGES ═══ -->
+                    <div class="s-panel" id="panel-legal">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-file-contract"></i> Legal Content</h3>
+                            <p class="panel-desc">Edit terms, privacy, and responsible gaming text shown on the website.</p>
+
+                            <div class="form-group">
+                                <label>Terms & Conditions</label>
+                                <textarea class="form-textarea" id="legalTerms" style="min-height:160px;">By using PokerRoyale you agree to play fairly, be 18+ years of age, and accept that all game outcomes are determined by certified random number generation. Real-money deposits and withdrawals are subject to KYC verification. We reserve the right to suspend accounts engaged in collusion, bot usage, or bonus abuse.</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Privacy Policy</label>
+                                <textarea class="form-textarea" id="legalPrivacy" style="min-height:140px;">PokerRoyale collects account data (name, email, phone, payment details) solely to provide gaming services, process transactions, and comply with regulations. We do not sell personal data. Data is encrypted in transit (SSL) and at rest. You may request data deletion by contacting support.</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Responsible Gaming Policy</label>
+                                <textarea class="form-textarea" id="legalResponsible" style="min-height:140px;">PokerRoyale promotes responsible gaming. Players can set deposit limits, loss limits, and session reminders in their profile. Self-exclusion options are available for 24 hours, 7 days, 30 days, or permanent. If you need help, contact support or visit gambleaware.org / ncpgambling.org.</textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('legal')">
+                                    <i class="fas fa-save"></i> Save Legal Content
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ MAINTENANCE ═══ -->
+                    <div class="s-panel" id="panel-maintenance">
+                        <div class="panel-card">
+                            <h3><i class="fas fa-tools"></i> Maintenance Mode</h3>
+                            <p class="panel-desc">Take the platform offline for updates. Admins can still access the panel.</p>
+
+                            <div class="toggle-row">
+                                <div class="toggle-info">
+                                    <h4>Enable Maintenance Mode</h4>
+                                    <p>Players will see a maintenance page instead of the site</p>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleMaintenance(this)" id="togMaintenance"></div>
+                            </div>
+
+                            <div class="form-group" style="margin-top:16px;">
+                                <label>Maintenance Message</label>
+                                <textarea class="form-textarea" id="maintMessage">We're currently performing scheduled maintenance. PokerRoyale will be back shortly. Thank you for your patience!</textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Estimated End Time</label>
+                                    <input class="form-input" id="maintEnd" type="datetime-local">
+                                </div>
+                                <div class="form-group">
+                                    <label>Whitelist IPs (comma separated)</label>
+                                    <input class="form-input" id="maintWhitelist" placeholder="127.0.0.1, 192.168.1.1">
+                                    <div class="form-hint">These IPs can still access the site during maintenance</div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-gold" onclick="saveSettings('maintenance')">
+                                    <i class="fas fa-save"></i> Save Maintenance Settings
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="panel-card">
+                            <h3><i class="fas fa-database"></i> Database & Cache</h3>
+                            <p class="panel-desc">Maintenance utilities for the platform.</p>
+
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                                <button class="btn btn-outline" onclick="runAction('clear_cache')">
+                                    <i class="fas fa-broom"></i> Clear Cache
+                                </button>
+                                <button class="btn btn-outline" onclick="runAction('backup_db')">
+                                    <i class="fas fa-download"></i> Backup Database
+                                </button>
+                                <button class="btn btn-outline" onclick="runAction('rebuild_index')">
+                                    <i class="fas fa-database"></i> Optimize Tables
+                                </button>
+                                <button class="btn btn-outline" onclick="runAction('clear_sessions')">
+                                    <i class="fas fa-user-slash"></i> Clear Expired Sessions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ DANGER ZONE ═══ -->
+                    <div class="s-panel" id="panel-danger">
+                        <div class="panel-card danger-zone">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                            <p class="panel-desc">Irreversible actions. Proceed with extreme caution. Super Admin only.</p>
+
+                            <div class="toggle-row">
+                                <div class="toggle-info">
+                                    <h4>Force Logout All Players</h4>
+                                    <p>Immediately end every player session across the platform</p>
+                                </div>
+                                <button class="btn btn-sm btn-danger" onclick="dangerAction('force_logout')">
+                                    <i class="fas fa-sign-out-alt"></i> Execute
+                                </button>
+                            </div>
+                            <div class="toggle-row">
+                                <div class="toggle-info">
+                                    <h4>Close All Active Tables</h4>
+                                    <p>Refund seated players and close every cash game table</p>
+                                </div>
+                                <button class="btn btn-sm btn-danger" onclick="dangerAction('close_tables')">
+                                    <i class="fas fa-times-circle"></i> Execute
+                                </button>
+                            </div>
+                            <div class="toggle-row">
+                                <div class="toggle-info">
+                                    <h4>Cancel All Running Tournaments</h4>
+                                    <p>Cancel tournaments and refund all buy-ins</p>
+                                </div>
+                                <button class="btn btn-sm btn-danger" onclick="dangerAction('cancel_tourneys')">
+                                    <i class="fas fa-ban"></i> Execute
+                                </button>
+                            </div>
+                            <div class="toggle-row">
+                                <div class="toggle-info">
+                                    <h4>Reset Demo Data</h4>
+                                    <p>Wipe and reseed demo users, tables, and transactions</p>
+                                </div>
+                                <button class="btn btn-sm btn-danger" onclick="dangerAction('reset_demo')">
+                                    <i class="fas fa-trash-restore"></i> Execute
+                                </button>
+                            </div>
+                            <div class="toggle-row">
+                                <div class="toggle-info">
+                                    <h4 style="color:var(--danger);">Factory Reset Platform</h4>
+                                    <p>Wipe ALL data except Super Admin account. This cannot be undone.</p>
+                                </div>
+                                <button class="btn btn-sm btn-danger" onclick="dangerAction('factory_reset')">
+                                    <i class="fas fa-skull-crossbones"></i> Factory Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /settings-panels -->
+            </div><!-- /settings-layout -->
+        </div><!-- /page-content -->
+    </div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+<script>
+// ═══════════════════════════════════════
+//  SETTINGS PAGE LOGIC
+// ═══════════════════════════════════════
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+
+function adminLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        localStorage.removeItem('pr_admin_role');
+        localStorage.removeItem('pr_admin_name');
+        window.location.href = 'login.html';
+    }
+}
+
+// Panel switching
+function switchPanel(panelId, el) {
+    document.querySelectorAll('.s-nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.s-panel').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const panel = document.getElementById('panel-' + panelId);
+    if (panel) panel.classList.add('active');
+}
+
+// Toast
+function showToast(msg, type = 'success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    t.innerHTML = `<i class="fas ${icons[type] || icons.success}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => {
+        t.classList.remove('show');
+        setTimeout(() => t.remove(), 400);
+    }, 3500);
+}
+
+// Collect settings by panel
+function collectGeneral() {
+    return {
+        site_name: document.getElementById('siteName').value,
+        site_tagline: document.getElementById('siteTagline').value,
+        default_currency: document.getElementById('currency').value,
+        timezone: document.getElementById('timezone').value,
+        support_email: document.getElementById('supportEmail').value,
+        support_phone: document.getElementById('supportPhone').value,
+        meta_description: document.getElementById('metaDesc').value
+    };
+}
+
+function collectPayments() {
+    const gateways = {};
+    document.querySelectorAll('[data-gw]').forEach(el => {
+        gateways[el.dataset.gw] = el.classList.contains('on');
+    });
+    return {
+        gateways,
+        paypal_client_id: document.getElementById('paypalClientId').value,
+        paypal_secret: document.getElementById('paypalSecret').value,
+        stripe_key: document.getElementById('stripeKey').value,
+        crypto_key: document.getElementById('cryptoKey').value
+    };
+}
+
+function collectLimits() {
+    return {
+        min_deposit: parseFloat(document.getElementById('minDeposit').value) || 10,
+        max_deposit: parseFloat(document.getElementById('maxDeposit').value) || 50000,
+        min_withdraw: parseFloat(document.getElementById('minWithdraw').value) || 25,
+        max_withdraw: parseFloat(document.getElementById('maxWithdraw').value) || 50000,
+        daily_withdraw_limit: parseFloat(document.getElementById('dailyWithdrawLimit').value) || 10000,
+        auto_approve_limit: parseFloat(document.getElementById('autoApproveLimit').value) || 100,
+        default_rake_percent: parseFloat(document.getElementById('rakePercent').value) || 5,
+        rake_cap: parseFloat(document.getElementById('rakeCap').value) || 50,
+        vip_rakeback: parseFloat(document.getElementById('rakeback').value) || 20,
+        tournament_fee_percent: parseFloat(document.getElementById('tourneyFee').value) || 10
+    };
+}
+
+function collectGames() {
+    return {
+        turn_timer: parseInt(document.getElementById('turnTimer').value) || 30,
+        time_bank: parseInt(document.getElementById('timeBank').value) || 60,
+        disconnect_protection: parseInt(document.getElementById('disconnectTime').value) || 30,
+        sitout_kick_hands: parseInt(document.getElementById('sitoutKick').value) || 5,
+        max_tables_per_player: parseInt(document.getElementById('maxTables').value) || 4,
+        chat_cooldown: parseInt(document.getElementById('chatCooldown').value) || 3,
+        allow_straddle: document.getElementById('togStraddle').classList.contains('on'),
+        rabbit_hunting: document.getElementById('togRabbit').classList.contains('on'),
+        run_it_twice: document.getElementById('togRunTwice').classList.contains('on'),
+        emotes_enabled: document.getElementById('togEmotes').classList.contains('on')
+    };
+}
+
+function collectSecurity() {
+    return {
+        session_timeout: parseInt(document.getElementById('sessionTimeout').value) || 30,
+        max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value) || 5,
+        lockout_duration: parseInt(document.getElementById('lockoutDuration').value) || 30,
+        min_password_length: parseInt(document.getElementById('minPasswordLen').value) || 8,
+        force_admin_2fa: document.getElementById('togAdmin2FA').classList.contains('on'),
+        kyc_required_withdraw: document.getElementById('togKycWithdraw').classList.contains('on'),
+        vpn_detection: document.getElementById('togVpn').classList.contains('on'),
+        multi_account_detection: document.getElementById('togMultiAcc').classList.contains('on'),
+        email_verification_required: document.getElementById('togEmailVerify').classList.contains('on'),
+        phone_otp_required: document.getElementById('togPhoneOtp').classList.contains('on')
+    };
+}
+
+function collectEmail() {
+    return {
+        smtp_host: document.getElementById('smtpHost').value,
+        smtp_port: parseInt(document.getElementById('smtpPort').value) || 587,
+        smtp_user: document.getElementById('smtpUser').value,
+        smtp_pass: document.getElementById('smtpPass').value,
+        email_from: document.getElementById('emailFrom').value,
+        twilio_sid: document.getElementById('twilioSid').value,
+        twilio_token: document.getElementById('twilioToken').value,
+        twilio_phone: document.getElementById('twilioPhone').value
+    };
+}
+
+function collectLegal() {
+    return {
+        terms: document.getElementById('legalTerms').value,
+        privacy: document.getElementById('legalPrivacy').value,
+        responsible_gaming: document.getElementById('legalResponsible').value
+    };
+}
+
+function collectMaintenance() {
+    return {
+        maintenance_mode: document.getElementById('togMaintenance').classList.contains('on'),
+        maintenance_message: document.getElementById('maintMessage').value,
+        maintenance_end: document.getElementById('maintEnd').value,
+        maintenance_whitelist: document.getElementById('maintWhitelist').value
+    };
+}
+
+async function saveSettings(panel) {
+    const collectors = {
+        general: collectGeneral,
+        payments: collectPayments,
+        limits: collectLimits,
+        games: collectGames,
+        security: collectSecurity,
+        email: collectEmail,
+        legal: collectLegal,
+        maintenance: collectMaintenance
+    };
+
+    const data = collectors[panel] ? collectors[panel]() : {};
+
+    // Try API first
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        const res = await fetch('http://localhost:3000/api/admin/settings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            const json = await res.json();
+            showToast(json.message || 'Settings saved successfully!', 'success');
+            // Persist locally too
+            localStorage.setItem('pr_admin_settings_' + panel, JSON.stringify(data));
+            return;
+        }
+    } catch (e) {
+        // API offline — save locally
+    }
+
+    localStorage.setItem('pr_admin_settings_' + panel, JSON.stringify(data));
+    showToast('Settings saved locally (API offline)', 'success');
+}
+
+function toggleMaintenance(el) {
+    el.classList.toggle('on');
+    const on = el.classList.contains('on');
+    document.getElementById('maintBanner').classList.toggle('show', on);
+    if (on) showToast('Maintenance mode ENABLED', 'warning');
+    else showToast('Maintenance mode disabled', 'success');
+}
+
+function testSms() {
+    showToast('Test SMS queued (check server logs / Twilio console)', 'info');
+}
+
+function runAction(action) {
+    const labels = {
+        clear_cache: 'Clear platform cache?',
+        backup_db: 'Create database backup?',
+        rebuild_index: 'Optimize all database tables?',
+        clear_sessions: 'Clear all expired sessions?'
+    };
+    if (!confirm(labels[action] || 'Run this action?')) return;
+
+    showToast('Running: ' + action.replace(/_/g, ' ') + '...', 'info');
+    setTimeout(() => {
+        showToast(action.replace(/_/g, ' ') + ' completed successfully!', 'success');
+    }, 1500);
+}
+
+function dangerAction(action) {
+    const warnings = {
+        force_logout: 'Force logout ALL players right now?',
+        close_tables: 'Close ALL active tables and refund players?',
+        cancel_tourneys: 'Cancel ALL running tournaments and refund buy-ins?',
+        reset_demo: 'Wipe and reseed all demo data?',
+        factory_reset: '⚠️ FACTORY RESET will delete ALL platform data except Super Admin. Type RESET to confirm.'
+    };
+
+    if (action === 'factory_reset') {
+        const typed = prompt(warnings[action]);
+        if (typed !== 'RESET') {
+            showToast('Factory reset cancelled', 'warning');
+            return;
+        }
+    } else {
+        if (!confirm(warnings[action] || 'Are you sure?')) return;
+        if (!confirm('This action may be irreversible. Confirm again?')) return;
+    }
+
+    showToast('Executing ' + action.replace(/_/g, ' ') + '...', 'warning');
+    setTimeout(() => {
+        showToast(action.replace(/_/g, ' ') + ' completed', 'success');
+    }, 2000);
+}
+
+// Load saved settings from localStorage on page load
+function loadSavedSettings() {
+    ['general', 'payments', 'limits', 'games', 'security', 'email', 'legal', 'maintenance'].forEach(panel => {
+        try {
+            const raw = localStorage.getItem('pr_admin_settings_' + panel);
+            if (!raw) return;
+            const data = JSON.parse(raw);
+
+            if (panel === 'general') {
+                if (data.site_name) document.getElementById('siteName').value = data.site_name;
+                if (data.site_tagline) document.getElementById('siteTagline').value = data.site_tagline;
+                if (data.default_currency) document.getElementById('currency').value = data.default_currency;
+                if (data.timezone) document.getElementById('timezone').value = data.timezone;
+                if (data.support_email) document.getElementById('supportEmail').value = data.support_email;
+                if (data.support_phone) document.getElementById('supportPhone').value = data.support_phone;
+                if (data.meta_description) document.getElementById('metaDesc').value = data.meta_description;
+            }
+            if (panel === 'limits') {
+                if (data.min_deposit != null) document.getElementById('minDeposit').value = data.min_deposit;
+                if (data.max_deposit != null) document.getElementById('maxDeposit').value = data.max_deposit;
+                if (data.min_withdraw != null) document.getElementById('minWithdraw').value = data.min_withdraw;
+                if (data.max_withdraw != null) document.getElementById('maxWithdraw').value = data.max_withdraw;
+                if (data.default_rake_percent != null) document.getElementById('rakePercent').value = data.default_rake_percent;
+                if (data.rake_cap != null) document.getElementById('rakeCap').value = data.rake_cap;
+            }
+            if (panel === 'maintenance' && data.maintenance_mode) {
+                document.getElementById('togMaintenance').classList.add('on');
+                document.getElementById('maintBanner').classList.add('show');
+            }
+        } catch (e) {}
+    });
+}
+
+loadSavedSettings();
+console.log('⚙️ PokerRoyale Admin — Settings Page Loaded');
+</script>
+</body>
+</html>

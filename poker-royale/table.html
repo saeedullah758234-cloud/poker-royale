@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Table — PokerRoyale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1A1A2E;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #00C853;
+            --blue: #0F3460;
+            --cyan: #00D4FF;
+            --purple: #7B2FF7;
+            --bg-dark: #0A0A1A;
+            --felt: #0d5e35;
+            --felt-dark: #073d22;
+            --felt-border: #5a3a00;
+            --text: #FFFFFF;
+            --text-muted: #8892B0;
+            --glass: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.1);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        a { text-decoration:none; color:inherit; }
+
+        /* ═══════════════════════════════════════
+           LAYOUT
+        ═══════════════════════════════════════ */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════
+           TOP BAR
+        ═══════════════════════════════════════ */
+        .top-bar {
+            grid-column: 1 / -1;
+            background: rgba(10,10,26,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+        .top-left { display:flex; align-items:center; gap:16px; }
+        .logo { display:flex; align-items:center; gap:8px; font-family:'Cinzel',serif; font-size:1.1rem; font-weight:900; color:var(--gold); }
+        .logo i { color:var(--accent); }
+        .logo span { color:var(--text); font-weight:400; }
+
+        .table-info-bar {
+            display: flex; align-items: center; gap: 20px;
+            padding: 4px 16px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+        }
+        .tib-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: .78rem; color: var(--text-muted);
+        }
+        .tib-item i { color: var(--gold); font-size: .7rem; }
+        .tib-item b { color: var(--text); font-weight: 700; }
+
+        .top-right { display:flex; align-items:center; gap:10px; }
+        .top-btn {
+            width:36px; height:36px; border-radius:50%;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; transition:var(--transition);
+            color: var(--text-muted); font-size:.85rem;
+        }
+        .top-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .top-btn.sound-on { color: var(--green); }
+
+        .balance-chip {
+            display:flex; align-items:center; gap:8px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(0,200,83,.12), rgba(0,230,118,.08));
+            border: 1px solid rgba(0,200,83,.25);
+            border-radius: 50px;
+        }
+        .balance-chip i { color:var(--green); font-size:.8rem; }
+        .balance-chip .amt { font-family:'Orbitron',sans-serif; font-size:.82rem; font-weight:700; }
+
+        /* ═══════════════════════════════════════
+           TABLE AREA
+        ═══════════════════════════════════════ */
+        .table-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(ellipse at center, rgba(13,94,53,0.15), transparent 70%),
+                var(--bg-dark);
+            overflow: hidden;
+        }
+
+        /* Ambient light */
+        .table-area::before {
+            content: '';
+            position: absolute;
+            top: -20%; left: 50%;
+            transform: translateX(-50%);
+            width: 80%; height: 60%;
+            background: radial-gradient(ellipse, rgba(255,215,0,0.04), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* ═══ POKER TABLE ═══ */
+        .poker-table {
+            position: relative;
+            width: 750px; height: 400px;
+            border-radius: 200px;
+            background: radial-gradient(ellipse at 50% 45%, #1a7a4a, var(--felt) 40%, var(--felt-dark) 100%);
+            border: 12px solid #3d2800;
+            box-shadow:
+                inset 0 0 80px rgba(0,0,0,0.5),
+                inset 0 2px 8px rgba(255,215,0,0.15),
+                0 0 0 4px #1a1000,
+                0 0 0 8px #5a3a00,
+                0 0 0 10px #1a1000,
+                0 30px 80px rgba(0,0,0,0.7),
+                0 0 120px rgba(13,94,53,0.2);
+        }
+
+        /* Table felt pattern */
+        .poker-table::before {
+            content: '';
+            position: absolute;
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            border-radius: 190px;
+            border: 2px dashed rgba(255,215,0,0.08);
+        }
+
+        /* Center line */
+        .poker-table::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 15%; right: 15%;
+            height: 1px;
+            background: rgba(255,255,255,0.04);
+        }
+
+        /* ═══ POT DISPLAY ═══ */
+        .pot-display {
+            position: absolute;
+            top: 32%; left: 50%;
+            transform: translateX(-50%);
+            text-align: center; z-index: 10;
+        }
+        .pot-label {
+            font-size: .65rem; color: rgba(255,215,0,0.6);
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .pot-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem; font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 2px 10px rgba(255,215,0,0.4), 0 0 30px rgba(255,215,0,0.15);
+        }
+        .pot-chips {
+            display: flex; justify-content: center; gap: 3px; margin-top: 6px;
+        }
+        .mini-chip {
+            width: 14px; height: 14px; border-radius: 50%;
+            border: 2px dashed rgba(255,255,255,0.4);
+        }
+        .mc-red { background: #e74c3c; }
+        .mc-blue { background: #3498db; }
+        .mc-green { background: #2ecc71; }
+        .mc-black { background: #2c3e50; }
+        .mc-gold { background: var(--gold); }
+
+        /* ═══ COMMUNITY CARDS ═══ */
+        .community-cards {
+            position: absolute;
+            top: 48%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex; gap: 8px;
+            z-index: 10;
+        }
+
+        /* ═══ CARD STYLES ═══ */
+        .card {
+            width: 52px; height: 74px;
+            border-radius: 6px;
+            position: relative;
+            perspective: 600px;
+            transition: var(--transition);
+        }
+        .card-inner {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 6px;
+            backface-visibility: hidden;
+        }
+        .card-front {
+            background: #fff;
+            transform: rotateY(180deg);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border: 1px solid #ddd;
+        }
+        .card-back {
+            background: linear-gradient(135deg, #1a237e, #283593);
+            border: 2px solid #3949ab;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-back::before {
+            content: '♠';
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.15);
+        }
+        .card-back::after {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            background: repeating-linear-gradient(
+                45deg, transparent, transparent 3px,
+                rgba(255,255,255,0.03) 3px, rgba(255,255,255,0.03) 6px
+            );
+        }
+
+        .card-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem; font-weight: 900;
+            line-height: 1;
+        }
+        .card-suit {
+            font-size: 1.3rem; line-height: 1;
+        }
+        .card-corner {
+            position: absolute; top: 3px; left: 4px;
+            font-size: .55rem; font-weight: 900; line-height: 1.1;
+            text-align: center;
+        }
+        .card-corner-br {
+            position: absolute; bottom: 3px; right: 4px;
+            font-size: .55rem; font-weight: 900; line-height: 1.1;
+            text-align: center;
+            transform: rotate(180deg);
+        }
+        .card.red .card-value, .card.red .card-suit, .card.red .card-corner, .card.red .card-corner-br { color: #e74c3c; }
+        .card.black .card-value, .card.black .card-suit, .card.black .card-corner, .card.black .card-corner-br { color: #1a1a2e; }
+
+        .card-placeholder {
+            width: 52px; height: 74px;
+            border-radius: 6px;
+            border: 2px dashed rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* ═══ PLAYER SEATS ═══ */
+        .player-seat {
+            position: absolute;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .seat-box {
+            background: rgba(10,10,26,0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 8px 14px;
+            text-align: center;
+            min-width: 100px;
+            transition: var(--transition);
+            position: relative;
+        }
+        .player-seat.active-turn .seat-box {
+            border-color: var(--gold);
+            box-shadow: 0 0 25px rgba(255,215,0,0.3), 0 0 50px rgba(255,215,0,0.1);
+            animation: turnGlow 1.5s ease-in-out infinite;
+        }
+        @keyframes turnGlow {
+            0%,100% { box-shadow: 0 0 25px rgba(255,215,0,0.3); }
+            50% { box-shadow: 0 0 35px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.15); }
+        }
+        .player-seat.folded .seat-box { opacity: 0.4; }
+        .player-seat.is-you .seat-box { border-color: var(--cyan); }
+
+        .seat-avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            margin: 0 auto 4px;
+            overflow: hidden;
+            border: 2px solid var(--glass-border);
+            position: relative;
+        }
+        .player-seat.active-turn .seat-avatar { border-color: var(--gold); }
+        .player-seat.is-you .seat-avatar { border-color: var(--cyan); }
+        .seat-avatar img { width:100%; height:100%; object-fit:cover; }
+
+        .dealer-btn {
+            position: absolute;
+            top: -4px; right: -4px;
+            width: 20px; height: 20px;
+            background: linear-gradient(135deg, #fff, #ddd);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .55rem; font-weight: 900; color: #000;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            border: 1px solid #bbb;
+        }
+
+        .seat-name {
+            font-size: .72rem; font-weight: 700;
+            white-space: nowrap;
+            max-width: 90px;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .seat-chips {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .7rem; font-weight: 700;
+            color: var(--gold);
+            margin-top: 2px;
+        }
+        .seat-bet {
+            font-size: .65rem; color: var(--green);
+            margin-top: 1px;
+        }
+
+        .seat-timer {
+            position: absolute;
+            bottom: -3px; left: 50%;
+            transform: translateX(-50%);
+            width: 80%; height: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .seat-timer-bar {
+            height: 100%;
+            background: var(--gold);
+            border-radius: 3px;
+            transition: width 1s linear;
+        }
+        .seat-timer-bar.urgent { background: var(--accent); }
+
+        .seat-cards {
+            display: flex; gap: 3px;
+            margin-top: 4px;
+        }
+        .seat-cards .mini-card {
+            width: 24px; height: 34px;
+            border-radius: 3px;
+            background: linear-gradient(135deg, #1a237e, #283593);
+            border: 1px solid #3949ab;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .seat-cards .mini-card.face-up {
+            background: #fff;
+            border-color: #ddd;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .5rem; font-weight: 900;
+        }
+        .seat-cards .mini-card.face-up.red { color: #e74c3c; }
+        .seat-cards .mini-card.face-up.black { color: #1a1a2e; }
+
+        /* Seat positions around the table */
+        .pos-1 { bottom: -55px; left: 50%; transform: translateX(-50%); }
+        .pos-2 { bottom: 10px; left: -30px; }
+        .pos-3 { top: 50%; left: -50px; transform: translateY(-50%); }
+        .pos-4 { top: 10px; left: -20px; }
+        .pos-5 { top: -55px; left: 30%; transform: translateX(-50%); }
+        .pos-6 { top: -55px; right: 30%; transform: translateX(50%); }
+        .pos-7 { top: 10px; right: -20px; }
+        .pos-8 { top: 50%; right: -50px; transform: translateY(-50%); }
+        .pos-9 { bottom: 10px; right: -30px; }
+
+        /* ═══ YOUR CARDS (Bottom) ═══ */
+        .your-cards {
+            position: absolute;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 10px;
+            z-index: 30;
+        }
+        .your-cards .card {
+            width: 72px; height: 102px;
+            cursor: pointer;
+            filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+        }
+        .your-cards .card:hover { transform: translateY(-12px); }
+        .your-cards .card .card-value { font-size: 1.5rem; }
+        .your-cards .card .card-suit { font-size: 1.8rem; }
+        .your-cards .card .card-corner { font-size: .75rem; top: 4px; left: 5px; }
+        .your-cards .card .card-corner-br { font-size: .75rem; bottom: 4px; right: 5px; }
+
+        /* ═══ ACTION PANEL ═══ */
+        .action-panel {
+            grid-column: 1 / 2;
+            background: rgba(10,10,26,0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 50;
+        }
+
+        .action-buttons {
+            display: flex; gap: 10px;
+        }
+        .act-btn {
+            padding: 14px 28px;
+            border: none; border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: .95rem; font-weight: 700;
+            cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: .5px;
+        }
+        .act-btn:hover { transform: translateY(-2px); }
+        .act-btn:active { transform: translateY(0); }
+
+        .btn-fold {
+            background: linear-gradient(135deg, #555, #333);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .btn-fold:hover { background: linear-gradient(135deg, #666, #444); }
+
+        .btn-check {
+            background: linear-gradient(135deg, var(--blue), #1a4a8a);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(15,52,96,0.4);
+        }
+        .btn-check:hover { box-shadow: 0 8px 25px rgba(15,52,96,0.6); }
+
+        .btn-call {
+            background: linear-gradient(135deg, var(--green), #00E676);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0,200,83,0.3);
+        }
+        .btn-call:hover { box-shadow: 0 8px 25px rgba(0,200,83,0.5); }
+
+        .btn-raise {
+            background: linear-gradient(135deg, var(--accent), #FF6B6B);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(233,69,96,0.3);
+        }
+        .btn-raise:hover { box-shadow: 0 8px 25px rgba(233,69,96,0.5); }
+
+        .btn-allin {
+            background: linear-gradient(135deg, var(--gold), #FFA500);
+            color: #000; font-weight: 900;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+        .btn-allin:hover { box-shadow: 0 8px 25px rgba(255,215,0,0.5); }
+
+        .btn-amount {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .7rem; display: block;
+            opacity: .8; margin-top: 2px;
+        }
+
+        /* Bet Slider */
+        .bet-slider-area {
+            flex: 1;
+            display: flex; flex-direction: column; gap: 6px;
+            padding: 0 10px;
+        }
+        .bet-label {
+            display: flex; justify-content: space-between;
+            font-size: .75rem; color: var(--text-muted);
+        }
+        .bet-label .bet-val {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--gold); font-weight: 700; font-size: .85rem;
+        }
+        .bet-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%; height: 8px;
+            background: linear-gradient(90deg, var(--green), var(--gold), var(--accent));
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+        .bet-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--gold);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            cursor: grab;
+        }
+        .bet-presets {
+            display: flex; gap: 6px;
+        }
+        .bet-preset {
+            padding: 4px 10px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: .7rem; font-weight: 600;
+            cursor: pointer; transition: var(--transition);
+        }
+        .bet-preset:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* ═══════════════════════════════════════
+           SIDEBAR (Chat + Hand History)
+        ═══════════════════════════════════════ */
+        .sidebar {
+            grid-row: 2 / 4;
+            background: rgba(10,10,26,0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--glass-border);
+            display: flex; flex-direction: column;
+        }
+
+        .side-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .side-tab {
+            flex: 1; padding: 12px;
+            text-align: center;
+            font-size: .8rem; font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer; transition: var(--transition);
+            border-bottom: 2px solid transparent;
+        }
+        .side-tab:hover { color: var(--text); }
+        .side-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+        .side-content { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+        .side-panel { display:none; flex:1; flex-direction:column; overflow:hidden; }
+        .side-panel.active { display:flex; }
+
+        /* Chat */
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .chat-messages::-webkit-scrollbar { width:3px; }
+        .chat-messages::-webkit-scrollbar-thumb { background:var(--glass-border); border-radius:3px; }
+
+        .chat-msg {
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: var(--glass);
+            font-size: .8rem;
+        }
+        .chat-msg .sender {
+            font-weight: 700; font-size: .72rem;
+            margin-bottom: 2px;
+        }
+        .chat-msg .sender.you { color: var(--cyan); }
+        .chat-msg .sender.other { color: var(--gold); }
+        .chat-msg .sender.system { color: var(--accent); }
+        .chat-msg .msg-text { color: var(--text-muted); line-height: 1.4; }
+        .chat-msg.system-msg {
+            background: rgba(233,69,96,.08);
+            border: 1px solid rgba(233,69,96,.15);
+            text-align: center;
+        }
+        .chat-msg.system-msg .msg-text { color: var(--accent); font-size: .72rem; }
+
+        .chat-input-area {
+            padding: 10px;
+            border-top: 1px solid var(--glass-border);
+            display: flex; gap: 8px;
+        }
+        .chat-input {
+            flex: 1; padding: 10px 12px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: .82rem;
+            outline: none; transition: var(--transition);
+        }
+        .chat-input:focus { border-color: var(--gold); }
+        .chat-send {
+            width: 40px; height: 40px;
+            background: var(--accent); border: none;
+            border-radius: 10px; color: #fff;
+            cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .chat-send:hover { background: #FF6B6B; }
+
+        /* Hand History */
+        .hand-history {
+            flex: 1; overflow-y: auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .hand-history::-webkit-scrollbar { width:3px; }
+        .hand-history::-webkit-scrollbar-thumb { background:var(--glass-border); border-radius:3px; }
+
+        .hh-item {
+            padding: 10px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+        }
+        .hh-header {
+            display: flex; justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .hh-hand { font-size: .72rem; font-weight: 700; color: var(--gold); }
+        .hh-result { font-size: .72rem; font-weight: 700; }
+        .hh-result.win { color: var(--green); }
+        .hh-result.loss { color: var(--accent); }
+        .hh-details { font-size: .68rem; color: var(--text-muted); line-height: 1.5; }
+        .hh-cards { display: flex; gap: 3px; margin-top: 4px; }
+        .hh-card {
+            padding: 2px 5px;
+            background: #fff;
+            border-radius: 3px;
+            font-size: .6rem; font-weight: 900;
+        }
+        .hh-card.red { color: #e74c3c; }
+        .hh-card.black { color: #1a1a2e; }
+
+        /* ═══════════════════════════════════════
+           MOBILE ACTION BAR
+        ═══════════════════════════════════════ */
+        .mobile-toggle-chat {
+            display: none;
+            position: fixed; bottom: 80px; right: 12px;
+            width: 44px; height: 44px;
+            background: var(--accent); border: none;
+            border-radius: 50%; color: #fff;
+            font-size: 1.1rem; cursor: pointer;
+            z-index: 60;
+            box-shadow: 0 4px 15px rgba(233,69,96,.4);
+        }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .game-layout { grid-template-columns: 1fr; }
+            .sidebar { display: none; position: fixed; top: 0; right: 0; width: 280px; height: 100vh; z-index: 200; }
+            .sidebar.open { display: flex; }
+            .mobile-toggle-chat { display: flex; align-items: center; justify-content: center; }
+            .poker-table { width: 600px; height: 320px; }
+        }
+
+        @media (max-width: 768px) {
+            .poker-table { width: 95vw; height: 280px; border-width: 8px; border-radius: 140px; }
+            .poker-table::before { border-radius: 130px; }
+            .table-info-bar { display: none; }
+            .act-btn { padding: 10px 16px; font-size: .8rem; }
+            .btn-amount { display: none; }
+            .action-panel { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+            .bet-slider-area { min-width: 100%; order: 10; }
+            .your-cards .card { width: 58px; height: 82px; }
+            .your-cards .card .card-value { font-size: 1.2rem; }
+            .your-cards .card .card-suit { font-size: 1.4rem; }
+            .community-cards .card { width: 40px; height: 56px; }
+            .community-cards .card .card-value { font-size: .85rem; }
+            .community-cards .card .card-suit { font-size: 1rem; }
+            .seat-box { min-width: 70px; padding: 5px 8px; }
+            .seat-avatar { width: 32px; height: 32px; }
+            .seat-name { font-size: .6rem; max-width: 60px; }
+            .seat-chips { font-size: .6rem; }
+            .pot-amount { font-size: 1.1rem; }
+            .pos-2, .pos-4, .pos-7, .pos-9 { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .poker-table { height: 240px; border-radius: 120px; }
+            .act-btn { padding: 8px 12px; font-size: .75rem; gap: 4px; }
+            .action-buttons { gap: 6px; }
+            .your-cards { bottom: 10px; gap: 6px; }
+            .your-cards .card { width: 50px; height: 72px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-layout">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="top-left">
+                <a href="lobby.html" class="logo">
+                    <i class="fas fa-crown"></i>Poker<span>Royale</span>
+                </a>
+                <div class="table-info-bar">
+                    <div class="tib-item"><i class="fas fa-diamond"></i> <b>Royal Flush Lounge</b></div>
+                    <div class="tib-item"><i class="fas fa-gamepad"></i> NL Hold'em</div>
+                    <div class="tib-item"><i class="fas fa-coins"></i> PKR <b>50/100</b></div>
+                    <div class="tib-item"><i class="fas fa-hand"></i> Hand #<b id="handNum">247</b></div>
+                </div>
+            </div>
+            <div class="top-right">
+                <div class="balance-chip">
+                    <i class="fas fa-wallet"></i>
+                    <span class="amt" id="myBalance">25,000</span>
+                </div>
+                <button class="top-btn sound-on" onclick="toggleSound(this)" title="Sound"><i class="fas fa-volume-up"></i></button>
+                <button class="top-btn" onclick="toggleFullscreen()" title="Fullscreen"><i class="fas fa-expand"></i></button>
+                <button class="top-btn" onclick="leaveTable()" title="Leave Table"><i class="fas fa-door-open"></i></button>
+            </div>
+        </div>
+
+        <!-- TABLE AREA -->
+        <div class="table-area">
+            <div class="poker-table" id="pokerTable">
+
+                <!-- Pot -->
+                <div class="pot-display">
+                    <div class="pot-label">Total Pot</div>
+                    <div class="pot-amount" id="potAmount">PKR 12,500</div>
+                    <div class="pot-chips">
+                        <div class="mini-chip mc-red"></div>
+                        <div class="mini-chip mc-blue"></div>
+                        <div class="mini-chip mc-gold"></div>
+                        <div class="mini-chip mc-green"></div>
+                        <div class="mini-chip mc-black"></div>
+                    </div>
+                </div>
+
+                <!-- Community Cards -->
+                <div class="community-cards" id="communityCards">
+                    <div class="card flipped red">
+                        <div class="card-inner">
+                            <div class="card-back"></div>
+                            <div class="card-front">
+                                <div class="card-corner">A<br>♥</div>
+                                <div class="card-value">A</div>
+                                <div class="card-suit">♥</div>
+                                <div class="card-corner-br">A<br>♥</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card flipped black">
+                        <div class="card-inner">
+                            <div class="card-back"></div>
+                            <div class="card-front">
+                                <div class="card-corner">K<br>♠</div>
+                                <div class="card-value">K</div>
+                                <div class="card-suit">♠</div>
+                                <div class="card-corner-br">K<br>♠</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card flipped red">
+                        <div class="card-inner">
+                            <div class="card-back"></div>
+                            <div class="card-front">
+                                <div class="card-corner">10<br>♦</div>
+                                <div class="card-value">10</div>
+                                <div class="card-suit">♦</div>
+                                <div class="card-corner-br">10<br>♦</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card flipped black">
+                        <div class="card-inner">
+                            <div class="card-back"></div>
+                            <div class="card-front">
+                                <div class="card-corner">7<br>♣</div>
+                                <div class="card-value">7</div>
+                                <div class="card-suit">♣</div>
+                                <div class="card-corner-br">7<br>♣</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-placeholder"></div>
+                </div>
+
+                <!-- Player Seats -->
+                <!-- Seat 1: YOU -->
+                <div class="player-seat pos-1 is-you active-turn" id="seat1">
+                    <div class="seat-box">
+                        <div class="seat-avatar">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="">
+                        </div>
+                        <div class="seat-name">You (Ali K.)</div>
+                        <div class="seat-chips">PKR 25,000</div>
+                        <div class="seat-bet">Bet: 200</div>
+                        <div class="seat-timer"><div class="seat-timer-bar" id="turnTimer" style="width:70%"></div></div>
+                    </div>
+                    <div class="seat-cards">
+                        <div class="mini-card face-up red">A♥</div>
+                        <div class="mini-card face-up black">K♠</div>
+                    </div>
+                </div>
+
+                <!-- Seat 2 -->
+                <div class="player-seat pos-2" id="seat2">
+                    <div class="seat-box">
+                        <div class="seat-avatar">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="">
+                            <div class="dealer-btn">D</div>
+                        </div>
+                        <div class="seat-name">Sara M.</div>
+                        <div class="seat-chips">PKR 18,500</div>
+                        <div class="seat-bet">Bet: 200</div>
+                    </div>
+                    <div class="seat-cards"><div class="mini-card"></div><div class="mini-card"></div></div>
+                </div>
+
+                <!-- Seat 3 -->
+                <div class="player-seat pos-3" id="seat3">
+                    <div class="seat-box">
+                        <div class="seat-avatar">
+                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="">
+                        </div>
+                        <div class="seat-name">Ahmed R.</div>
+                        <div class="seat-chips">PKR 32,100</div>
+                        <div class="seat-bet">Bet: 200</div>
+                    </div>
+                    <div class="seat-cards"><div class="mini-card"></div><div class="mini-card"></div></div>
+                </div>
+
+                <!-- Seat 4 (folded) -->
+                <div class="player-seat pos-4 folded" id="seat4">
+                    <div class="seat-box">
+                        <div class="seat-avatar">
+                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80" alt="">
+                        </div>
+                        <div class="seat-name">Zainab A.</div>
+                        <div class="seat-chips">PKR 8,200</div>
+                        <div class="seat-bet" style="color:var(--accent)">Folded</div>
+                    </div>
+                </div>
+
+                <!-- Seat 5 -->
+                <div class="player-seat pos-5" id="seat5">
+                    <div class="seat-box">
+                        <div class="seat-avatar">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&q=80" alt="">
+                        </div>
+                        <div class="seat-name">Raza K.</div>
+                        <div class="seat-chips">PKR 45,000</div>
+                        <div class="seat-bet">Bet: 500</div>
+                    </div>
+                    <div class="seat-cards"><div class="mini-card"></div><div class="mini-card"></div></div>
+                </div>
+
+                <!-- Seat 6 -->
+                <div class="player-seat pos-6" id="seat6">
+                    <div class="seat-box">
+                        <div class="seat-avatar">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="">
+                        </div>
+                        <div class="seat-name">Hassan Y.</div>
+                        <div class="seat-chips">PKR 12,800</div>
+                        <div class="seat-bet">Bet: 200</div>
+                    </div>
+                    <div class="seat-cards"><div class="mini-card"></div><div class="mini-card"></div></div>
+                </div>
+
+                <!-- Seat 7 (empty) -->
+                <div class="player-seat pos-7" id="seat7" style="opacity:0.3">
+                    <div class="seat-box" style="border-style:dashed">
+                        <div class="seat-avatar" style="background:var(--glass);display:flex;align-items:center;justify-content:center">
+                            <i class="fas fa-plus" style="color:var(--text-muted)"></i>
+                        </div>
+                        <div class="seat-name" style="color:var(--text-muted)">Empty Seat</div>
+                        <div class="seat-chips" style="color:var(--text-muted)">Sit Here</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Your Hole Cards -->
+            <div class="your-cards">
+                <div class="card flipped red">
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <div class="card-corner">A<br>♥</div>
+                            <div class="card-value">A</div>
+                            <div class="card-suit">♥</div>
+                            <div class="card-corner-br">A<br>♥</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card flipped black">
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <div class="card-corner">K<br>♠</div>
+                            <div class="card-value">K</div>
+                            <div class="card-suit">♠</div>
+                            <div class="card-corner-br">K<br>♠</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTION PANEL -->
+        <div class="action-panel">
+            <div class="action-buttons">
+                <button class="act-btn btn-fold" onclick="doAction('fold')">
+                    <i class="fas fa-xmark"></i> Fold
+                </button>
+                <button class="act-btn btn-check" onclick="doAction('check')" id="checkBtn">
+                    <i class="fas fa-check"></i> Check
+                </button>
+                <button class="act-btn btn-call" onclick="doAction('call')" id="callBtn" style="display:none">
+                    <i class="fas fa-phone"></i> Call
+                    <span class="btn-amount">PKR 200</span>
+                </button>
+                <button class="act-btn btn-raise" onclick="doAction('raise')">
+                    <i class="fas fa-arrow-up"></i> Raise
+                    <span class="btn-amount" id="raiseAmt">PKR 400</span>
+                </button>
+                <button class="act-btn btn-allin" onclick="doAction('allin')">
+                    <i class="fas fa-fire"></i> All In
+                </button>
+            </div>
+
+            <div class="bet-slider-area">
+                <div class="bet-label">
+                    <span>Bet Amount</span>
+                    <span class="bet-val" id="betDisplay">PKR 400</span>
+                </div>
+                <input type="range" class="bet-slider" id="betSlider" min="200" max="25000" value="400" step="100" oninput="updateBet(this.value)">
+                <div class="bet-presets">
+                    <button class="bet-preset" onclick="setBet(200)">Min</button>
+                    <button class="bet-preset" onclick="setBet(600)">3x</button>
+                    <button class="bet-preset" onclick="setBet(1000)">1K</button>
+                    <button class="bet-preset" onclick="setBet(5000)">5K</button>
+                    <button class="bet-preset" onclick="setBet(12500)">½ Pot</button>
+                    <button class="bet-preset" onclick="setBet(25000)">Pot</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="side-tabs">
+                <div class="side-tab active" onclick="switchSideTab('chat',this)"><i class="fas fa-comments"></i> Chat</div>
+                <div class="side-tab" onclick="switchSideTab('history',this)"><i class="fas fa-clock-rotate-left"></i> History</div>
+            </div>
+
+            <div class="side-content">
+                <!-- Chat Panel -->
+                <div class="side-panel active" id="chatPanel">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-msg system-msg"><div class="msg-text">🃏 Hand #247 started — Good luck!</div></div>
+                        <div class="chat-msg"><div class="sender other">Sara M.</div><div class="msg-text">gl everyone! 🍀</div></div>
+                        <div class="chat-msg"><div class="sender other">Ahmed R.</div><div class="msg-text">nice hand last round Ali 👏</div></div>
+                        <div class="chat-msg"><div class="sender you">You</div><div class="msg-text">thanks! let's go 🔥</div></div>
+                        <div class="chat-msg system-msg"><div class="msg-text">📢 Flop: A♥ K♠ 10♦</div></div>
+                        <div class="chat-msg"><div class="sender other">Raza K.</div><div class="msg-text">interesting board...</div></div>
+                        <div class="chat-msg system-msg"><div class="msg-text">📢 Turn: 7♣</div></div>
+                        <div class="chat-msg"><div class="sender other">Hassan Y.</div><div class="msg-text">hmm 🤔</div></div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChat()">
+                        <button class="chat-send" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <!-- Hand History Panel -->
+                <div class="side-panel" id="historyPanel">
+                    <div class="hand-history">
+                        <div class="hh-item">
+                            <div class="hh-header">
+                                <span class="hh-hand">Hand #246</span>
+                                <span class="hh-result win">+PKR 8,500</span>
+                            </div>
+                            <div class="hh-details">You won with Two Pair (Aces & Kings)</div>
+                            <div class="hh-cards">
+                                <span class="hh-card red">A♥</span>
+                                <span class="hh-card black">K♠</span>
+                            </div>
+                        </div>
+                        <div class="hh-item">
+                            <div class="hh-header">
+                                <span class="hh-hand">Hand #245</span>
+                                <span class="hh-result loss">-PKR 500</span>
+                            </div>
+                            <div class="hh-details">Folded on Turn</div>
+                            <div class="hh-cards">
+                                <span class="hh-card black">9♣</span>
+                                <span class="hh-card red">4♦</span>
+                            </div>
+                        </div>
+                        <div class="hh-item">
+                            <div class="hh-header">
+                                <span class="hh-hand">Hand #244</span>
+                                <span class="hh-result win">+PKR 3,200</span>
+                            </div>
+                            <div class="hh-details">Won with Flush (Hearts)</div>
+                            <div class="hh-cards">
+                                <span class="hh-card red">J♥</span>
+                                <span class="hh-card red">8♥</span>
+                            </div>
+                        </div>
+                        <div class="hh-item">
+                            <div class="hh-header">
+                                <span class="hh-hand">Hand #243</span>
+                                <span class="hh-result loss">-PKR 1,000</span>
+                            </div>
+                            <div class="hh-details">Lost to Straight on River</div>
+                            <div class="hh-cards">
+                                <span class="hh-card black">Q♠</span>
+                                <span class="hh-card black">J♣</span>
+                            </div>
+                        </div>
+                        <div class="hh-item">
+                            <div class="hh-header">
+                                <span class="hh-hand">Hand #242</span>
+                                <span class="hh-result win">+PKR 15,000</span>
+                            </div>
+                            <div class="hh-details">Won with Full House! 🎉</div>
+                            <div class="hh-cards">
+                                <span class="hh-card red">A♦</span>
+                                <span class="hh-card black">A♣</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Mobile Chat Toggle -->
+    <button class="mobile-toggle-chat" onclick="toggleSidebar()"><i class="fas fa-comments"></i></button>
+
+    <script>
+        // ─── BET SLIDER ───
+        function updateBet(val) {
+            document.getElementById('betDisplay').textContent = 'PKR ' + parseInt(val).toLocaleString();
+            document.getElementById('raiseAmt').textContent = 'PKR ' + parseInt(val).toLocaleString();
+        }
+
+        function setBet(val) {
+            document.getElementById('betSlider').value = val;
+            updateBet(val);
+        }
+
+        // ─── ACTIONS ───
+        function doAction(action) {
+            const msgs = {
+                fold: '❌ You folded',
+                check: '✅ You checked',
+                call: '📞 You called PKR 200',
+                raise: '⬆️ You raised to ' + document.getElementById('betDisplay').textContent,
+                allin: '🔥 ALL IN! ' + document.getElementById('betDisplay').textContent
+            };
+
+            addSystemChat(msgs[action]);
+
+            // Visual feedback
+            const btn = event.target.closest('.act-btn');
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 200);
+
+            if (action === 'fold') {
+                document.getElementById('seat1').classList.add('folded');
+                document.getElementById('seat1').classList.remove('active-turn');
+                setTimeout(() => nextTurn(), 1500);
+            }
+
+            if (action === 'allin') {
+                document.getElementById('potAmount').textContent = 'PKR 37,500';
+                document.getElementById('potAmount').style.color = '#FF6B6B';
+                document.getElementById('potAmount').style.fontSize = '2rem';
+            }
+        }
+
+        // ─── TURN TIMER ───
+        let timerWidth = 70;
+        const timerBar = document.getElementById('turnTimer');
+        setInterval(() => {
+            timerWidth -= 0.5;
+            if (timerWidth <= 0) timerWidth = 100;
+            timerBar.style.width = timerWidth + '%';
+            timerBar.classList.toggle('urgent', timerWidth < 25);
+        }, 500);
+
+        function nextTurn() {
+            document.querySelectorAll('.player-seat').forEach(s => s.classList.remove('active-turn'));
+            // Simulate next player
+            const seats = [2,3,5,6];
+            const next = seats[Math.floor(Math.random() * seats.length)];
+            document.getElementById('seat' + next).classList.add('active-turn');
+            timerWidth = 100;
+        }
+
+        // ─── CHAT ───
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            addChat('You', msg, 'you');
+            input.value = '';
+
+            // Simulate response
+            setTimeout(() => {
+                const responses = ['nice!', 'hmm 🤔', 'gl!', '😂', 'let\'s go!', 'gg', 'wow', '👀'];
+                const names = ['Sara M.', 'Ahmed R.', 'Raza K.', 'Hassan Y.'];
+                addChat(
+                    names[Math.floor(Math.random() * names.length)],
+                    responses[Math.floor(Math.random() * responses.length)],
+                    'other'
+                );
+            }, 1500 + Math.random() * 2000);
+        }
+
+        function addChat(sender, text, type) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            div.innerHTML = `<div class="sender ${type}">${sender}</div><div class="msg-text">${text}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemChat(text) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg system-msg';
+            div.innerHTML = `<div class="msg-text">${text}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ─── SIDEBAR TABS ───
+        function switchSideTab(tab, el) {
+            document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById(tab === 'chat' ? 'chatPanel' : 'historyPanel').classList.add('active');
+        }
+
+        // ─── MOBILE SIDEBAR ───
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ─── SOUND TOGGLE ───
+        function toggleSound(btn) {
+            btn.classList.toggle('sound-on');
+            const icon = btn.querySelector('i');
+            if (btn.classList.contains('sound-on')) {
+                icon.className = 'fas fa-volume-up';
+            } else {
+                icon.className = 'fas fa-volume-xmark';
+            }
+        }
+
+        // ─── FULLSCREEN ───
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // ─── LEAVE TABLE ───
+        function leaveTable() {
+            if (confirm('Are you sure you want to leave the table?')) {
+                window.location.href = 'lobby.html';
+            }
+        }
+
+        // ─── SIMULATE GAME EVENTS ───
+        setInterval(() => {
+            const events = [
+                '📢 Raza K. raises to PKR 500',
+                '📢 Sara M. calls PKR 500',
+                '📢 Ahmed R. checks',
+                '📢 Hassan Y. folds',
+            ];
+            // Random event every 15-25 seconds
+        }, 15000 + Math.random() * 10000);
+
+        // Hand counter
+        let handNum = 247;
+        setInterval(() => {
+            handNum++;
+            document.getElementById('handNum').textContent = handNum;
+        }, 60000);
+
+        console.log('🃏 PokerRoyale — Game Table Loaded');
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — PokerRoyale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --sidebar-active: #1E88E5;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --card-hover: #374151;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--main-bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* ═══════════════════════════════════════
+           LAYOUT
+        ═══════════════════════════════════════ */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════
+           SIDEBAR
+        ═══════════════════════════════════════ */
+        .admin-sidebar {
+            width: var(--sidebar-w);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            z-index: 1000;
+            transition: var(--transition);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .admin-sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+        .admin-sidebar.collapsed .nav-text,
+        .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span,
+        .admin-sidebar.collapsed .sidebar-footer-text {
+            display: none;
+        }
+        .admin-sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 14px;
+        }
+        .admin-sidebar.collapsed .nav-badge { display: none; }
+
+        .sidebar-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--gold);
+        }
+        .sidebar-logo i { font-size: 1.4rem; color: var(--accent); }
+        .sidebar-logo span { color: var(--text); font-weight: 400; }
+        .sidebar-toggle {
+            width: 32px; height: 32px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .sidebar-toggle:hover { color: var(--gold); border-color: var(--gold); }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+        }
+        .nav-group { margin-bottom: 8px; }
+        .nav-group-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 8px 12px 6px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: var(--transition);
+            margin-bottom: 2px;
+            position: relative;
+        }
+        .nav-link:hover {
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+        }
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(30,136,229,0.2), rgba(30,136,229,0.08));
+            color: var(--primary);
+            border: 1px solid rgba(30,136,229,0.25);
+        }
+        .nav-link.active i { color: var(--primary); }
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .nav-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: var(--accent);
+            color: #fff;
+        }
+        .nav-badge.green { background: var(--green); color: #000; }
+        .nav-badge.gold { background: var(--gold); color: #000; }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .sidebar-admin {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--glass);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .sidebar-admin:hover { background: rgba(255,255,255,0.06); }
+        .sidebar-admin img {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+        }
+        .sidebar-admin-info { flex: 1; min-width: 0; }
+        .sidebar-admin-info .name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar-admin-info .role {
+            font-size: 0.68rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ═══════════════════════════════════════
+           MAIN CONTENT
+        ═══════════════════════════════════════ */
+        .admin-main {
+            flex: 1;
+            margin-left: var(--sidebar-w);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .admin-main.expanded {
+            margin-left: var(--sidebar-collapsed);
+        }
+
+        /* TOPBAR */
+        .admin-topbar {
+            background: rgba(17,24,39,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .page-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a:hover { color: var(--gold); }
+        .breadcrumb i { font-size: 0.6rem; }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .topbar-search {
+            position: relative;
+        }
+        .topbar-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .topbar-search input {
+            padding: 9px 14px 9px 36px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            width: 240px;
+            transition: var(--transition);
+        }
+        .topbar-search input:focus {
+            border-color: var(--primary);
+            width: 300px;
+        }
+
+        .topbar-btn {
+            width: 40px; height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: var(--transition);
+        }
+        .topbar-btn:hover {
+            color: var(--text);
+            border-color: var(--primary);
+        }
+        .notif-count {
+            position: absolute;
+            top: -4px; right: -4px;
+            width: 18px; height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--main-bg);
+        }
+
+        /* ═══════════════════════════════════════
+           DASHBOARD CONTENT
+        ═══════════════════════════════════════ */
+        .dashboard-content {
+            padding: 28px;
+            flex: 1;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+        }
+        .stat-card.blue::before { background: var(--primary); }
+        .stat-card.green::before { background: var(--green); }
+        .stat-card.gold::before { background: var(--gold); }
+        .stat-card.red::before { background: var(--accent); }
+        .stat-card.cyan::before { background: var(--cyan); }
+        .stat-card.purple::before { background: var(--purple); }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .stat-icon {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .stat-icon.blue { background: rgba(59,130,246,0.15); color: var(--primary); }
+        .stat-icon.green { background: rgba(16,185,129,0.15); color: var(--green); }
+        .stat-icon.gold { background: rgba(255,215,0,0.15); color: var(--gold); }
+        .stat-icon.red { background: rgba(233,69,96,0.15); color: var(--accent); }
+        .stat-icon.cyan { background: rgba(6,182,212,0.15); color: var(--cyan); }
+        .stat-icon.purple { background: rgba(123,47,247,0.15); color: var(--purple); }
+
+        .stat-trend {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 50px;
+        }
+        .stat-trend.positive { background: rgba(16,185,129,0.12); color: var(--green); }
+        .stat-trend.negative { background: rgba(239,68,68,0.12); color: var(--danger); }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            transition: opacity 0.2s;
+        }
+
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-card h3 i { color: var(--gold); font-size: 0.9rem; }
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        /* Bottom Row */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .panel-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+        }
+        .panel-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-card h3 i { color: var(--gold); font-size: 0.85rem; }
+
+        /* Activity Feed */
+        .activity-feed {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .activity-feed::-webkit-scrollbar { width: 3px; }
+        .activity-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.82rem;
+            animation: slideIn 0.4s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(15px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .activity-item i { width: 18px; text-align: center; flex-shrink: 0; }
+        .activity-item span:nth-child(2) { flex: 1; }
+        .activity-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Top Players */
+        .top-player-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .tp-rank {
+            width: 28px; height: 28px;
+            background: var(--glass);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+        .tp-name { flex: 1; font-size: 0.85rem; font-weight: 600; }
+        .tp-earnings {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* System Health */
+        .health-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .health-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .health-dot.online {
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(16,185,129,0.5);
+            animation: pulse 2s infinite;
+        }
+        .health-dot.offline { background: var(--danger); }
+        .health-dot.warning { background: var(--warning); }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .health-name { flex: 1; font-size: 0.85rem; font-weight: 500; }
+        .health-uptime {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.78rem;
+            color: var(--green);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .qa-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+        .qa-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .qa-btn i {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .qa-btn span {
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .qa-btn.approve i { color: var(--green); }
+        .qa-btn.create i { color: var(--gold); }
+        .qa-btn.notify i { color: var(--cyan); }
+        .qa-btn.ban i { color: var(--accent); }
+
+        /* Pending Alerts Banner */
+        .alert-banner {
+            background: linear-gradient(135deg, rgba(233,69,96,0.12), rgba(233,69,96,0.04));
+            border: 1px solid rgba(233,69,96,0.25);
+            border-radius: var(--radius);
+            padding: 16px 22px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .alert-banner i {
+            font-size: 1.3rem;
+            color: var(--accent);
+        }
+        .alert-banner .alert-text {
+            flex: 1;
+            font-size: 0.88rem;
+        }
+        .alert-banner .alert-text b { color: var(--accent); }
+        .alert-banner .btn-sm {
+            padding: 8px 18px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .alert-banner .btn-sm:hover {
+            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
+        }
+
+        /* Recent Table */
+        .table-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        .table-card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .table-card-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-card-header h3 i { color: var(--gold); }
+        .table-card-header .view-all {
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .table-card-header .view-all:hover { text-decoration: underline; }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .admin-table th {
+            padding: 12px 18px;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+        .admin-table td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            vertical-align: middle;
+        }
+        .admin-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.active, .status-badge.completed, .status-badge.verified {
+            background: rgba(16,185,129,0.12); color: var(--green);
+        }
+        .status-badge.pending, .status-badge.processing {
+            background: rgba(245,158,11,0.12); color: var(--warning);
+        }
+        .status-badge.suspended, .status-badge.failed, .status-badge.banned {
+            background: rgba(239,68,68,0.12); color: var(--danger);
+        }
+        .status-badge.running {
+            background: rgba(233,69,96,0.12); color: var(--accent);
+        }
+        .status-badge.registering {
+            background: rgba(6,182,212,0.12); color: var(--cyan);
+        }
+
+        .action-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--glass);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            transition: var(--transition);
+            margin-right: 4px;
+        }
+        .action-btn:hover { color: var(--text); }
+        .action-btn.approve:hover { background: rgba(16,185,129,0.15); color: var(--green); border-color: var(--green); }
+        .action-btn.reject:hover { background: rgba(239,68,68,0.15); color: var(--danger); border-color: var(--danger); }
+        .action-btn.view:hover { background: rgba(59,130,246,0.15); color: var(--primary); border-color: var(--primary); }
+
+        /* Toast */
+        .admin-toast {
+            position: fixed;
+            top: 20px; right: 20px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            z-index: 9999;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+            backdrop-filter: blur(20px);
+        }
+        .admin-toast.show { transform: translateX(0); }
+
+        /* Mobile */
+        .mobile-sidebar-toggle {
+            display: none;
+            width: 40px; height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════ */
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .bottom-row { grid-template-columns: 1fr 1fr; }
+            .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 992px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            .admin-sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .admin-main {
+                margin-left: 0 !important;
+            }
+            .mobile-sidebar-toggle { display: flex; }
+            .charts-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .topbar-search input { width: 160px; }
+            .topbar-search input:focus { width: 200px; }
+        }
+        @media (max-width: 768px) {
+            .dashboard-content { padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .bottom-row { grid-template-columns: 1fr; }
+            .quick-actions { grid-template-columns: 1fr 1fr; }
+            .admin-topbar { padding: 10px 16px; }
+            .page-title { font-size: 1.1rem; }
+            .topbar-search { display: none; }
+            .admin-table { font-size: 0.78rem; }
+            .admin-table th, .admin-table td { padding: 10px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+
+        <!-- ═══════════ SIDEBAR ═══════════ -->
+        <aside class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">
+                    <i class="fas fa-crown"></i>
+                    <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+                </a>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Collapse">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-group">
+                    <div class="nav-group-title">Main</div>
+                    <a href="index.html" class="nav-link active">
+                        <i class="fas fa-th-large"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                    <a href="analytics.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="nav-text">Analytics</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Management</div>
+                    <a href="users.html" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Users</span>
+                        <span class="nav-badge">52K</span>
+                    </a>
+                    <a href="finance.html" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span class="nav-text">Finance</span>
+                    </a>
+                    <a href="withdrawals.html" class="nav-link">
+                        <i class="fas fa-arrow-up"></i>
+                        <span class="nav-text">Withdrawals</span>
+                        <span class="nav-badge">23</span>
+                    </a>
+                    <a href="deposits.html" class="nav-link">
+                        <i class="fas fa-arrow-down"></i>
+                        <span class="nav-text">Deposits</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Games</div>
+                    <a href="games.html" class="nav-link">
+                        <i class="fas fa-gamepad"></i>
+                        <span class="nav-text">Live Games</span>
+                        <span class="nav-badge green">156</span>
+                    </a>
+                    <a href="tables.html" class="nav-link">
+                        <i class="fas fa-border-all"></i>
+                        <span class="nav-text">Tables</span>
+                    </a>
+                    <a href="tournaments.html" class="nav-link">
+                        <i class="fas fa-trophy"></i>
+                        <span class="nav-text">Tournaments</span>
+                        <span class="nav-badge gold">24</span>
+                    </a>
+                    <a href="hand-history.html" class="nav-link">
+                        <i class="fas fa-history"></i>
+                        <span class="nav-text">Hand History</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Operations</div>
+                    <a href="kyc.html" class="nav-link">
+                        <i class="fas fa-id-card"></i>
+                        <span class="nav-text">KYC Queue</span>
+                        <span class="nav-badge">8</span>
+                    </a>
+                    <a href="promotions.html" class="nav-link">
+                        <i class="fas fa-gift"></i>
+                        <span class="nav-text">Promotions</span>
+                    </a>
+                    <a href="support.html" class="nav-link">
+                        <i class="fas fa-headset"></i>
+                        <span class="nav-text">Support</span>
+                        <span class="nav-badge">12</span>
+                    </a>
+                    <a href="security.html" class="nav-link">
+                        <i class="fas fa-shield-halved"></i>
+                        <span class="nav-text">Security</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">System</div>
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                    <a href="admins.html" class="nav-link">
+                        <i class="fas fa-user-shield"></i>
+                        <span class="nav-text">Admins</span>
+                    </a>
+                    <a href="audit-log.html" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span class="nav-text">Audit Log</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-admin" onclick="adminLogout()">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                    <div class="sidebar-admin-info sidebar-footer-text">
+                        <div class="name admin-name">Super Admin</div>
+                        <div class="role admin-role">SUPER ADMIN</div>
+                    </div>
+                    <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:0.9rem;"></i>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══════════ MAIN ═══════════ -->
+        <div class="admin-main" id="adminMain">
+
+            <!-- TOPBAR -->
+            <header class="admin-topbar">
+                <div class="topbar-left">
+                    <button class="mobile-sidebar-toggle" id="mobileToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <div class="page-title">Dashboard</div>
+                        <div class="breadcrumb">
+                            <a href="index.html">Admin</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="global-search" placeholder="Search users, txn... (Ctrl+K)">
+                    </div>
+                    <button class="topbar-btn" title="Notifications" id="notifBell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-count">7</span>
+                    </button>
+                    <button class="topbar-btn fullscreen-btn" title="Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="topbar-btn" title="Refresh" onclick="location.reload()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- DASHBOARD CONTENT -->
+            <div class="dashboard-content admin-dashboard">
+
+                <!-- Alert Banner -->
+                <div class="alert-banner">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div class="alert-text">
+                        You have <b>23 pending withdrawals</b> and <b>8 KYC documents</b> awaiting review.
+                    </div>
+                    <button class="btn-sm" onclick="window.location.href='withdrawals.html'">
+                        Review Now →
+                    </button>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card blue" data-stat="totalUsers">
+                        <div class="stat-header">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            <span class="stat-trend positive">+12%</span>
+                        </div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value">52,847</div>
+                    </div>
+                    <div class="stat-card green" data-stat="activePlayers">
+                        <div class="stat-header">
+                            <div class="stat-icon green"><i class="fas fa-circle"></i></div>
+                            <span class="stat-trend positive">+5%</span>
+                        </div>
+                        <div class="stat-label">Active Now</div>
+                        <div class="stat-value">12,847</div>
+                    </div>
+                    <div class="stat-card gold" data-stat="revenueToday">
+                        <div class="stat-header">
+                            <div class="stat-icon gold"><i class="fas fa-dollar-sign"></i></div>
+                            <span class="stat-trend positive">+18%</span>
+                        </div>
+                        <div class="stat-label">Revenue Today</div>
+                        <div class="stat-value">$45,230</div>
+                    </div>
+                    <div class="stat-card red" data-stat="pendingWithdrawals">
+                        <div class="stat-header">
+                            <div class="stat-icon red"><i class="fas fa-clock"></i></div>
+                            <span class="stat-trend negative">23</span>
+                        </div>
+                        <div class="stat-label">Pending Withdrawals</div>
+                        <div class="stat-value">23</div>
+                    </div>
+                    <div class="stat-card cyan" data-stat="activeTables">
+                        <div class="stat-header">
+                            <div class="stat-icon cyan"><i class="fas fa-border-all"></i></div>
+                            <span class="stat-trend positive">+8</span>
+                        </div>
+                        <div class="stat-label">Active Tables</div>
+                        <div class="stat-value">156</div>
+                    </div>
+                    <div class="stat-card purple" data-stat="activeTournaments">
+                        <div class="stat-header">
+                            <div class="stat-icon purple"><i class="fas fa-trophy"></i></div>
+                            <span class="stat-trend positive">+2</span>
+                        </div>
+                        <div class="stat-label">Live Tournaments</div>
+                        <div class="stat-value">24</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-header">
+                            <div class="stat-icon green"><i class="fas fa-arrow-down"></i></div>
+                            <span class="stat-trend positive">+22%</span>
+                        </div>
+                        <div class="stat-label">Deposits Today</div>
+                        <div class="stat-value">$128,500</div>
+                    </div>
+                    <div class="stat-card gold">
+                        <div class="stat-header">
+                            <div class="stat-icon gold"><i class="fas fa-coins"></i></div>
+                            <span class="stat-trend positive">+9%</span>
+                        </div>
+                        <div class="stat-label">Rake Earned</div>
+                        <div class="stat-value">$12,450</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="qa-btn approve" onclick="window.location.href='withdrawals.html'">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Approve Withdrawals</span>
+                    </button>
+                    <button class="qa-btn create" onclick="window.location.href='create-tournament.html'">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Create Tournament</span>
+                    </button>
+                    <button class="qa-btn notify" onclick="window.location.href='communications.html'">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Send Notification</span>
+                    </button>
+                    <button class="qa-btn ban" onclick="window.location.href='security.html'">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Security Alerts</span>
+                    </button>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-area"></i> Revenue Overview (12 Months)</h3>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie"></i> Payment Methods</h3>
+                        <div class="chart-container">
+                            <canvas id="paymentMethodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Panels -->
+                <div class="bottom-row">
+                    <!-- Live Activity -->
+                    <div class="panel-card">
+                        <h3><i class="fas fa-bolt"></i> Live Activity</h3>
+                        <div class="activity-feed" id="activityFeed">
+                            <div class="activity-item">
+                                <i class="fas fa-user-plus" style="color:var(--cyan)"></i>
+                                <span>New registration: poker_star_99</span>
+                                <span class="activity-time">2 min ago</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-arrow-down" style="color:var(--green)"></i>
+                                <span>Deposit: $2,500 via PayPal</span>
+                                <span class="activity-time">5 min ago</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-trophy" style="color:var(--gold)"></i>
+                                <span>Tournament "Daily Freeroll" started</span>
+                                <span class="activity-time">8 min ago</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-arrow-up" style="color:var(--accent)"></i>
+                                <span>Withdrawal approved: $1,200</span>
+                                <span class="activity-time">12 min ago</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-shield-halved" style="color:var(--purple)"></i>
+                                <span>KYC verified: User #4521</span>
+                                <span class="activity-time">15 min ago</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-exclamation-triangle" style="color:var(--accent)"></i>
+                                <span>Fraud alert: IP match detected</span>
+                                <span class="activity-time">18 min ago</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-gamepad" style="color:var(--cyan)"></i>
+                                <span>New table: High Roller $50/$100</span>
+                                <span class="activity-time">22 min ago</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Earners Today -->
+                    <div class="panel-card">
+                        <h3><i class="fas fa-crown"></i> Top Earners Today</h3>
+                        <div class="top-players-list">
+                            <div class="top-player-item">
+                                <span class="tp-rank">1</span>
+                                <span class="tp-name">Ali Khan</span>
+                                <span class="tp-earnings" style="color:var(--green)">$12,500</span>
+                            </div>
+                            <div class="top-player-item">
+                                <span class="tp-rank">2</span>
+                                <span class="tp-name">Sara Malik</span>
+                                <span class="tp-earnings" style="color:var(--green)">$8,750</span>
+                            </div>
+                            <div class="top-player-item">
+                                <span class="tp-rank">3</span>
+                                <span class="tp-name">Ahmed Raza</span>
+                                <span class="tp-earnings" style="color:var(--green)">$6,250</span>
+                            </div>
+                            <div class="top-player-item">
+                                <span class="tp-rank">4</span>
+                                <span class="tp-name">Fatima Noor</span>
+                                <span class="tp-earnings" style="color:var(--green)">$5,600</span>
+                            </div>
+                            <div class="top-player-item">
+                                <span class="tp-rank">5</span>
+                                <span class="tp-name">John Smith</span>
+                                <span class="tp-earnings" style="color:var(--green)">$4,200</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Health -->
+                    <div class="panel-card">
+                        <h3><i class="fas fa-server"></i> System Health</h3>
+                        <div class="system-health">
+                            <div class="health-item">
+                                <span class="health-dot online"></span>
+                                <span class="health-name">API Server</span>
+                                <span class="health-uptime">99.98%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-dot online"></span>
+                                <span class="health-name">Database (MySQL)</span>
+                                <span class="health-uptime">99.99%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-dot online"></span>
+                                <span class="health-name">Payment Gateway</span>
+                                <span class="health-uptime">99.95%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-dot online"></span>
+                                <span class="health-name">WebSocket Server</span>
+                                <span class="health-uptime">99.90%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-dot online"></span>
+                                <span class="health-name">Email Service</span>
+                                <span class="health-uptime">99.85%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-dot online"></span>
+                                <span class="health-name">CDN / Assets</span>
+                                <span class="health-uptime">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Withdrawals Table -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h3><i class="fas fa-arrow-up"></i> Recent Withdrawal Requests</h3>
+                        <a href="withdrawals.html" class="view-all">View All →</a>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="withdrawalsTable">
+                            <thead>
+                                <tr>
+                                    <th>Txn ID</th>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-family:'Orbitron';font-size:0.78rem;">TXN-94821</td>
+                                    <td><strong>Ali Khan</strong></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;color:var(--accent);">$1,250</td>
+                                    <td>PayPal</td>
+                                    <td>Jan 20, 14:32</td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                    <td>
+                                        <button class="action-btn approve" title="Approve" onclick="approveTxn('TXN-94821')"><i class="fas fa-check"></i></button>
+                                        <button class="action-btn reject" title="Reject" onclick="rejectTxn('TXN-94821')"><i class="fas fa-times"></i></button>
+                                        <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:'Orbitron';font-size:0.78rem;">TXN-94820</td>
+                                    <td><strong>Sara Malik</strong></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;color:var(--accent);">$3,200</td>
+                                    <td>Bank Transfer</td>
+                                    <td>Jan 20, 12:15</td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                    <td>
+                                        <button class="action-btn approve" title="Approve" onclick="approveTxn('TXN-94820')"><i class="fas fa-check"></i></button>
+                                        <button class="action-btn reject" title="Reject" onclick="rejectTxn('TXN-94820')"><i class="fas fa-times"></i></button>
+                                        <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:'Orbitron';font-size:0.78rem;">TXN-94819</td>
+                                    <td><strong>Ahmed Raza</strong></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;color:var(--accent);">$750</td>
+                                    <td>Skrill</td>
+                                    <td>Jan 20, 10:45</td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                    <td>
+                                        <button class="action-btn approve" title="Approve" onclick="approveTxn('TXN-94819')"><i class="fas fa-check"></i></button>
+                                        <button class="action-btn reject" title="Reject" onclick="rejectTxn('TXN-94819')"><i class="fas fa-times"></i></button>
+                                        <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:'Orbitron';font-size:0.78rem;">TXN-94818</td>
+                                    <td><strong>Fatima Noor</strong></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;color:var(--accent);">$5,600</td>
+                                    <td>Crypto (USDT)</td>
+                                    <td>Jan 19, 22:10</td>
+                                    <td><span class="status-badge processing">Processing</span></td>
+                                    <td>
+                                        <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:'Orbitron';font-size:0.78rem;">TXN-94817</td>
+                                    <td><strong>John Smith</strong></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;color:var(--green);">$800</td>
+                                    <td>Visa</td>
+                                    <td>Jan 19, 18:30</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                    <td>
+                                        <button class="action-btn view" title="View"><i class="fas fa-eye"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Users Table -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h3><i class="fas fa-users"></i> Recent Registrations</h3>
+                        <a href="users.html" class="view-all">View All →</a>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Country</th>
+                                    <th>Status</th>
+                                    <th>KYC</th>
+                                    <th>Balance</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>#52847</strong></td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,215,0,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--gold);font-size:0.8rem;">P</div>
+                                            <div>
+                                                <div style="font-weight:600;">poker_star_99</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>star99@email.com</td>
+                                    <td>🇺🇸 USA</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;">$0</td>
+                                    <td>Just now</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#52846</strong></td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,212,255,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--cyan);font-size:0.8rem;">M</div>
+                                            <div>
+                                                <div style="font-weight:600;">mike_bluff</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>mike@email.com</td>
+                                    <td>🇬🇧 UK</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td><span class="status-badge verified">Verified</span></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;">$500</td>
+                                    <td>5 min ago</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#52845</strong></td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--green);font-size:0.8rem;">L</div>
+                                            <div>
+                                                <div style="font-weight:600;">lisa_ace</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>lisa@email.com</td>
+                                    <td>🇨🇦 Canada</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;">$250</td>
+                                    <td>12 min ago</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#52844</strong></td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:32px;height:32px;border-radius:50%;background:rgba(123,47,247,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--purple);font-size:0.8rem;">R</div>
+                                            <div>
+                                                <div style="font-weight:600;">raja_poker</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>raja@email.com</td>
+                                    <td>🇦🇪 UAE</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td><span class="status-badge verified">Verified</span></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;">$1,200</td>
+                                    <td>28 min ago</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>#52843</strong></td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:32px;height:32px;border-radius:50%;background:rgba(233,69,96,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:0.8rem;">A</div>
+                                            <div>
+                                                <div style="font-weight:600;">anna_fold</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>anna@email.com</td>
+                                    <td>🇦🇺 Australia</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                    <td style="font-family:'Orbitron';font-weight:700;">$0</td>
+                                    <td>45 min ago</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /dashboard-content -->
+        </div><!-- /admin-main -->
+    </div><!-- /admin-layout -->
+
+    <script>
+        // ═══════════════════════════════════════
+        //  ADMIN DASHBOARD SCRIPT
+        // ═══════════════════════════════════════
+
+        // ─── AUTH CHECK ───
+        (function checkAuth() {
+            // For demo: auto-set admin token if missing
+            if (!localStorage.getItem('pr_admin_token')) {
+                localStorage.setItem('pr_admin_token', 'demo_admin_token');
+                localStorage.setItem('pr_admin_role', 'super_admin');
+                localStorage.setItem('pr_admin_name', 'Super Admin');
+            }
+        })();
+
+        // ─── SIDEBAR TOGGLE ───
+        const sidebar = document.getElementById('sidebar');
+        const adminMain = document.getElementById('adminMain');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mobileToggle = document.getElementById('mobileToggle');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            adminMain.classList.toggle('expanded');
+            localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+        });
+
+        if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+            adminMain.classList.add('expanded');
+        }
+
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+
+        // ─── FULLSCREEN ───
+        document.querySelector('.fullscreen-btn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // ─── LOGOUT ───
+        function adminLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('pr_admin_token');
+                localStorage.removeItem('pr_admin_role');
+                localStorage.removeItem('pr_admin_name');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // ─── TOAST ───
+        function showToast(msg, type = 'success') {
+            document.querySelectorAll('.admin-toast').forEach(t => t.remove());
+            const toast = document.createElement('div');
+            toast.className = 'admin-toast';
+
+            const colors = {
+                success: { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.3)', color: '#10B981', icon: 'fa-check-circle' },
+                error: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)', color: '#EF4444', icon: 'fa-times-circle' },
+                warning: { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', color: '#F59E0B', icon: 'fa-exclamation-triangle' },
+                info: { bg: 'rgba(6,182,212,0.15)', border: 'rgba(6,182,212,0.3)', color: '#06B6D4', icon: 'fa-info-circle' }
+            };
+            const c = colors[type] || colors.success;
+
+            Object.assign(toast.style, {
+                background: c.bg, border: `1px solid ${c.border}`, color: c.color
+            });
+            toast.innerHTML = `<i class="fas ${c.icon}"></i> ${msg}`;
+            document.body.appendChild(toast);
+
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        }
+
+        // ─── WITHDRAWAL ACTIONS ───
+        function approveTxn(id) {
+            if (confirm(`Approve withdrawal ${id}?`)) {
+                showToast(`${id} approved successfully!`, 'success');
+            }
+        }
+        function rejectTxn(id) {
+            const reason = prompt('Rejection reason:');
+            if (reason) showToast(`${id} rejected`, 'error');
+        }
+
+        // ─── CHARTS ───
+        Chart.defaults.color = '#9CA3AF';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+
+        // Revenue Chart
+        const revCtx = document.getElementById('revenueChart');
+        if (revCtx) {
+            new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                    datasets: [
+                        {
+                            label: 'Deposits',
+                            data: [45000,52000,48000,61000,55000,67000,72000,68000,75000,82000,78000,95000],
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16,185,129,0.1)',
+                            fill: true, tension: 0.4, borderWidth: 2,
+                            pointRadius: 3, pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Withdrawals',
+                            data: [32000,38000,35000,42000,40000,48000,52000,49000,55000,60000,57000,68000],
+                            borderColor: '#E94560',
+                            backgroundColor: 'rgba(233,69,96,0.1)',
+                            fill: true, tension: 0.4, borderWidth: 2,
+                            pointRadius: 3, pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Rake',
+                            data: [5200,6100,5800,7200,6500,7800,8400,7900,8800,9600,9100,11200],
+                            borderColor: '#FFD700',
+                            backgroundColor: 'rgba(255,215,0,0.1)',
+                            fill: true, tension: 0.4, borderWidth: 2,
+                            pointRadius: 3, pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } },
+                        tooltip: {
+                            backgroundColor: 'rgba(17,24,39,0.95)',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (v) => '$' + (v/1000) + 'K' },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Payment Methods Doughnut
+        const payCtx = document.getElementById('paymentMethodChart');
+        if (payCtx) {
+            new Chart(payCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['PayPal', 'Skrill', 'Bank', 'Visa', 'MasterCard', 'Crypto'],
+                    datasets: [{
+                        data: [35, 20, 18, 12, 10, 5],
+                        backgroundColor: ['#003087','#862165','#0066B2','#1A1F71','#EB001B','#F7931A'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { usePointStyle: true, padding: 14, font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ─── LIVE ACTIVITY SIMULATION ───
+        const feed = document.getElementById('activityFeed');
+        const liveEvents = [
+            { icon: 'fa-user-plus', text: 'New registration: user_', color: 'var(--cyan)' },
+            { icon: 'fa-arrow-down', text: 'Deposit: $', color: 'var(--green)' },
+            { icon: 'fa-arrow-up', text: 'Withdrawal request: $', color: 'var(--accent)' },
+            { icon: 'fa-gamepad', text: 'New table: NL Hold\'em $', color: 'var(--purple)' },
+            { icon: 'fa-trophy', text: 'Tournament finished: ', color: 'var(--gold)' },
+            { icon: 'fa-shield-halved', text: 'KYC submitted: User #', color: 'var(--cyan)' },
+        ];
+
+        setInterval(() => {
+            if (!feed) return;
+            const e = liveEvents[Math.floor(Math.random() * liveEvents.length)];
+            let text = e.text;
+            if (text.includes('$') && !text.includes('Hold')) {
+                text += (Math.floor(Math.random() * 5000) + 50).toLocaleString();
+            } else if (text.includes('user_') || text.includes('User #') || text.includes('finished')) {
+                text += Math.floor(Math.random() * 9000 + 1000);
+            } else if (text.includes('Hold')) {
+                text += (Math.random() > 0.5 ? '5/$10' : '1/$2');
+            }
+
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <i class="fas ${e.icon}" style="color:${e.color}"></i>
+                <span>${text}</span>
+                <span class="activity-time">Just now</span>
+            `;
+            feed.insertBefore(item, feed.firstChild);
+            while (feed.children.length > 15) feed.removeChild(feed.lastChild);
+        }, 8000);
+
+        // ─── LIVE STAT UPDATES ───
+        setInterval(() => {
+            const activeEl = document.querySelector('[data-stat="activePlayers"] .stat-value');
+            if (activeEl) {
+                const base = 12847;
+                const variation = Math.floor(Math.random() * 200) - 100;
+                activeEl.textContent = (base + variation).toLocaleString();
+            }
+        }, 5000);
+
+        // ─── KEYBOARD SHORTCUTS ───
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.global-search')?.focus();
+            }
+        });
+
+        console.log('🔐 PokerRoyale Admin Dashboard — Loaded');
+    </script>
+</body>
+</html>

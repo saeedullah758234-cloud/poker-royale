@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — PokerRoyale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1A1A2E;
+            --secondary: #16213E;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #00C853;
+            --blue: #0F3460;
+            --cyan: #00D4FF;
+            --purple: #7B2FF7;
+            --bg-dark: #0A0A1A;
+            --text: #FFFFFF;
+            --text-muted: #8892B0;
+            --glass: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.1);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family:'Inter',sans-serif;
+            background:var(--bg-dark);
+            color:var(--text);
+            line-height:1.6;
+            min-height:100vh;
+        }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+        img { max-width:100%; display:block; }
+        .container { max-width:1280px; margin:0 auto; padding:0 20px; }
+
+        .page-bg {
+            position:fixed; top:0; left:0;
+            width:100%; height:100%; z-index:0; pointer-events:none;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(0,212,255,0.06), transparent 45%),
+                radial-gradient(circle at 85% 70%, rgba(123,47,247,0.06), transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255,215,0,0.03), transparent 60%);
+        }
+
+        /* ═══════════════════════════════════════
+           NAVBAR
+        ═══════════════════════════════════════ */
+        .navbar {
+            position:sticky; top:0; width:100%; z-index:1000;
+            background:rgba(10,10,26,.92);
+            backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--glass-border);
+            padding:12px 0;
+        }
+        .navbar .container { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+        .logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.4rem; font-weight:900; color:var(--gold); }
+        .logo i { font-size:1.5rem; color:var(--accent); }
+        .logo span { color:var(--text); font-weight:400; }
+        .nav-links { display:flex; align-items:center; gap:26px; }
+        .nav-links a { font-size:.9rem; font-weight:500; color:var(--text-muted); transition:var(--transition); padding:6px 0; position:relative; }
+        .nav-links a:hover, .nav-links a.active { color:var(--gold); }
+        .nav-links a.active::after { content:''; position:absolute; bottom:-4px; left:0; width:100%; height:2px; background:var(--gold); }
+        .nav-right { display:flex; align-items:center; gap:14px; }
+        .wallet-pill { display:flex; align-items:center; gap:8px; padding:7px 14px; background:rgba(0,200,83,.12); border:1px solid rgba(0,200,83,.3); border-radius:50px; cursor:pointer; transition:var(--transition); }
+        .wallet-pill:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,200,83,.2); }
+        .wallet-pill i { color:var(--green); font-size:.85rem; }
+        .wallet-pill .bal { font-family:'Orbitron',sans-serif; font-size:.82rem; font-weight:700; }
+        .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; }
+        .hamburger span { width:24px; height:2.5px; background:var(--text); border-radius:2px; }
+
+        /* ═══════════════════════════════════════
+           PROFILE HERO BANNER
+        ═══════════════════════════════════════ */
+        .profile-hero {
+            position:relative; z-index:2;
+            margin-top:30px;
+            border-radius:24px;
+            overflow:hidden;
+            background:linear-gradient(135deg, var(--primary), var(--blue));
+            border:1px solid var(--glass-border);
+        }
+        .profile-hero-bg {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            background:url('https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1400&q=80') center/cover;
+            filter:brightness(.15) saturate(1.3);
+        }
+        .profile-hero-bg::after {
+            content:''; position:absolute; top:0; left:0; width:100%; height:100%;
+            background:linear-gradient(135deg, rgba(26,26,46,.95), rgba(15,52,96,.8) 50%, rgba(10,10,26,.95));
+        }
+        .profile-hero-content {
+            position:relative; z-index:2;
+            padding:40px;
+            display:flex; align-items:center; gap:30px;
+        }
+        .profile-avatar-wrap {
+            position:relative; flex-shrink:0;
+        }
+        .profile-avatar {
+            width:120px; height:120px; border-radius:50%;
+            border:4px solid var(--gold);
+            overflow:hidden;
+            box-shadow:0 0 30px rgba(255,215,0,.3);
+        }
+        .profile-avatar img { width:100%; height:100%; object-fit:cover; }
+        .avatar-edit {
+            position:absolute; bottom:4px; right:4px;
+            width:32px; height:32px; border-radius:50%;
+            background:var(--accent); border:3px solid var(--primary);
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; transition:var(--transition);
+            color:#fff; font-size:.75rem;
+        }
+        .avatar-edit:hover { background:var(--gold); color:#000; }
+        .vip-badge-avatar {
+            position:absolute; top:0; right:-5px;
+            padding:3px 10px; border-radius:50px;
+            background:linear-gradient(135deg,var(--gold),#FFA500);
+            color:#000; font-size:.65rem; font-weight:900;
+            text-transform:uppercase; letter-spacing:1px;
+            box-shadow:0 2px 10px rgba(255,215,0,.4);
+        }
+        .profile-info h1 {
+            font-family:'Cinzel',serif; font-size:1.8rem; font-weight:900;
+            margin-bottom:4px;
+        }
+        .profile-info h1 .hl {
+            background:linear-gradient(135deg,var(--gold),#FFA500);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .profile-meta {
+            display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;
+        }
+        .profile-meta span {
+            display:flex; align-items:center; gap:6px;
+            font-size:.82rem; color:var(--text-muted);
+        }
+        .profile-meta span i { color:var(--gold); font-size:.75rem; }
+        .profile-meta span b { color:var(--text); }
+        .profile-actions {
+            margin-left:auto; display:flex; gap:10px;
+        }
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:8px;
+            padding:11px 24px; border-radius:50px;
+            font-family:'Inter',sans-serif; font-size:.88rem; font-weight:700;
+            cursor:pointer; transition:var(--transition); border:none; text-decoration:none;
+        }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; }
+        .btn-gold:hover { transform:translateY(-2px); box-shadow:0 0 25px rgba(255,215,0,.4); }
+        .btn-glass { background:var(--glass); border:1px solid var(--glass-border); color:var(--text); }
+        .btn-glass:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-accent { background:linear-gradient(135deg,var(--accent),#FF6B6B); color:#fff; }
+        .btn-accent:hover { transform:translateY(-2px); box-shadow:0 4px 20px rgba(233,69,96,.4); }
+
+        /* ═══════════════════════════════════════
+           STATS ROW
+        ═══════════════════════════════════════ */
+        .stats-row {
+            position:relative; z-index:2;
+            display:grid; grid-template-columns:repeat(6,1fr); gap:14px;
+            margin:24px 0;
+        }
+        .stat-mini {
+            background:var(--glass); border:1px solid var(--glass-border);
+            border-radius:14px; padding:18px 16px; text-align:center;
+            backdrop-filter:blur(10px); transition:var(--transition);
+        }
+        .stat-mini:hover { transform:translateY(-3px); border-color:var(--gold); }
+        .stat-mini .icon { font-size:1.2rem; margin-bottom:6px; }
+        .stat-mini .val { font-family:'Orbitron',sans-serif; font-size:1.15rem; font-weight:900; }
+        .stat-mini .lbl { font-size:.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+
+        /* ═══════════════════════════════════════
+           PROFILE TABS
+        ═══════════════════════════════════════ */
+        .profile-tabs {
+            display:flex; gap:4px;
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:50px; padding:4px;
+            margin-bottom:24px;
+            width:fit-content;
+            position:relative; z-index:2;
+            overflow-x:auto;
+        }
+        .profile-tabs::-webkit-scrollbar { display:none; }
+        .ptab {
+            padding:9px 20px; border-radius:50px;
+            background:transparent; border:none;
+            color:var(--text-muted); font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600;
+            cursor:pointer; transition:var(--transition);
+            display:flex; align-items:center; gap:6px;
+            white-space:nowrap;
+        }
+        .ptab:hover { color:var(--text); }
+        .ptab.active { background:linear-gradient(135deg,var(--accent),#FF6B6B); color:#fff; box-shadow:0 4px 12px rgba(233,69,96,.3); }
+
+        .tab-panel { display:none; animation:fadeIn .4s ease; position:relative; z-index:2; }
+        .tab-panel.active { display:block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        /* ═══════════════════════════════════════
+           GAME HISTORY TABLE
+        ═══════════════════════════════════════ */
+        .panel-card {
+            background:var(--glass); border:1px solid var(--glass-border);
+            border-radius:var(--radius); padding:24px;
+            backdrop-filter:blur(10px); margin-bottom:24px;
+        }
+        .panel-card h3 {
+            font-size:1.05rem; font-weight:700; margin-bottom:16px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .panel-card h3 i { color:var(--gold); }
+
+        .table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--glass-border); }
+        .data-table { width:100%; border-collapse:collapse; font-size:.85rem; text-align:left; }
+        .data-table th {
+            padding:14px 16px; background:rgba(255,255,255,.02);
+            color:var(--text-muted); font-size:.72rem;
+            text-transform:uppercase; letter-spacing:.5px;
+            border-bottom:1px solid var(--glass-border);
+        }
+        .data-table td {
+            padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.03);
+            vertical-align:middle;
+        }
+        .data-table tr:hover { background:rgba(255,255,255,.02); }
+        .result-win { color:var(--green); font-weight:700; }
+        .result-loss { color:var(--accent); font-weight:700; }
+        .badge-sm {
+            display:inline-flex; padding:3px 10px; border-radius:50px;
+            font-size:.68rem; font-weight:700; text-transform:uppercase;
+        }
+        .badge-cash { background:rgba(0,212,255,.12); color:var(--cyan); border:1px solid rgba(0,212,255,.25); }
+        .badge-mtt { background:rgba(255,215,0,.12); color:var(--gold); border:1px solid rgba(255,215,0,.25); }
+        .badge-sng { background:rgba(123,47,247,.12); color:var(--purple); border:1px solid rgba(123,47,247,.25); }
+
+        /* ═══════════════════════════════════════
+           OVERVIEW GRID
+        ═══════════════════════════════════════ */
+        .overview-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+        .chart-placeholder {
+            height:200px; border-radius:12px;
+            background:linear-gradient(180deg, rgba(0,200,83,.08), transparent);
+            border:1px solid rgba(0,200,83,.15);
+            display:flex; align-items:flex-end; justify-content:center;
+            padding:20px; gap:8px; overflow:hidden;
+        }
+        .chart-bar {
+            width:28px; border-radius:6px 6px 0 0;
+            background:linear-gradient(180deg, var(--green), rgba(0,200,83,.3));
+            transition:var(--transition);
+        }
+        .chart-bar:hover { background:linear-gradient(180deg, var(--gold), rgba(255,215,0,.3)); }
+
+        .win-rate-ring {
+            width:140px; height:140px; margin:0 auto 16px;
+            border-radius:50%;
+            background:conic-gradient(var(--green) 0% 67%, rgba(255,255,255,.06) 67% 100%);
+            display:flex; align-items:center; justify-content:center;
+            position:relative;
+        }
+        .win-rate-ring::before {
+            content:''; width:110px; height:110px; border-radius:50%;
+            background:var(--bg-dark); position:absolute;
+        }
+        .win-rate-ring .val {
+            position:relative; z-index:1;
+            font-family:'Orbitron',sans-serif; font-size:1.5rem; font-weight:900; color:var(--green);
+        }
+
+        /* ═══════════════════════════════════════
+           ACHIEVEMENTS
+        ═══════════════════════════════════════ */
+        .achievements-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+        .ach-card {
+            background:var(--glass); border:1px solid var(--glass-border);
+            border-radius:14px; padding:20px; text-align:center;
+            transition:var(--transition);
+        }
+        .ach-card:hover { transform:translateY(-4px); border-color:var(--gold); }
+        .ach-card.locked { opacity:.35; }
+        .ach-icon { font-size:2rem; margin-bottom:8px; }
+        .ach-card h4 { font-size:.85rem; font-weight:700; margin-bottom:4px; }
+        .ach-card p { font-size:.72rem; color:var(--text-muted); }
+
+        /* ═══════════════════════════════════════
+           TRANSACTIONS TAB
+        ═══════════════════════════════════════ */
+        .txn-type { display:flex; align-items:center; gap:6px; font-weight:600; }
+        .txn-type.dep { color:var(--green); }
+        .txn-type.wit { color:var(--accent); }
+        .txn-type.bonus { color:var(--gold); }
+        .status-pill {
+            display:inline-flex; align-items:center; gap:4px;
+            padding:3px 10px; border-radius:50px;
+            font-size:.68rem; font-weight:700; text-transform:uppercase;
+        }
+        .sp-done { background:rgba(0,200,83,.12); color:var(--green); }
+        .sp-pending { background:rgba(255,215,0,.12); color:var(--gold); }
+        .sp-failed { background:rgba(233,69,96,.12); color:var(--accent); }
+
+        /* ═══════════════════════════════════════
+           SETTINGS TAB
+        ═══════════════════════════════════════ */
+        .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+        .setting-group { margin-bottom:20px; }
+        .setting-group label {
+            display:block; font-size:.82rem; font-weight:600;
+            color:var(--text-muted); margin-bottom:6px;
+        }
+        .setting-input {
+            width:100%; padding:12px 16px;
+            background:rgba(0,0,0,.25); border:1.5px solid var(--glass-border);
+            border-radius:10px; color:var(--text);
+            font-family:'Inter',sans-serif; font-size:.9rem;
+            outline:none; transition:var(--transition);
+        }
+        .setting-input:focus { border-color:var(--gold); }
+        .toggle-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 0; border-bottom:1px solid var(--glass-border);
+        }
+        .toggle-row .info h4 { font-size:.9rem; font-weight:600; }
+        .toggle-row .info p { font-size:.78rem; color:var(--text-muted); }
+        .toggle-switch {
+            width:48px; height:26px; border-radius:50px;
+            background:var(--glass-border); cursor:pointer;
+            position:relative; transition:var(--transition);
+        }
+        .toggle-switch.on { background:var(--green); }
+        .toggle-switch::after {
+            content:''; position:absolute; top:3px; left:3px;
+            width:20px; height:20px; border-radius:50%;
+            background:#fff; transition:var(--transition);
+        }
+        .toggle-switch.on::after { left:25px; }
+
+        /* ═══════════════════════════════════════
+           KYC TAB
+        ═══════════════════════════════════════ */
+        .kyc-status-card {
+            display:flex; align-items:center; gap:20px;
+            padding:24px; border-radius:14px;
+            margin-bottom:20px;
+        }
+        .kyc-verified { background:rgba(0,200,83,.08); border:1px solid rgba(0,200,83,.2); }
+        .kyc-pending { background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.2); }
+        .kyc-icon { font-size:2.5rem; }
+        .kyc-info h3 { font-size:1.1rem; font-weight:700; margin-bottom:4px; }
+        .kyc-info p { font-size:.85rem; color:var(--text-muted); }
+        .doc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+        .doc-card {
+            background:var(--glass); border:1px solid var(--glass-border);
+            border-radius:12px; padding:20px; text-align:center;
+            transition:var(--transition);
+        }
+        .doc-card:hover { border-color:var(--gold); }
+        .doc-card .doc-icon { font-size:2rem; margin-bottom:8px; }
+        .doc-card h4 { font-size:.88rem; font-weight:700; margin-bottom:4px; }
+        .doc-card .doc-status { font-size:.72rem; font-weight:700; }
+        .doc-status.verified { color:var(--green); }
+        .doc-status.pending { color:var(--gold); }
+        .doc-status.missing { color:var(--accent); }
+
+        /* ═══════════════════════════════════════
+           TOAST
+        ═══════════════════════════════════════ */
+        .toast {
+            position:fixed; bottom:30px; right:30px;
+            padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px;
+            font-size:.88rem; font-weight:600; z-index:3000;
+            transform:translateY(100px); opacity:0;
+            transition:all .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+        .toast.success { background:rgba(0,200,83,.15); border:1px solid rgba(0,200,83,.3); color:var(--green); }
+        .toast.error { background:rgba(233,69,96,.15); border:1px solid rgba(233,69,96,.3); color:var(--accent); }
+
+        /* ═══════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════ */
+        .footer {
+            position:relative; z-index:2;
+            background:rgba(10,10,26,.98);
+            border-top:1px solid var(--glass-border);
+            padding:40px 0 20px; margin-top:60px;
+        }
+        .footer-bottom {
+            display:flex; justify-content:space-between; align-items:center;
+            font-size:.8rem; color:var(--text-muted); flex-wrap:wrap; gap:12px;
+        }
+        .footer-badges { display:flex; gap:12px; }
+        .footer-badges span { display:flex; align-items:center; gap:5px; padding:4px 10px; background:var(--glass); border-radius:50px; }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════ */
+        @media(max-width:1024px){
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+            .overview-grid { grid-template-columns:1fr; }
+            .settings-grid { grid-template-columns:1fr; }
+            .achievements-grid { grid-template-columns:repeat(2,1fr); }
+            .doc-grid { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:768px){
+            .nav-links { display:none; }
+            .hamburger { display:flex; }
+            .profile-hero-content { flex-direction:column; text-align:center; padding:24px; }
+            .profile-meta { justify-content:center; }
+            .profile-actions { margin-left:0; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .profile-tabs { width:100%; }
+            .achievements-grid { grid-template-columns:1fr 1fr; }
+            .doc-grid { grid-template-columns:1fr; }
+        }
+        @media(max-width:480px){
+            .stats-row { grid-template-columns:1fr; }
+            .profile-info h1 { font-size:1.4rem; }
+            .profile-avatar { width:90px; height:90px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-bg"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo"><i class="fas fa-crown"></i>Poker<span>Royale</span></a>
+            <ul class="nav-links">
+                <li><a href="lobby.html">Lobby</a></li>
+                <li><a href="tournaments.html">Tournaments</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="promotions.html">Promotions</a></li>
+                <li><a href="cashier.html">Cashier</a></li>
+            </ul>
+            <div class="nav-right">
+                <a href="cashier.html" class="wallet-pill"><i class="fas fa-wallet"></i><span class="bal">PKR 25,000</span></a>
+                <div class="hamburger"><span></span><span></span><span></span></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- PROFILE HERO -->
+        <div class="profile-hero">
+            <div class="profile-hero-bg"></div>
+            <div class="profile-hero-content">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80" alt="Avatar">
+                    </div>
+                    <div class="avatar-edit" onclick="showToast('Avatar upload coming soon!')"><i class="fas fa-camera"></i></div>
+                    <div class="vip-badge-avatar">Gold VIP</div>
+                </div>
+                <div class="profile-info">
+                    <h1>Ali <span class="hl">Khan</span></h1>
+                    <div class="profile-meta">
+                        <span><i class="fas fa-at"></i> <b>poker_king</b></span>
+                        <span><i class="fas fa-envelope"></i> ali@gmail.com</span>
+                        <span><i class="fas fa-phone"></i> +92 311-1111111</span>
+                        <span><i class="fas fa-map-marker-alt"></i> Lahore, Pakistan</span>
+                        <span><i class="fas fa-calendar"></i> Member since <b>Jan 2024</b></span>
+                        <span><i class="fas fa-shield-halved"></i> <b style="color:var(--green)">KYC Verified</b></span>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-gold" onclick="switchTab('settings')"><i class="fas fa-pen"></i> Edit Profile</button>
+                    <a href="cashier.html" class="btn btn-glass"><i class="fas fa-wallet"></i> Cashier</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="stats-row">
+            <div class="stat-mini"><div class="icon">🎮</div><div class="val" style="color:var(--cyan)">1,247</div><div class="lbl">Games Played</div></div>
+            <div class="stat-mini"><div class="icon">🃏</div><div class="val" style="color:var(--text)">34,892</div><div class="lbl">Hands Played</div></div>
+            <div class="stat-mini"><div class="icon">🏆</div><div class="val" style="color:var(--gold)">23</div><div class="lbl">Tournaments Won</div></div>
+            <div class="stat-mini"><div class="icon">💰</div><div class="val" style="color:var(--green)">PKR 1.2M</div><div class="lbl">Total Earned</div></div>
+            <div class="stat-mini"><div class="icon">🎯</div><div class="val" style="color:var(--accent)">67%</div><div class="lbl">Win Rate</div></div>
+            <div class="stat-mini"><div class="icon">⭐</div><div class="val" style="color:var(--purple)">12,450</div><div class="lbl">Loyalty Points</div></div>
+        </div>
+
+        <!-- TABS -->
+        <div class="profile-tabs" id="profileTabs">
+            <button class="ptab active" data-tab="overview" onclick="switchTab('overview')"><i class="fas fa-chart-line"></i> Overview</button>
+            <button class="ptab" data-tab="history" onclick="switchTab('history')"><i class="fas fa-clock-rotate-left"></i> Game History</button>
+            <button class="ptab" data-tab="transactions" onclick="switchTab('transactions')"><i class="fas fa-money-bill-transfer"></i> Transactions</button>
+            <button class="ptab" data-tab="achievements" onclick="switchTab('achievements')"><i class="fas fa-medal"></i> Achievements</button>
+            <button class="ptab" data-tab="settings" onclick="switchTab('settings')"><i class="fas fa-gear"></i> Settings</button>
+            <button class="ptab" data-tab="kyc" onclick="switchTab('kyc')"><i class="fas fa-id-card"></i> KYC</button>
+        </div>
+
+        <!-- ═══ OVERVIEW TAB ═══ -->
+        <div class="tab-panel active" id="panel-overview">
+            <div class="overview-grid">
+                <div class="panel-card">
+                    <h3><i class="fas fa-chart-bar"></i> Monthly Earnings (PKR)</h3>
+                    <div class="chart-placeholder">
+                        <div class="chart-bar" style="height:40%"></div>
+                        <div class="chart-bar" style="height:65%"></div>
+                        <div class="chart-bar" style="height:45%"></div>
+                        <div class="chart-bar" style="height:80%"></div>
+                        <div class="chart-bar" style="height:55%"></div>
+                        <div class="chart-bar" style="height:90%"></div>
+                        <div class="chart-bar" style="height:70%"></div>
+                        <div class="chart-bar" style="height:95%"></div>
+                        <div class="chart-bar" style="height:60%"></div>
+                        <div class="chart-bar" style="height:85%"></div>
+                        <div class="chart-bar" style="height:75%"></div>
+                        <div class="chart-bar" style="height:100%"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--text-muted);margin-top:8px;padding:0 10px;">
+                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                        <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                    </div>
+                </div>
+                <div class="panel-card" style="text-align:center;">
+                    <h3 style="justify-content:center;"><i class="fas fa-bullseye"></i> Overall Win Rate</h3>
+                    <div class="win-rate-ring"><span class="val">67%</span></div>
+                    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px;">Top 8% of all players on PokerRoyale</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">
+                        <div><div style="font-family:'Orbitron';font-weight:700;color:var(--green);">836</div><div style="font-size:.7rem;color:var(--text-muted);">Wins</div></div>
+                        <div><div style="font-family:'Orbitron';font-weight:700;color:var(--accent);">411</div><div style="font-size:.7rem;color:var(--text-muted);">Losses</div></div>
+                        <div><div style="font-family:'Orbitron';font-weight:700;color:var(--gold);">PKR 45K</div><div style="font-size:.7rem;color:var(--text-muted);">Biggest Pot</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h3><i class="fas fa-fire"></i> Recent Activity</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:rgba(0,200,83,.05);border-radius:10px;">
+                        <span style="font-size:1.2rem;">🏆</span>
+                        <div style="flex:1;"><b style="font-size:.85rem;">Won Sunday Mega Championship</b><br><span style="font-size:.75rem;color:var(--text-muted);">2 hours ago</span></div>
+                        <span style="font-family:'Orbitron';font-weight:700;color:var(--green);">+PKR 125,000</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--glass);border-radius:10px;">
+                        <span style="font-size:1.2rem;">💰</span>
+                        <div style="flex:1;"><b style="font-size:.85rem;">Deposited via EasyPaisa</b><br><span style="font-size:.75rem;color:var(--text-muted);">5 hours ago</span></div>
+                        <span style="font-family:'Orbitron';font-weight:700;color:var(--green);">+PKR 15,000</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:rgba(233,69,96,.05);border-radius:10px;">
+                        <span style="font-size:1.2rem;">🃏</span>
+                        <div style="flex:1;"><b style="font-size:.85rem;">Cash Game — Royal Flush Lounge</b><br><span style="font-size:.75rem;color:var(--text-muted);">Yesterday</span></div>
+                        <span style="font-family:'Orbitron';font-weight:700;color:var(--accent);">-PKR 3,200</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:rgba(255,215,0,.05);border-radius:10px;">
+                        <span style="font-size:1.2rem;">🎁</span>
+                        <div style="flex:1;"><b style="font-size:.85rem;">Claimed Daily Login Bonus</b><br><span style="font-size:.75rem;color:var(--text-muted);">Yesterday</span></div>
+                        <span style="font-family:'Orbitron';font-weight:700;color:var(--gold);">+PKR 500</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ GAME HISTORY TAB ═══ -->
+        <div class="tab-panel" id="panel-history">
+            <div class="panel-card">
+                <h3><i class="fas fa-clock-rotate-left"></i> Complete Game History</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Date</th><th>Game Type</th><th>Table / Event</th><th>Duration</th><th>Result</th><th>Profit/Loss</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Jan 20, 2025</td><td><span class="badge-sm badge-mtt">MTT</span></td><td>Sunday Mega Championship</td><td>4h 32m</td><td><b style="color:var(--gold)">1st Place</b></td><td class="result-win">+PKR 125,000</td></tr>
+                            <tr><td>Jan 19, 2025</td><td><span class="badge-sm badge-cash">Cash</span></td><td>Royal Flush Lounge (50/100)</td><td>2h 15m</td><td>Left Table</td><td class="result-win">+PKR 8,500</td></tr>
+                            <tr><td>Jan 18, 2025</td><td><span class="badge-sm badge-sng">SNG</span></td><td>Turbo Sit & Go #4521</td><td>35m</td><td>3rd Place</td><td class="result-win">+PKR 1,200</td></tr>
+                            <tr><td>Jan 17, 2025</td><td><span class="badge-sm badge-cash">Cash</span></td><td>High Roller VIP (1K/2K)</td><td>1h 45m</td><td>Left Table</td><td class="result-loss">-PKR 12,000</td></tr>
+                            <tr><td>Jan 16, 2025</td><td><span class="badge-sm badge-mtt">MTT</span></td><td>Daily Freeroll PKR 50K</td><td>3h 10m</td><td>14th Place</td><td class="result-win">+PKR 2,500</td></tr>
+                            <tr><td>Jan 15, 2025</td><td><span class="badge-sm badge-cash">Cash</span></td><td>Omaha Masters (100/200)</td><td>3h 20m</td><td>Left Table</td><td class="result-win">+PKR 18,200</td></tr>
+                            <tr><td>Jan 14, 2025</td><td><span class="badge-sm badge-sng">SNG</span></td><td>Heads-Up Turbo #3891</td><td>18m</td><td>2nd Place</td><td class="result-loss">-PKR 500</td></tr>
+                            <tr><td>Jan 13, 2025</td><td><span class="badge-sm badge-mtt">MTT</span></td><td>Weekly Grand PKR 500K</td><td>5h 45m</td><td><b style="color:var(--gold)">3rd Place</b></td><td class="result-win">+PKR 75,000</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ TRANSACTIONS TAB ═══ -->
+        <div class="tab-panel" id="panel-transactions">
+            <div class="panel-card">
+                <h3><i class="fas fa-money-bill-transfer"></i> Financial Ledger</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Ref ID</th><th>Date</th><th>Type</th><th>Method</th><th>Amount</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="font-family:'Orbitron';font-size:.78rem;">TXN-94821</td><td>Jan 20, 2025</td><td><span class="txn-type dep"><i class="fas fa-arrow-down"></i> Deposit</span></td><td>EasyPaisa</td><td style="color:var(--green);font-weight:700;">+PKR 15,000</td><td><span class="status-pill sp-done">Completed</span></td></tr>
+                            <tr><td style="font-family:'Orbitron';font-size:.78rem;">TXN-87341</td><td>Jan 18, 2025</td><td><span class="txn-type wit"><i class="fas fa-arrow-up"></i> Withdrawal</span></td><td>JazzCash</td><td style="color:var(--accent);font-weight:700;">-PKR 25,000</td><td><span class="status-pill sp-done">Completed</span></td></tr>
+                            <tr><td style="font-family:'Orbitron';font-size:.78rem;">TXN-76219</td><td>Jan 15, 2025</td><td><span class="txn-type bonus"><i class="fas fa-gift"></i> Bonus</span></td><td>Welcome Bonus</td><td style="color:var(--gold);font-weight:700;">+PKR 10,000</td><td><span class="status-pill sp-done">Credited</span></td></tr>
+                            <tr><td style="font-family:'Orbitron';font-size:.78rem;">TXN-65102</td><td>Jan 12, 2025</td><td><span class="txn-type dep"><i class="fas fa-arrow-down"></i> Deposit</span></td><td>Bank Transfer</td><td style="color:var(--green);font-weight:700;">+PKR 50,000</td><td><span class="status-pill sp-done">Completed</span></td></tr>
+                            <tr><td style="font-family:'Orbitron';font-size:.78rem;">TXN-54890</td><td>Jan 10, 2025</td><td><span class="txn-type wit"><i class="fas fa-arrow-up"></i> Withdrawal</span></td><td>EasyPaisa</td><td style="color:var(--accent);font-weight:700;">-PKR 8,000</td><td><span class="status-pill sp-pending">Pending</span></td></tr>
+                            <tr><td style="font-family:'Orbitron';font-size:.78rem;">TXN-43210</td><td>Jan 08, 2025</td><td><span class="txn-type dep"><i class="fas fa-arrow-down"></i> Deposit</span></td><td>JazzCash</td><td style="color:var(--green);font-weight:700;">+PKR 5,000</td><td><span class="status-pill sp-failed">Failed</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ ACHIEVEMENTS TAB ═══ -->
+        <div class="tab-panel" id="panel-achievements">
+            <div class="panel-card">
+                <h3><i class="fas fa-medal"></i> Achievement Badges</h3>
+                <div class="achievements-grid">
+                    <div class="ach-card"><div class="ach-icon">🏆</div><h4>First Blood</h4><p>Won your first hand</p></div>
+                    <div class="ach-card"><div class="ach-icon">💎</div><h4>High Roller</h4><p>Played PKR 100K+ stakes</p></div>
+                    <div class="ach-card"><div class="ach-icon">🔥</div><h4>Hot Streak</h4><p>Won 10 hands in a row</p></div>
+                    <div class="ach-card"><div class="ach-icon">👑</div><h4>Tournament King</h4><p>Won 10 tournaments</p></div>
+                    <div class="ach-card"><div class="ach-icon">🃏</div><h4>Royal Flush</h4><p>Hit a Royal Flush</p></div>
+                    <div class="ach-card"><div class="ach-icon">💰</div><h4>Millionaire</h4><p>Earned PKR 1M total</p></div>
+                    <div class="ach-card"><div class="ach-icon">🎯</div><h4>Sharpshooter</h4><p>70%+ win rate (100 games)</p></div>
+                    <div class="ach-card locked"><div class="ach-icon">🌟</div><h4>Legend</h4><p>Reach Diamond VIP tier</p></div>
+                    <div class="ach-card"><div class="ach-icon">⚡</div><h4>Speed Demon</h4><p>Won a Turbo in under 20m</p></div>
+                    <div class="ach-card"><div class="ach-icon">🛡️</div><h4>Iron Wall</h4><p>Played 500+ hours</p></div>
+                    <div class="ach-card locked"><div class="ach-icon">🎰</div><h4>All-In Hero</h4><p>Won 5 all-ins in a row</p></div>
+                    <div class="ach-card locked"><div class="ach-icon">🌍</div><h4>Global Player</h4><p>Played with 50 countries</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ SETTINGS TAB ═══ -->
+        <div class="tab-panel" id="panel-settings">
+            <div class="settings-grid">
+                <div class="panel-card">
+                    <h3><i class="fas fa-user-pen"></i> Personal Information</h3>
+                    <div class="setting-group"><label>Full Name</label><input class="setting-input" value="Ali Khan"></div>
+                    <div class="setting-group"><label>Username</label><input class="setting-input" value="poker_king" readonly style="opacity:.6;"></div>
+                    <div class="setting-group"><label>Email Address</label><input class="setting-input" type="email" value="ali@gmail.com"></div>
+                    <div class="setting-group"><label>Phone Number</label><input class="setting-input" value="+92 311-1111111"></div>
+                    <div class="setting-group"><label>City</label><input class="setting-input" value="Lahore"></div>
+                    <button class="btn btn-gold" style="margin-top:8px;" onclick="showToast('Profile updated successfully!')"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+                <div class="panel-card">
+                    <h3><i class="fas fa-shield-halved"></i> Security & Preferences</h3>
+                    <div class="setting-group"><label>Current Password</label><input class="setting-input" type="password" placeholder="Enter current password"></div>
+                    <div class="setting-group"><label>New Password</label><input class="setting-input" type="password" placeholder="Enter new password"></div>
+                    <div class="setting-group"><label>Confirm New Password</label><input class="setting-input" type="password" placeholder="Confirm new password"></div>
+                    <button class="btn btn-accent" style="margin-top:8px;margin-bottom:20px;" onclick="showToast('Password changed!')"><i class="fas fa-key"></i> Update Password</button>
+                    <div class="toggle-row"><div class="info"><h4>Two-Factor Authentication</h4><p>Add extra security to your account</p></div><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
+                    <div class="toggle-row"><div class="info"><h4>Email Notifications</h4><p>Receive tournament & promo alerts</p></div><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
+                    <div class="toggle-row"><div class="info"><h4>SMS Alerts</h4><p>Get SMS for deposits & withdrawals</p></div><div class="toggle-switch" onclick="this.classList.toggle('on')"></div></div>
+                    <div class="toggle-row"><div class="info"><h4>Sound Effects</h4><p>In-game card & chip sounds</p></div><div class="toggle-switch on" onclick="this.classList.toggle('on')"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ KYC TAB ═══ -->
+        <div class="tab-panel" id="panel-kyc">
+            <div class="kyc-status-card kyc-verified">
+                <div class="kyc-icon">✅</div>
+                <div class="kyc-info">
+                    <h3 style="color:var(--green);">Identity Verified</h3>
+                    <p>Your account has been fully verified. You can deposit and withdraw without limits.</p>
+                </div>
+            </div>
+            <div class="panel-card">
+                <h3><i class="fas fa-file-shield"></i> Verification Documents</h3>
+                <div class="doc-grid">
+                    <div class="doc-card">
+                        <div class="doc-icon">🪪</div>
+                        <h4>CNIC Front</h4>
+                        <div class="doc-status verified"><i class="fas fa-check-circle"></i> Verified</div>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">🪪</div>
+                        <h4>CNIC Back</h4>
+                        <div class="doc-status verified"><i class="fas fa-check-circle"></i> Verified</div>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">🤳</div>
+                        <h4>Selfie with ID</h4>
+                        <div class="doc-status verified"><i class="fas fa-check-circle"></i> Verified</div>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">🏠</div>
+                        <h4>Proof of Address</h4>
+                        <div class="doc-status verified"><i class="fas fa-check-circle"></i> Verified</div>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">🏦</div>
+                        <h4>Bank Statement</h4>
+                        <div class="doc-status pending"><i class="fas fa-clock"></i> Under Review</div>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">📄</div>
+                        <h4>Source of Funds</h4>
+                        <div class="doc-status missing"><i class="fas fa-times-circle"></i> Not Required</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toastBox"><i class="fas fa-check-circle"></i><span id="toastMsg">Success!</span></div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 PokerRoyale. All rights reserved. 18+ Only.</p>
+                <div class="footer-badges">
+                    <span><i class="fas fa-shield-halved" style="color:var(--green)"></i> SSL</span>
+                    <span><i class="fas fa-certificate" style="color:var(--gold)"></i> RNG Certified</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            const btn = document.querySelector(`.ptab[data-tab="${tabId}"]`);
+            if (btn) btn.classList.add('active');
+            const panel = document.getElementById('panel-' + tabId);
+            if (panel) panel.classList.add('active');
+        }
+
+        function showToast(msg, type='success') {
+            const t = document.getElementById('toastBox');
+            document.getElementById('toastMsg').textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        // Animate chart bars on load
+        document.querySelectorAll('.chart-bar').forEach((bar, i) => {
+            const h = bar.style.height;
+            bar.style.height = '0%';
+            setTimeout(() => { bar.style.height = h; }, 200 + i * 80);
+        });
+    </script>
+
+</body>
+</html>

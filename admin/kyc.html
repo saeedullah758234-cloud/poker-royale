@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYC Queue — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+        
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats & Filter Bar */
+        .stats-bar {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;
+        }
+        .ms-icon.warning { background:rgba(245,158,11,.15); color:var(--warning); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:900; margin-top:2px; }
+
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:20px;
+            display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:12px; align-items:center;
+        }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:100%; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        
+        .filter-select {
+            padding:10px 32px 10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+        
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none;
+        }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--primary); color:var(--text); }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); transform:translateY(-1px); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-danger:hover { box-shadow:0 4px 15px rgba(239,68,68,.4); transform:translateY(-1px); }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-green:hover { box-shadow:0 4px 15px rgba(16,185,129,.4); transform:translateY(-1px); }
+
+        /* Main View - Two Columns */
+        .kyc-layout {
+            display:grid; grid-template-columns:1fr 400px; gap:24px; align-items:start;
+        }
+
+        /* Queue List */
+        .queue-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .qc-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .qc-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .qc-header h3 i { color:var(--gold); }
+        
+        .kyc-list { display:flex; flex-direction:column; }
+        .kyc-item {
+            display:flex; align-items:center; justify-content:space-between; gap:16px;
+            padding:16px 20px; border-bottom:1px solid rgba(255,255,255,.03);
+            transition:var(--transition); cursor:pointer;
+        }
+        .kyc-item:last-child { border-bottom:none; }
+        .kyc-item:hover { background:rgba(255,255,255,.02); }
+        .kyc-item.selected { background:rgba(59,130,246,.08); border-left:3px solid var(--primary); padding-left:17px; }
+
+        .ki-user { display:flex; align-items:center; gap:12px; flex:1; }
+        .ki-avatar {
+            width:40px; height:40px; border-radius:50%; background:var(--glass); border:2px solid var(--border);
+            display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--gold); font-size:.9rem; flex-shrink:0;
+        }
+        .ki-avatar img { width:100%; height:100%; object-fit:cover; }
+        .ki-info .name { font-weight:600; font-size:.9rem; }
+        .ki-info .email { font-size:.72rem; color:var(--text-muted); }
+        
+        .ki-docs { display:flex; gap:6px; }
+        .doc-badge {
+            padding:3px 8px; border-radius:6px; background:var(--glass); border:1px solid var(--border);
+            font-size:.65rem; font-weight:600; color:var(--text-muted);
+        }
+        
+        .ki-risk { font-size:.7rem; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:4px; }
+        .ki-risk.low { color:var(--green); }
+        .ki-risk.medium { color:var(--warning); }
+        .ki-risk.high { color:var(--danger); }
+        
+        .ki-date { font-size:.75rem; color:var(--text-muted); text-align:right; }
+        .ki-status {
+            padding:3px 10px; border-radius:50px; font-size:.68rem; font-weight:700; text-transform:uppercase;
+        }
+        .ki-status.pending { background:rgba(245,158,11,.15); color:var(--warning); }
+        .ki-status.approved { background:rgba(16,185,129,.15); color:var(--green); }
+        .ki-status.rejected { background:rgba(239,68,68,.15); color:var(--danger); }
+
+        /* Document Review Panel (Right Side) */
+        .review-panel {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            position:sticky; top:90px; display:flex; flex-direction:column;
+            height:calc(100vh - 120px);
+        }
+        .rp-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+        }
+        .rp-header h3 { font-size:1rem; font-weight:700; }
+        .rp-user-info { display:flex; align-items:center; gap:12px; margin-top:12px; }
+        .rp-user-info .meta { font-size:.75rem; color:var(--text-muted); line-height:1.5; }
+        
+        .rp-body {
+            padding:20px; flex:1; overflow-y:auto;
+        }
+        .rp-body::-webkit-scrollbar { width:4px; }
+        .rp-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+        
+        .doc-preview-card {
+            background:var(--glass); border:1px solid var(--border); border-radius:12px;
+            padding:12px; margin-bottom:16px;
+        }
+        .dpc-title { font-size:.82rem; font-weight:600; margin-bottom:8px; display:flex; justify-content:space-between; }
+        .dpc-img {
+            width:100%; height:180px; background:#000; border-radius:8px; overflow:hidden;
+            display:flex; align-items:center; justify-content:center; cursor:zoom-in;
+            border:1px solid rgba(255,255,255,.05); position:relative;
+        }
+        .dpc-img img { width:100%; height:100%; object-fit:contain; }
+        
+        .fraud-checks {
+            background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:10px;
+            padding:14px; margin-bottom:16px;
+        }
+        .fc-title { font-size:.8rem; font-weight:700; margin-bottom:10px; color:var(--gold); }
+        .fc-item {
+            display:flex; align-items:center; justify-content:space-between;
+            font-size:.75rem; color:var(--text-muted); margin-bottom:6px;
+        }
+        .fc-item:last-child { margin-bottom:0; }
+        .fc-item i.pass { color:var(--green); }
+        .fc-item i.fail { color:var(--danger); }
+        .fc-item i.warn { color:var(--warning); }
+        
+        .rp-footer {
+            padding:16px 20px; border-top:1px solid var(--border); background:rgba(0,0,0,.2);
+        }
+        .rp-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+        .empty-review {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            height:100%; color:var(--text-muted); text-align:center; padding:20px;
+        }
+        .empty-review i { font-size:3rem; margin-bottom:12px; opacity:.3; }
+
+        /* Modals & Toasts */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.9); backdrop-filter:blur(10px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:16px;
+            max-width:500px; width:100%; transform:scale(.95); transition:var(--transition);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header { padding:20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .modal-header h3 { font-size:1.1rem; font-weight:700; }
+        .modal-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem; }
+        .modal-body { padding:20px; }
+        .modal-footer { padding:16px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+        
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; margin-bottom:6px; color:var(--text-muted); }
+        .form-select, .form-textarea {
+            width:100%; padding:10px 14px; background:rgba(0,0,0,.3); border:1px solid var(--border);
+            border-radius:8px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .form-select:focus, .form-textarea:focus { border-color:var(--primary); }
+        .form-select option { background:var(--card-bg); }
+        .form-textarea { resize:vertical; min-height:80px; }
+
+        /* Image Zoom Modal */
+        .zoom-modal { max-width:900px; background:transparent; border:none; box-shadow:none; }
+        .zoom-modal .modal-body { padding:0; display:flex; align-items:center; justify-content:center; position:relative; }
+        .zoom-modal img { max-width:100%; max-height:85vh; border-radius:8px; border:2px solid rgba(255,255,255,.1); box-shadow:0 20px 60px rgba(0,0,0,.8); }
+        .zoom-close { position:absolute; top:-40px; right:0; background:rgba(0,0,0,.5); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; border:1px solid rgba(255,255,255,.2); }
+
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        @media(max-width:1200px){
+            .kyc-layout { grid-template-columns:1fr; }
+            .review-panel { position:fixed; top:0; right:-420px; width:400px; height:100vh; z-index:1100; transition:right .3s ease; border-radius:0; border:none; border-left:1px solid var(--border); }
+            .review-panel.open { right:0; }
+            .rp-close-mobile { display:block !important; }
+        }
+        @media(max-width:992px){
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-bar { grid-template-columns:repeat(2,1fr); }
+            .filters-bar { grid-template-columns:1fr 1fr; }
+        }
+        @media(max-width:768px){
+            .page-content { padding:16px; }
+            .stats-bar { grid-template-columns:1fr; }
+            .filters-bar { grid-template-columns:1fr; }
+            .review-panel { width:100%; right:-100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo"><i class="fas fa-crown"></i><span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span></a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link active"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge" id="navKycBadge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">KYC Verification</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>KYC Queue</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <div class="stats-bar">
+                <div class="mini-stat active-filter" data-status="pending" onclick="filterStatus('pending', this)">
+                    <div class="ms-icon warning"><i class="fas fa-clock"></i></div>
+                    <div><div class="ms-label">Pending Review</div><div class="ms-value" id="statPending" style="color:var(--warning)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="approved" onclick="filterStatus('approved', this)">
+                    <div class="ms-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div><div class="ms-label">Approved (30d)</div><div class="ms-value" id="statApproved" style="color:var(--green)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="rejected" onclick="filterStatus('rejected', this)">
+                    <div class="ms-icon red"><i class="fas fa-times-circle"></i></div>
+                    <div><div class="ms-label">Rejected (30d)</div><div class="ms-value" id="statRejected" style="color:var(--danger)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon blue"><i class="fas fa-id-card"></i></div>
+                    <div><div class="ms-label">Total Verified</div><div class="ms-value" id="statTotal">31,450</div></div>
+                </div>
+            </div>
+
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search user, email..." oninput="applyFilters()">
+                </div>
+                <select class="filter-select" id="filterType" onchange="applyFilters()">
+                    <option value="">All Document Types</option>
+                    <option value="ID Card">ID Card</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driver License">Driver License</option>
+                    <option value="Utility Bill">Utility Bill</option>
+                </select>
+                <select class="filter-select" id="filterRisk" onchange="applyFilters()">
+                    <option value="">All Risk Levels</option>
+                    <option value="low">Low Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="high">High Risk</option>
+                </select>
+                <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
+            </div>
+
+            <div class="kyc-layout">
+                
+                <!-- Queue List -->
+                <div class="queue-card">
+                    <div class="qc-header">
+                        <h3><i class="fas fa-list"></i> Submission Queue <span id="queueCount" style="color:var(--text-muted);font-size:.8rem;font-weight:400;margin-left:6px;"></span></h3>
+                    </div>
+                    <div class="kyc-list" id="kycList">
+                        <!-- Rendered via JS -->
+                    </div>
+                    <div class="empty-state" id="emptyState">
+                        <div class="icon">🪪</div>
+                        <h3>Queue is empty</h3>
+                        <p>No KYC submissions found matching criteria</p>
+                    </div>
+                </div>
+
+                <!-- Review Panel -->
+                <div class="review-panel" id="reviewPanel">
+                    <!-- Overlay for empty state -->
+                    <div class="empty-review" id="emptyReview">
+                        <i class="fas fa-search"></i>
+                        <p>Select a user from the queue<br>to review documents</p>
+                    </div>
+
+                    <!-- Actual content (hidden initially) -->
+                    <div id="activeReview" style="display:none; height:100%; display:flex; flex-direction:column;">
+                        <div class="rp-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3>Document Review</h3>
+                            <button class="btn-outline rp-close-mobile" style="display:none; padding:4px 10px;" onclick="closeMobilePanel()"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="rp-body" id="reviewBody">
+                            <!-- Populated via JS -->
+                        </div>
+                        <div class="rp-footer" id="reviewFooter">
+                            <div class="rp-actions">
+                                <button class="btn btn-danger" onclick="openRejectModal()"><i class="fas fa-times"></i> Reject</button>
+                                <button class="btn btn-green" onclick="approveKyc()"><i class="fas fa-check"></i> Approve</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- REJECT MODAL -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Reject Documents</h3>
+            <button class="modal-close" onclick="closeModal('rejectModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Rejection Reason *</label>
+                <select class="form-select" id="rejectReason" onchange="toggleCustomReason()">
+                    <option value="">Select a reason...</option>
+                    <option value="Blurry or unreadable image">Blurry or unreadable image</option>
+                    <option value="Document expired">Document expired</option>
+                    <option value="Name mismatch">Name does not match account</option>
+                    <option value="Corners cut off">All four corners must be visible</option>
+                    <option value="Unsupported document type">Unsupported document type</option>
+                    <option value="Suspected forgery">Suspected forgery / manipulation</option>
+                    <option value="Other">Other (Custom)</option>
+                </select>
+            </div>
+            <div class="form-group" id="customReasonGrp" style="display:none;">
+                <label>Custom Reason Message</label>
+                <textarea class="form-textarea" id="customReason" placeholder="Explain why the document is rejected. This will be emailed to the user."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('rejectModal')">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmReject()"><i class="fas fa-paper-plane"></i> Confirm Reject</button>
+        </div>
+    </div>
+</div>
+
+<!-- IMAGE ZOOM MODAL -->
+<div class="modal-overlay zoom-modal" id="zoomModal">
+    <div class="modal-box" style="background:transparent; border:none; box-shadow:none;">
+        <button class="zoom-close" onclick="closeModal('zoomModal')"><i class="fas fa-times"></i></button>
+        <div class="modal-body">
+            <img id="zoomImg" src="" alt="Document Zoom">
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  KYC DATA & LOGIC
+// ═══════════════════════════════════════
+const KYC_DATA = [
+    { id:101, user:'Ahmed Raza', email:'ahmed@gmail.com', type:'Passport', status:'pending', risk:'low', date:'2 hours ago', docs:['front'], country:'AE', joined:'2024-03-10', fraudChecks:{nameMatch:true, age18:true, geoMatch:true} },
+    { id:102, user:'John Smith', email:'john@gmail.com', type:'ID Card', status:'pending', risk:'medium', date:'5 hours ago', docs:['front','back','selfie'], country:'US', joined:'2024-01-05', fraudChecks:{nameMatch:true, age18:true, geoMatch:false} },
+    { id:103, user:'Ravi Kumar', email:'ravi@email.com', type:'Utility Bill', status:'pending', risk:'low', date:'1 day ago', docs:['front'], country:'IN', joined:'2024-02-28', fraudChecks:{nameMatch:true, age18:true, geoMatch:true} },
+    { id:104, user:'Mike Wilson', email:'mike@email.com', type:'Driver License', status:'pending', risk:'high', date:'1 day ago', docs:['front','back'], country:'CA', joined:'2024-01-20', fraudChecks:{nameMatch:false, age18:true, geoMatch:true} },
+    { id:105, user:'Sara Malik', email:'sara@gmail.com', type:'ID Card', status:'approved', risk:'low', date:'2 days ago', docs:['front','back'], country:'UK', joined:'2024-02-20', fraudChecks:{nameMatch:true, age18:true, geoMatch:true} },
+    { id:106, user:'Emma Brown', email:'emma@email.com', type:'Passport', status:'rejected', risk:'medium', date:'3 days ago', docs:['front'], country:'UK', joined:'2024-03-15', fraudChecks:{nameMatch:true, age18:false, geoMatch:true} },
+];
+
+let filtered = [];
+let currentStatus = 'pending';
+let activeKycId = null;
+
+function renderQueue() {
+    updateStats();
+    
+    const list = document.getElementById('kycList');
+    const empty = document.getElementById('emptyState');
+    
+    if (filtered.length === 0) {
+        list.innerHTML = '';
+        empty.classList.add('show');
+        document.getElementById('queueCount').textContent = '';
+        return;
+    }
+    empty.classList.remove('show');
+    document.getElementById('queueCount').textContent = `(${filtered.length})`;
+
+    list.innerHTML = filtered.map(k => `
+        <div class="kyc-item ${k.id === activeKycId ? 'selected' : ''}" onclick="selectKyc(${k.id})">
+            <div class="ki-user">
+                <div class="ki-avatar">${k.user[0]}</div>
+                <div class="ki-info">
+                    <div class="name">${k.user}</div>
+                    <div class="email">${k.email}</div>
+                </div>
+            </div>
+            <div style="flex:1; text-align:center;">
+                <div class="ki-docs">
+                    <span class="doc-badge">${k.type}</span>
+                    ${k.docs.length > 1 ? `<span class="doc-badge">+${k.docs.length-1}</span>` : ''}
+                </div>
+            </div>
+            <div style="text-align:right;">
+                ${k.status === 'pending' 
+                    ? `<div class="ki-risk ${k.risk}"><i class="fas fa-shield-halved"></i> ${k.risk} Risk</div>`
+                    : `<div class="ki-status ${k.status}">${k.status}</div>`
+                }
+                <div class="ki-date">${k.date}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateStats() {
+    const pend = KYC_DATA.filter(k => k.status === 'pending').length;
+    const appr = KYC_DATA.filter(k => k.status === 'approved').length;
+    const rej = KYC_DATA.filter(k => k.status === 'rejected').length;
+    
+    document.getElementById('statPending').textContent = pend;
+    document.getElementById('navKycBadge').textContent = pend;
+    document.getElementById('statApproved').textContent = appr;
+    document.getElementById('statRejected').textContent = rej;
+}
+
+function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const type = document.getElementById('filterType').value;
+    const risk = document.getElementById('filterRisk').value;
+
+    filtered = KYC_DATA.filter(k => {
+        if (k.status !== currentStatus) return false;
+        if (q && !(`${k.user} ${k.email}`).toLowerCase().includes(q)) return false;
+        if (type && k.type !== type) return false;
+        if (risk && k.risk !== risk) return false;
+        return true;
+    });
+
+    renderQueue();
+}
+
+function filterStatus(status, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if(el) el.classList.add('active-filter');
+    currentStatus = status;
+    activeKycId = null;
+    hideReviewPanel();
+    applyFilters();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterRisk').value = '';
+    applyFilters();
+}
+
+// ─── REVIEW PANEL ───
+function selectKyc(id) {
+    activeKycId = id;
+    renderQueue(); // update selected visual
+    const k = KYC_DATA.find(x => x.id === id);
+    if(!k) return;
+
+    document.getElementById('emptyReview').style.display = 'none';
+    document.getElementById('activeReview').style.display = 'flex';
+    document.querySelector('.review-panel').classList.add('open'); // Mobile slide in
+
+    // Populate Body
+    let docHtml = k.docs.map(docType => `
+        <div class="doc-preview-card">
+            <div class="dpc-title">
+                <span>${docType === 'front' ? 'Front Side' : docType === 'back' ? 'Back Side' : 'Selfie'}</span>
+                <span style="color:var(--primary);cursor:pointer;" onclick="zoomDoc('https://images.unsplash.com/photo-1621252179027-94459d278660?w=600&q=80')"><i class="fas fa-search-plus"></i> Zoom</span>
+            </div>
+            <div class="dpc-img" onclick="zoomDoc('https://images.unsplash.com/photo-1621252179027-94459d278660?w=600&q=80')">
+                <img src="https://images.unsplash.com/photo-1621252179027-94459d278660?w=600&q=80" alt="Doc">
+            </div>
+        </div>
+    `).join('');
+
+    const checks = k.fraudChecks;
+    const checkHtml = `
+        <div class="fraud-checks">
+            <div class="fc-title"><i class="fas fa-robot"></i> Automated Checks</div>
+            <div class="fc-item"><span>Name Match (OCR)</span><i class="fas ${checks.nameMatch?'fa-check-circle pass':'fa-times-circle fail'}"></i></div>
+            <div class="fc-item"><span>Age Verification (18+)</span><i class="fas ${checks.age18?'fa-check-circle pass':'fa-times-circle fail'}"></i></div>
+            <div class="fc-item"><span>IP/Geo Match</span><i class="fas ${checks.geoMatch?'fa-check-circle pass':'fa-exclamation-triangle warn'}"></i></div>
+        </div>
+    `;
+
+    document.getElementById('reviewBody').innerHTML = `
+        <div class="rp-user-info" style="margin-bottom:16px;">
+            <div class="ki-avatar" style="width:50px;height:50px;font-size:1.1rem;">${k.user[0]}</div>
+            <div>
+                <h4 style="font-size:1.05rem;">${k.user}</h4>
+                <div class="meta">${k.email} • Joined ${k.joined} • ${k.country}</div>
+            </div>
+        </div>
+        ${checkHtml}
+        <h4 style="font-size:.9rem; margin-bottom:10px;">${k.type} Documents</h4>
+        ${docHtml}
+    `;
+
+    // Footer actions visibility
+    document.getElementById('reviewFooter').style.display = k.status === 'pending' ? 'block' : 'none';
+}
+
+function hideReviewPanel() {
+    document.getElementById('emptyReview').style.display = 'flex';
+    document.getElementById('activeReview').style.display = 'none';
+}
+function closeMobilePanel() {
+    document.querySelector('.review-panel').classList.remove('open');
+}
+
+// ─── ACTIONS ───
+function approveKyc() {
+    if(!activeKycId) return;
+    const k = KYC_DATA.find(x => x.id === activeKycId);
+    if(!confirm(`Approve KYC for ${k.user}?`)) return;
+    
+    k.status = 'approved';
+    showToast(`KYC for ${k.user} Approved!`, 'success');
+    activeKycId = null;
+    hideReviewPanel();
+    closeMobilePanel();
+    applyFilters();
+}
+
+function openRejectModal() {
+    if(!activeKycId) return;
+    document.getElementById('rejectReason').value = '';
+    document.getElementById('customReasonGrp').style.display = 'none';
+    document.getElementById('customReason').value = '';
+    openModal('rejectModal');
+}
+
+function toggleCustomReason() {
+    const v = document.getElementById('rejectReason').value;
+    document.getElementById('customReasonGrp').style.display = v === 'Other' ? 'block' : 'none';
+}
+
+function confirmReject() {
+    const reason = document.getElementById('rejectReason').value;
+    if(!reason) return showToast('Please select a rejection reason', 'error');
+    if(reason === 'Other' && !document.getElementById('customReason').value.trim()) {
+        return showToast('Please enter a custom reason', 'error');
+    }
+
+    const k = KYC_DATA.find(x => x.id === activeKycId);
+    k.status = 'rejected';
+    closeModal('rejectModal');
+    showToast(`KYC for ${k.user} Rejected`, 'error');
+    activeKycId = null;
+    hideReviewPanel();
+    closeMobilePanel();
+    applyFilters();
+}
+
+function zoomDoc(src) {
+    document.getElementById('zoomImg').src = src;
+    openModal('zoomModal');
+}
+
+// ─── UTILS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => { o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
+
+function showToast(msg, type='info') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { info:'fa-info-circle', success:'fa-check-circle', error:'fa-times-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => { sidebar.classList.toggle('mobile-open'); });
+function adminLogout() { if(confirm('Logout?')) { localStorage.removeItem('pr_admin_token'); window.location.href='login.html'; } }
+
+// Init
+applyFilters();
+console.log('🪪 PokerRoyale Admin — KYC Loaded');
+</script>
+</body>
+</html>

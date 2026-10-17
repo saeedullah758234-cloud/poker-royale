@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Configurations — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.warning { background:rgba(245,158,11,.15); color:var(--warning); }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.35rem; font-weight:900; }
+
+        /* Filters */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:20px;
+            display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+        }
+        .filters-left { display:flex; gap:12px; align-items:center; flex-wrap:wrap; flex:1; }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:220px; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        
+        .filter-select {
+            padding:10px 32px 10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); transform:translateY(-1px); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); transform:translateY(-1px); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+
+        /* Table Card */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 14px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none;
+        }
+        .admin-table th:hover { color:var(--gold); }
+        .admin-table td {
+            padding:14px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .t-name { font-weight:700; font-size:.9rem; margin-bottom:2px; }
+        .t-type { font-size:.75rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px; }
+        .t-type i { color:var(--gold); }
+
+        .number-cell { font-family:'Orbitron',sans-serif; font-weight:700; }
+        .blinds-cell { color:var(--gold); }
+        .buyin-cell { color:var(--green); }
+
+        .status-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.active { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.waiting { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.full { background:rgba(233,69,96,.12); color:var(--danger); }
+        .status-badge.paused { background:rgba(156,163,175,.12); color:var(--text-muted); }
+
+        .action-btns { display:flex; gap:4px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.edit:hover { background:rgba(255,215,0,.15); color:var(--gold); border-color:var(--gold); }
+        .action-btn.pause:hover { background:rgba(245,158,11,.15); color:var(--warning); border-color:var(--warning); }
+        .action-btn.play:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+        .action-btn.delete:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:680px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; background:#1a1f2e; z-index:10;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; display:flex; align-items:center; gap:8px; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+            position:sticky; bottom:0; background:#1a1f2e; z-index:10;
+        }
+
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-group label .req { color:var(--accent); }
+        .form-input, .form-select {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus, .form-select:focus { border-color:var(--primary); }
+        .form-select { cursor:pointer; }
+        .form-select option { background:var(--card-bg); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        
+        .input-prefix { display:flex; align-items:center; }
+        .input-prefix .prefix {
+            padding:11px 12px; background:rgba(255,255,255,.04); border:1.5px solid var(--border);
+            border-right:none; border-radius:10px 0 0 10px; color:var(--gold);
+            font-family:'Orbitron',sans-serif; font-weight:700; font-size:.85rem;
+        }
+        .input-prefix .form-input { border-radius:0 10px 10px 0; }
+        .form-hint { font-size:.72rem; color:var(--text-muted); margin-top:4px; }
+
+        .section-title {
+            font-size:.9rem; font-weight:700; color:var(--gold); margin:18px 0 12px;
+            padding-bottom:8px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:8px;
+        }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        .empty-state { text-align:center; padding:50px 20px; display:none; }
+        .empty-state.show { display:block; }
+        .empty-state .icon { font-size:2.5rem; opacity:.3; margin-bottom:10px; }
+        .empty-state h3 { font-size:1.1rem; margin-bottom:4px; }
+        .empty-state p { color:var(--text-muted); font-size:.88rem; }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+            .filters-bar { flex-direction:column; align-items:stretch; }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .form-row, .form-row-3 { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .admin-table { font-size:.78rem; }
+            .admin-table th, .admin-table td { padding:10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span></a>
+                <a href="tables.html" class="nav-link active"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span><span class="nav-badge green" id="navTableBadge">15</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Table Configurations</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="games.html">Games</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Tables</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="renderTable()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat active-filter" data-status="all" onclick="filterByStat('all', this)">
+                    <div class="ms-icon blue"><i class="fas fa-border-all"></i></div>
+                    <div><div class="ms-label">Total Tables</div><div class="ms-value" id="statTotal">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="active" onclick="filterByStat('active', this)">
+                    <div class="ms-icon green"><i class="fas fa-play"></i></div>
+                    <div><div class="ms-label">Active / Playing</div><div class="ms-value" id="statActive" style="color:var(--green)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="waiting" onclick="filterByStat('waiting', this)">
+                    <div class="ms-icon warning"><i class="fas fa-hourglass-half"></i></div>
+                    <div><div class="ms-label">Waiting</div><div class="ms-value" id="statWaiting" style="color:var(--warning)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="full" onclick="filterByStat('full', this)">
+                    <div class="ms-icon red"><i class="fas fa-ban"></i></div>
+                    <div><div class="ms-label">Full Tables</div><div class="ms-value" id="statFull" style="color:var(--danger)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="paused" onclick="filterByStat('paused', this)">
+                    <div class="ms-icon cyan"><i class="fas fa-pause"></i></div>
+                    <div><div class="ms-label">Paused</div><div class="ms-value" id="statPaused" style="color:var(--cyan)">0</div></div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filters-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search tables by name or ID..." oninput="applyFilters()">
+                    </div>
+                    <select class="filter-select" id="filterGame" onchange="applyFilters()">
+                        <option value="">All Game Types</option>
+                        <option value="holdem">Texas Hold'em</option>
+                        <option value="omaha">PL Omaha</option>
+                        <option value="omaha_hilo">Omaha Hi-Lo</option>
+                        <option value="short_deck">Short Deck 6+</option>
+                    </select>
+                    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="waiting">Waiting</option>
+                        <option value="full">Full</option>
+                        <option value="paused">Paused</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
+                </div>
+                <div>
+                    <button class="btn btn-gold" onclick="openAddModal()"><i class="fas fa-plus"></i> Create Table</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-list"></i> Table Directory <span style="color:var(--text-muted);font-weight:400;font-size:.82rem;" id="resultCount"></span></h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="admin-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="id">ID</th>
+                                <th data-sort="name">Table Name / Type</th>
+                                <th data-sort="blinds">Blinds (SB/BB)</th>
+                                <th data-sort="buyin">Buy-in (Min/Max)</th>
+                                <th data-sort="players">Players</th>
+                                <th data-sort="rake">Rake % / Cap</th>
+                                <th data-sort="status">Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">🪑</div>
+                    <h3>No tables found</h3>
+                    <p>Try adjusting filters or create a new table configuration.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD/EDIT TABLE -->
+<div class="modal-overlay" id="tableModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New Table</h3>
+            <button class="modal-close" onclick="closeModal('tableModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId" value="">
+
+            <div class="section-title"><i class="fas fa-info-circle"></i> Basic Configuration</div>
+            <div class="form-group">
+                <label>Table Name <span class="req">*</span></label>
+                <input type="text" class="form-input" id="tName" placeholder="e.g. High Roller VIP" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Game Type <span class="req">*</span></label>
+                    <select class="form-select" id="tGame">
+                        <option value="holdem">Texas Hold'em</option>
+                        <option value="omaha">PL Omaha</option>
+                        <option value="omaha_hilo">Omaha Hi-Lo</option>
+                        <option value="short_deck">Short Deck 6+</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Betting Type</label>
+                    <select class="form-select" id="tBetting">
+                        <option value="nl">No Limit (NL)</option>
+                        <option value="pl">Pot Limit (PL)</option>
+                        <option value="fl">Fixed Limit (FL)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-coins"></i> Blinds & Buy-in</div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Small Blind (SB) <span class="req">*</span></label>
+                    <div class="input-prefix"><span class="prefix">$</span><input type="number" class="form-input" id="tSb" value="1" min="0.01" step="0.01" oninput="autoCalcBlinds()"></div>
+                </div>
+                <div class="form-group">
+                    <label>Big Blind (BB) <span class="req">*</span></label>
+                    <div class="input-prefix"><span class="prefix">$</span><input type="number" class="form-input" id="tBb" value="2" min="0.02" step="0.01"></div>
+                </div>
+                <div class="form-group">
+                    <label>Ante</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input type="number" class="form-input" id="tAnte" value="0" min="0" step="0.01"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Min Buy-in (Usually 20x BB)</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input type="number" class="form-input" id="tMinBuy" value="40" min="1"></div>
+                </div>
+                <div class="form-group">
+                    <label>Max Buy-in (Usually 100x BB)</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input type="number" class="form-input" id="tMaxBuy" value="200" min="1"></div>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-users"></i> Table Limits & Rake</div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Max Players</label>
+                    <select class="form-select" id="tPlayers">
+                        <option value="2">2 (Heads-up)</option>
+                        <option value="6">6 (6-Max)</option>
+                        <option value="9" selected>9 (Full Ring)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Rake %</label>
+                    <div class="input-prefix"><span class="prefix">%</span><input type="number" class="form-input" id="tRakePct" value="5" min="0" max="20" step="0.5"></div>
+                </div>
+                <div class="form-group">
+                    <label>Rake Cap</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input type="number" class="form-input" id="tRakeCap" value="50" min="0"></div>
+                </div>
+            </div>
+            <div class="form-group" id="statusGroup" style="display:none; margin-top:10px;">
+                <label>Status Override</label>
+                <select class="form-select" id="tStatus">
+                    <option value="waiting">Waiting</option>
+                    <option value="active">Active</option>
+                    <option value="full">Full</option>
+                    <option value="paused">Paused</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('tableModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveTable()" id="btnSave"><i class="fas fa-save"></i> Save Table</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  TABLE CONFIG DATA
+// ═══════════════════════════════════════
+const GAME_LABELS = {
+    'holdem': "Texas Hold'em",
+    'omaha': 'PL Omaha',
+    'omaha_hilo': 'Omaha Hi-Lo',
+    'short_deck': 'Short Deck'
+};
+
+const TABLE_CONFIGS = [
+    { id:1, name:'Royal Flush Lounge', game:'holdem', betting:'nl', sb:2, bb:5, ante:0, minBuy:100, maxBuy:500, currentP:7, maxP:9, rakePct:5, rakeCap:50, status:'active' },
+    { id:2, name:'Diamond Players', game:'holdem', betting:'nl', sb:10, bb:25, ante:0, minBuy:500, maxBuy:2500, currentP:9, maxP:9, rakePct:5, rakeCap:100, status:'full' },
+    { id:3, name:'Omaha Masters', game:'omaha', betting:'pl', sb:5, bb:10, ante:0, minBuy:200, maxBuy:1000, currentP:6, maxP:6, rakePct:5, rakeCap:50, status:'full' },
+    { id:4, name:'High Roller VIP', game:'holdem', betting:'nl', sb:50, bb:100, ante:10, minBuy:5000, maxBuy:25000, currentP:4, maxP:6, rakePct:4, rakeCap:200, status:'active' },
+    { id:5, name:'Beginner Friendly', game:'holdem', betting:'nl', sb:0.5, bb:1, ante:0, minBuy:20, maxBuy:100, currentP:8, maxP:9, rakePct:5, rakeCap:10, status:'active' },
+    { id:6, name:'Short Deck Showdown', game:'short_deck', betting:'nl', sb:2, bb:5, ante:1, minBuy:100, maxBuy:500, currentP:5, maxP:6, rakePct:5, rakeCap:50, status:'active' },
+    { id:7, name:'Heads Up Arena', game:'holdem', betting:'nl', sb:5, bb:10, ante:0, minBuy:200, maxBuy:1000, currentP:1, maxP:2, rakePct:5, rakeCap:25, status:'waiting' },
+    { id:8, name:'Night Owl Table', game:'holdem', betting:'nl', sb:1, bb:2, ante:0, minBuy:40, maxBuy:200, currentP:3, maxP:9, rakePct:5, rakeCap:20, status:'active' },
+    { id:9, name:'Omaha Hi-Lo Elite', game:'omaha_hilo', betting:'pl', sb:5, bb:10, ante:0, minBuy:200, maxBuy:1000, currentP:5, maxP:9, rakePct:5, rakeCap:50, status:'active' },
+    { id:10, name:'Turbo Speed Desk', game:'holdem', betting:'nl', sb:2, bb:5, ante:0, minBuy:100, maxBuy:500, currentP:0, maxP:6, rakePct:5, rakeCap:50, status:'waiting' },
+    { id:11, name:'Weekend Warriors', game:'holdem', betting:'nl', sb:5, bb:10, ante:0, minBuy:200, maxBuy:1000, currentP:8, maxP:9, rakePct:5, rakeCap:50, status:'active' },
+    { id:12, name:'Micro Grinders', game:'holdem', betting:'nl', sb:0.25, bb:0.5, ante:0, minBuy:10, maxBuy:50, currentP:6, maxP:9, rakePct:5, rakeCap:5, status:'active' },
+    { id:13, name:'Maintenance Test', game:'holdem', betting:'nl', sb:1, bb:2, ante:0, minBuy:40, maxBuy:200, currentP:0, maxP:9, rakePct:5, rakeCap:20, status:'paused' },
+    { id:14, name:'Whale Shark Den', game:'omaha', betting:'pl', sb:100, bb:200, ante:0, minBuy:10000, maxBuy:50000, currentP:6, maxP:6, rakePct:3, rakeCap:500, status:'full' },
+    { id:15, name:'Standard FL', game:'holdem', betting:'fl', sb:2, bb:4, ante:0, minBuy:40, maxBuy:400, currentP:2, maxP:9, rakePct:5, rakeCap:20, status:'waiting' },
+];
+
+let filtered = [...TABLES];
+let currentFilter = 'all';
+let nextId = 16;
+
+// ─── RENDER ───
+function renderTable() {
+    applyFilters(false);
+    updateStats();
+
+    const tbody = document.getElementById('tableBody');
+    const empty = document.getElementById('emptyState');
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        empty.classList.add('show');
+        document.getElementById('resultCount').textContent = '';
+        return;
+    }
+    empty.classList.remove('show');
+    document.getElementById('resultCount').textContent = `(${filtered.length})`;
+
+    tbody.innerHTML = filtered.map(t => {
+        const betText = t.betting.toUpperCase();
+        return `
+        <tr>
+            <td style="font-family:'Orbitron';font-weight:700;">#${t.id}</td>
+            <td>
+                <div class="t-name">${t.name}</div>
+                <div class="t-type"><i class="fas fa-cards"></i> ${betText} ${GAME_LABELS[t.game]}</div>
+            </td>
+            <td class="number-cell blinds-cell">$${t.sb} / $${t.bb} ${t.ante > 0 ? `<span style="color:var(--text-muted);font-size:.7rem">(+$${t.ante})</span>` : ''}</td>
+            <td class="number-cell buyin-cell">$${t.minBuy} – $${t.maxBuy}</td>
+            <td class="number-cell"><b>${t.currentP}</b> / ${t.maxP}</td>
+            <td class="number-cell">${t.rakePct}% <span style="color:var(--text-muted);font-size:.75rem">($${t.rakeCap} cap)</span></td>
+            <td><span class="status-badge ${t.status}">${t.status !== 'paused' ? '<span class="dot"></span>' : ''} ${t.status}</span></td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn edit" title="Edit Config" onclick="openEditModal(${t.id})"><i class="fas fa-pen"></i></button>
+                    ${t.status === 'paused' 
+                        ? `<button class="action-btn play" title="Resume" onclick="toggleStatus(${t.id}, 'active')"><i class="fas fa-play"></i></button>`
+                        : `<button class="action-btn pause" title="Pause" onclick="toggleStatus(${t.id}, 'paused')"><i class="fas fa-pause"></i></button>`
+                    }
+                    <button class="action-btn delete" title="Delete" onclick="deleteTable(${t.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function updateStats() {
+    const active = TABLES.filter(t => t.status === 'active').length;
+    const waiting = TABLES.filter(t => t.status === 'waiting').length;
+    const full = TABLES.filter(t => t.status === 'full').length;
+    const paused = TABLES.filter(t => t.status === 'paused').length;
+
+    document.getElementById('statTotal').textContent = TABLES.length;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statWaiting').textContent = waiting;
+    document.getElementById('statFull').textContent = full;
+    document.getElementById('statPaused').textContent = paused;
+    document.getElementById('navTableBadge').textContent = TABLES.length;
+}
+
+// ─── FILTERS ───
+function applyFilters(reset = true) {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const game = document.getElementById('filterGame').value;
+    const status = document.getElementById('filterStatus').value;
+
+    filtered = TABLES.filter(t => {
+        if (currentFilter !== 'all' && t.status !== currentFilter) return false;
+        if (status && t.status !== status) return false;
+        if (game && t.game !== game) return false;
+        if (q && !(`${t.id} ${t.name} ${GAME_LABELS[t.game]}`).toLowerCase().includes(q)) return false;
+        return true;
+    });
+}
+
+function filterByStat(status, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if(el) el.classList.add('active-filter');
+    currentFilter = status;
+    applyFilters();
+    renderTable();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterGame').value = '';
+    document.getElementById('filterStatus').value = '';
+    filterByStat('all', document.querySelector('.mini-stat[data-status="all"]'));
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(() => { applyFilters(); renderTable(); }, 250));
+document.getElementById('filterGame').addEventListener('change', () => { applyFilters(); renderTable(); });
+document.getElementById('filterStatus').addEventListener('change', () => { applyFilters(); renderTable(); });
+
+// ─── AUTO CALC BLINDS ───
+function autoCalcBlinds() {
+    const sb = parseFloat(document.getElementById('tSb').value) || 0;
+    if (sb > 0) {
+        document.getElementById('tBb').value = sb * 2;
+        document.getElementById('tMinBuy').value = sb * 40; // 20x BB
+        document.getElementById('tMaxBuy').value = sb * 200; // 100x BB
+    }
+}
+
+// ─── MODAL CRUD ───
+function openAddModal() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle" style="color:var(--gold);margin-right:8px;"></i>Create New Table';
+    document.getElementById('btnSave').innerHTML = '<i class="fas fa-plus"></i> Create Table';
+    document.getElementById('editId').value = '';
+    
+    document.getElementById('tName').value = '';
+    document.getElementById('tGame').value = 'holdem';
+    document.getElementById('tBetting').value = 'nl';
+    document.getElementById('tSb').value = 1;
+    document.getElementById('tBb').value = 2;
+    document.getElementById('tAnte').value = 0;
+    document.getElementById('tMinBuy').value = 40;
+    document.getElementById('tMaxBuy').value = 200;
+    document.getElementById('tPlayers').value = 9;
+    document.getElementById('tRakePct').value = 5;
+    document.getElementById('tRakeCap').value = 50;
+    document.getElementById('statusGroup').style.display = 'none';
+
+    openModal('tableModal');
+}
+
+function openEditModal(id) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Edit Table Config';
+    document.getElementById('btnSave').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    document.getElementById('editId').value = t.id;
+
+    document.getElementById('tName').value = t.name;
+    document.getElementById('tGame').value = t.game;
+    document.getElementById('tBetting').value = t.betting;
+    document.getElementById('tSb').value = t.sb;
+    document.getElementById('tBb').value = t.bb;
+    document.getElementById('tAnte').value = t.ante;
+    document.getElementById('tMinBuy').value = t.minBuy;
+    document.getElementById('tMaxBuy').value = t.maxBuy;
+    document.getElementById('tPlayers').value = t.maxP;
+    document.getElementById('tRakePct').value = t.rakePct;
+    document.getElementById('tRakeCap').value = t.rakeCap;
+    
+    document.getElementById('statusGroup').style.display = 'block';
+    document.getElementById('tStatus').value = t.status;
+
+    openModal('tableModal');
+}
+
+function saveTable() {
+    const name = document.getElementById('tName').value.trim();
+    if (!name) return showToast('Table Name is required', 'error');
+
+    const id = document.getElementById('editId').value;
+    const data = {
+        name,
+        game: document.getElementById('tGame').value,
+        betting: document.getElementById('tBetting').value,
+        sb: parseFloat(document.getElementById('tSb').value) || 0,
+        bb: parseFloat(document.getElementById('tBb').value) || 0,
+        ante: parseFloat(document.getElementById('tAnte').value) || 0,
+        minBuy: parseFloat(document.getElementById('tMinBuy').value) || 0,
+        maxBuy: parseFloat(document.getElementById('tMaxBuy').value) || 0,
+        maxP: parseInt(document.getElementById('tPlayers').value) || 9,
+        rakePct: parseFloat(document.getElementById('tRakePct').value) || 0,
+        rakeCap: parseFloat(document.getElementById('tRakeCap').value) || 0
+    };
+
+    if (id) {
+        // Update
+        const t = TABLES.find(x => x.id == id);
+        if (t) {
+            Object.assign(t, data);
+            t.status = document.getElementById('tStatus').value;
+            showToast(`Table #${t.id} updated successfully`, 'success');
+        }
+    } else {
+        // Create
+        data.id = nextId++;
+        data.currentP = 0;
+        data.status = 'waiting';
+        TABLES.unshift(data);
+        showToast(`Table "${name}" created`, 'success');
+        
+        // Mock API Call
+        try {
+            const token = localStorage.getItem('pr_admin_token');
+            fetch('http://localhost:3000/api/admin/games/tables', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: JSON.stringify({
+                    table_name: data.name, game_type: data.game, betting_type: data.betting,
+                    small_blind: data.sb, big_blind: data.bb, ante: data.ante,
+                    min_buyin: data.minBuy, max_buyin: data.maxBuy, max_players: data.maxP,
+                    rake_percentage: data.rakePct, rake_cap: data.rakeCap
+                })
+            }).catch(()=>{});
+        } catch (e) {}
+    }
+
+    closeModal('tableModal');
+    renderTable();
+}
+
+function toggleStatus(id, newStatus) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+    if (newStatus === 'paused') {
+        if (!confirm(`Pause table "${t.name}"? Active hands will finish but no new hands will start.`)) return;
+    }
+    t.status = newStatus;
+    renderTable();
+    showToast(`Table marked as ${newStatus}`, newStatus==='paused'?'warning':'success');
+}
+
+function deleteTable(id) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+    if (t.currentP > 0) {
+        if (!confirm(`WARNING: "${t.name}" currently has ${t.currentP} players seated. Deleting will forcefully kick them and refund their chips. Proceed?`)) return;
+    } else {
+        if (!confirm(`Are you sure you want to permanently delete table "${t.name}"?`)) return;
+    }
+
+    const idx = TABLES.findIndex(x => x.id === id);
+    if (idx >= 0) TABLES.splice(idx, 1);
+    
+    // Mock API
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        fetch(`http://localhost:3000/api/admin/games/tables/${id}/close`, {
+            method: 'POST',
+            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+        }).catch(()=>{});
+    } catch (e) {}
+
+    renderTable();
+    showToast(`Table deleted successfully`, 'error');
+}
+
+// ─── SORTING ───
+document.querySelectorAll('#dataTable th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        const map = { id:'id', name:'name', blinds:'bb', buyin:'maxBuy', players:'currentP', rake:'rakePct', status:'status' };
+        const field = map[key];
+        if (!field) return;
+        const asc = th.classList.contains('sort-asc');
+        document.querySelectorAll('#dataTable th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+        
+        filtered.sort((a, b) => {
+            let av = a[field], bv = b[field];
+            if (typeof av === 'string') av = av.toLowerCase();
+            if (typeof bv === 'string') bv = bv.toLowerCase();
+            if (av < bv) return asc ? 1 : -1;
+            if (av > bv) return asc ? -1 : 1;
+            return 0;
+        });
+        
+        // Re-render only tbody
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = filtered.map(t => {
+            const betText = t.betting.toUpperCase();
+            return `
+            <tr>
+                <td style="font-family:'Orbitron';font-weight:700;">#${t.id}</td>
+                <td><div class="t-name">${t.name}</div><div class="t-type"><i class="fas fa-cards"></i> ${betText} ${GAME_LABELS[t.game]}</div></td>
+                <td class="number-cell blinds-cell">$${t.sb} / $${t.bb} ${t.ante > 0 ? `<span style="color:var(--text-muted);font-size:.7rem">(+$${t.ante})</span>` : ''}</td>
+                <td class="number-cell buyin-cell">$${t.minBuy} – $${t.maxBuy}</td>
+                <td class="number-cell"><b>${t.currentP}</b> / ${t.maxP}</td>
+                <td class="number-cell">${t.rakePct}% <span style="color:var(--text-muted);font-size:.75rem">($${t.rakeCap} cap)</span></td>
+                <td><span class="status-badge ${t.status}">${t.status !== 'paused' ? '<span class="dot"></span>' : ''} ${t.status}</span></td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn edit" title="Edit Config" onclick="openEditModal(${t.id})"><i class="fas fa-pen"></i></button>
+                        ${t.status === 'paused' ? `<button class="action-btn play" title="Resume" onclick="toggleStatus(${t.id}, 'active')"><i class="fas fa-play"></i></button>` : `<button class="action-btn pause" title="Pause" onclick="toggleStatus(${t.id}, 'paused')"><i class="fas fa-pause"></i></button>`}
+                        <button class="action-btn delete" title="Delete" onclick="deleteTable(${t.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    });
+});
+
+// ─── UTILS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => { o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
+
+function showToast(msg, type='success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+function debounce(fn, wait) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; }
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => { sidebar.classList.toggle('mobile-open'); });
+function adminLogout() { if(confirm('Logout?')) { localStorage.removeItem('pr_admin_token'); window.location.href='login.html'; } }
+
+// Init
+renderTable();
+console.log('🪑 PokerRoyale Admin — Table Configs Loaded');
+</script>
+
+<script src="../currency-override.js"></script>
+</body>
+</html>

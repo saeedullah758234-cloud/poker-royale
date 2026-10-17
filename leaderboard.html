@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerRoyale - Global Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b0e14;
+            --bg-card: #121620;
+            --bg-card-alt: #181d2a;
+            --gold: #ffb703;
+            --gold-bright: #ffd700;
+            --gold-gradient: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+            --silver-gradient: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
+            --bronze-gradient: linear-gradient(135deg, #d97706 0%, #78350f 100%);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: rgba(255, 183, 3, 0.2);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            background: rgba(18, 22, 32, 0.95);
+            border-bottom: 1px solid var(--border-card);
+            padding: 0.9rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .brand { font-family: 'Cinzel', serif; font-size: 1.4rem; font-weight: 800; color: var(--gold); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-links { display: flex; gap: 24px; align-items: center; }
+        .nav-link { color: var(--text-sub); text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover, .nav-link.active { color: var(--gold-bright); }
+        .balance-badge { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 6px 16px; border-radius: 30px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        /* Header Banner */
+        .header-banner {
+            background: linear-gradient(135deg, #131722 0%, #0d1017 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+        }
+        .header-banner h1 { font-family: 'Cinzel', serif; font-size: 2.5rem; color: var(--gold-bright); margin-bottom: 0.5rem; letter-spacing: 1px; }
+        .header-banner p { color: var(--text-sub); font-size: 1.05rem; }
+
+        .container { max-width: 1240px; margin: 2rem auto; padding: 0 1.5rem; width: 100%; }
+
+        /* Podium Section for Top 3 Players */
+        .podium-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            padding-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .podium-wrapper { flex-direction: column; align-items: center; }
+        }
+
+        .podium-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 2rem 1.5rem 1.5rem;
+            text-align: center;
+            width: 100%;
+            max-width: 280px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s;
+        }
+
+        .podium-card:hover { transform: translateY(-8px); }
+
+        .podium-card.rank-1 {
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(255, 183, 3, 0.25);
+            order: 2;
+            transform: scale(1.08);
+            margin-bottom: 1.5rem;
+        }
+        .podium-card.rank-2 { order: 1; border-color: #94a3b8; }
+        .podium-card.rank-3 { order: 3; border-color: #b45309; }
+
+        .crown-badge {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .rank-1 .crown-badge { background: var(--gold-gradient); color: #000; }
+        .rank-2 .crown-badge { background: var(--silver-gradient); color: #000; }
+        .rank-3 .crown-badge { background: var(--bronze-gradient); color: #fff; }
+
+        .podium-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0.5rem auto 1rem;
+            border: 3px solid transparent;
+            background: #1e2330;
+        }
+
+        .rank-1 .podium-avatar { border-color: var(--gold-bright); }
+        .rank-2 .podium-avatar { border-color: #cbd5e1; }
+        .rank-3 .podium-avatar { border-color: #d97706; }
+
+        .podium-name { font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .podium-tag { font-size: 0.8rem; color: var(--gold); font-weight: 600; margin-bottom: 0.8rem; }
+        .podium-earned { font-size: 1.4rem; font-weight: 800; color: #4ade80; margin-bottom: 0.3rem; }
+        .podium-stats { font-size: 0.8rem; color: var(--text-sub); }
+
+        /* Current Player Banner */
+        .my-standing-banner {
+            background: linear-gradient(135deg, rgba(255, 183, 3, 0.1) 0%, rgba(18, 22, 32, 0.9) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .my-standing-info { display: flex; align-items: center; gap: 1rem; }
+        .my-rank-pill { background: var(--gold-gradient); color: #000; font-weight: 800; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; }
+
+        /* Controls & Filters */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            color: var(--text-sub);
+            padding: 0.65rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn.active, .filter-btn:hover { background: rgba(255, 183, 3, 0.1); color: var(--gold-bright); border-color: var(--gold); }
+
+        .search-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 260px;
+        }
+        .search-box input { background: transparent; border: none; color: #fff; outline: none; width: 100%; font-size: 0.9rem; }
+
+        /* Main Leaderboard Table */
+        .leaderboard-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .leader-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        .leader-table th, .leader-table td { padding: 1.1rem 1.2rem; text-align: left; border-bottom: 1px solid var(--border-card); }
+        .leader-table th { color: var(--gold); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; background: rgba(0,0,0,0.2); }
+
+        .leader-table tbody tr { transition: background 0.2s; }
+        .leader-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .rank-number { font-weight: 800; font-size: 1.05rem; width: 60px; }
+        .player-cell { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+        .player-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-card); background: #1e2330; }
+        .country-flag { font-size: 0.85rem; color: var(--text-sub); display: flex; align-items: center; gap: 5px; }
+
+        .vip-badge { font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(255, 183, 3, 0.15); color: var(--gold); border: 1px solid var(--border-color); }
+        .usd-earn { color: #4ade80; font-weight: 700; font-size: 1rem; }
+
+        /* Footer */
+        .footer { background: #080a0f; border-top: 1px solid var(--border-card); padding: 2rem 1.5rem; text-align: center; color: var(--text-sub); font-size: 0.9rem; margin-top: auto; }
+        .footer-links { display: flex; justify-content: center; gap: 20px; margin-top: 1rem; flex-wrap: wrap; }
+        .footer-links a { color: var(--gold); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="dashboard.html" class="brand"><i class="fa-solid fa-crown"></i> POKER ROYALE</a>
+        <div class="nav-links">
+            <a href="lobby.html" class="nav-link">Lobby</a>
+            <a href="tournaments.html" class="nav-link">Tournaments</a>
+            <a href="leaderboard.html" class="nav-link active">Leaderboard</a>
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="cashier.html" class="nav-link">Cashier</a>
+            <div class="balance-badge">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="navBalance">$0.00</span>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:var(--text-sub); cursor:pointer;"><i class="fa-solid fa-right-from-bracket fa-lg"></i></button>
+        </div>
+    </nav>
+
+    <!-- Header Banner -->
+    <div class="header-banner">
+        <h1>Global Hall of Fame</h1>
+        <p>Honoring the Top High Rollers, Tournament Champions, and Cash Game Legends Worldwide.</p>
+    </div>
+
+    <div class="container">
+
+        <!-- Top 3 Podium Cards -->
+        <div class="podium-wrapper">
+            
+            <!-- 2nd Place (Silver) -->
+            <div class="podium-card rank-2">
+                <div class="crown-badge">🥈</div>
+                <img class="podium-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" alt="Silver Player">
+                <div class="podium-name">Alex "TheShark"</div>
+                <div class="podium-tag"><i class="fa-solid fa-location-dot"></i> Nevada, USA</div>
+                <div class="podium-earned">$89,200.00</div>
+                <div class="podium-stats">31,420 Hands Played • 68% Win Rate</div>
+            </div>
+
+            <!-- 1st Place (Gold) -->
+            <div class="podium-card rank-1">
+                <div class="crown-badge">🥇</div>
+                <img class="podium-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200" alt="Gold Player">
+                <div class="podium-name">Saeed "RoyaleKing"</div>
+                <div class="podium-tag"><i class="fa-solid fa-crown" style="color:var(--gold);"></i> California, USA</div>
+                <div class="podium-earned">$124,500.00</div>
+                <div class="podium-stats">34,892 Hands Played • 72% Win Rate</div>
+            </div>
+
+            <!-- 3rd Place (Bronze) -->
+            <div class="podium-card rank-3">
+                <div class="crown-badge">🥉</div>
+                <img class="podium-avatar" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200" alt="Bronze Player">
+                <div class="podium-name">Sarah "PocketAces"</div>
+                <div class="podium-tag"><i class="fa-solid fa-location-dot"></i> Texas, USA</div>
+                <div class="podium-earned">$64,150.00</div>
+                <div class="podium-stats">28,110 Hands Played • 64% Win Rate</div>
+            </div>
+
+        </div>
+
+        <!-- Logged-in User Current Position Banner -->
+        <div class="my-standing-banner">
+            <div class="my-standing-info">
+                <span class="my-rank-pill">Your Rank: #14</span>
+                <div>
+                    <h4 style="color:#fff; font-size:1rem;" id="myUserName">Player Standing</h4>
+                    <p style="color:var(--text-sub); font-size:0.85rem;">Keep grinding tables to climb into the Top 10 High Rollers!</p>
+                </div>
+            </div>
+            <div style="display:flex; gap:20px; align-items:center;">
+                <div>
+                    <div style="font-size:0.75rem; color:var(--text-sub); text-transform:uppercase;">Total Earned</div>
+                    <div style="color:#4ade80; font-weight:800; font-size:1.1rem;" id="myTotalEarned">$1,200.00</div>
+                </div>
+                <a href="table.html" class="filter-btn active" style="text-decoration:none;"><i class="fa-solid fa-play"></i> Play Now</a>
+            </div>
+        </div>
+
+        <!-- Filter Controls Bar -->
+        <div class="controls-row">
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="filterLeaderboard('all')">All-Time Earnings</button>
+                <button class="filter-btn" onclick="filterLeaderboard('tournaments')">Tournament Champions</button>
+                <button class="filter-btn" onclick="filterLeaderboard('weekly')">Weekly Rakeback Kings</button>
+                <button class="filter-btn" onclick="filterLeaderboard('highroller')">High Rollers ($100+ Stakes)</button>
+            </div>
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-sub);"></i>
+                <input type="text" id="leaderSearch" placeholder="Search player or username..." onkeyup="searchLeaderboard()">
+            </div>
+        </div>
+
+        <!-- Main Leaderboard Table -->
+        <div class="leaderboard-card">
+            <table class="leader-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player Name</th>
+                        <th>Region / VIP</th>
+                        <th>Hands Played</th>
+                        <th>Total Earned (USD)</th>
+                        <th>Win Rate</th>
+                        <th>Favorite Game</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div style="font-family:'Cinzel', serif; color:var(--gold); font-size:1.2rem; margin-bottom:10px;"><i class="fa-solid fa-crown"></i> POKER ROYALE</div>
+        <p>Premium global real-money poker platform. USA & International Jurisdiction.</p>
+        <div class="footer-links">
+            <a href="lobby.html">Lobby</a>
+            <a href="tournaments.html">Tournaments</a>
+            <a href="cashier.html">Cashier</a>
+            <a href="dashboard.html">My Dashboard</a>
+        </div>
+        <p style="margin-top:1.5rem; font-size:0.8rem;">© 2026 PokerRoyale Platform. All Rights Reserved. Strictly 18+ Only. RNG Certified.</p>
+    </footer>
+
+    <!-- Currency Override Script -->
+    <script src="js/currency-override.js"></script>
+    <script>
+        // Sample Global Leaderboard Dataset
+        const globalPlayers = [
+            { rank: 1, name: 'Saeed "RoyaleKing"', region: 'California, USA', vip: 'BLACK VIP', hands: '34,892', earned: 124500.00, winRate: '72%', game: 'Texas Hold\'em', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
+            { rank: 2, name: 'Alex "TheShark"', region: 'Nevada, USA', vip: 'GOLD VIP', hands: '31,420', earned: 89200.00, winRate: '68%', game: 'Texas Hold\'em', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200' },
+            { rank: 3, name: 'Sarah "PocketAces"', region: 'Texas, USA', vip: 'GOLD VIP', hands: '28,110', earned: 64150.00, winRate: '64%', game: 'Pot Limit Omaha', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200' },
+            { rank: 4, name: 'Michael_BluffMaster', region: 'Florida, USA', vip: 'SILVER VIP', hands: '24,900', earned: 48900.00, winRate: '61%', game: 'Texas Hold\'em', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200' },
+            { rank: 5, name: 'David_VegasPro', region: 'Nevada, USA', vip: 'GOLD VIP', hands: '22,100', earned: 41250.00, winRate: '59%', game: 'Texas Hold\'em', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200' },
+            { rank: 6, name: 'Elena_RoyalFlush', region: 'London, UK', vip: 'SILVER VIP', hands: '19,850', earned: 38700.00, winRate: '58%', game: 'Short Deck 6+', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200' },
+            { rank: 7, name: 'Jason_Nuts101', region: 'New York, USA', vip: 'BRONZE VIP', hands: '17,400', earned: 29800.00, winRate: '56%', game: 'Pot Limit Omaha', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200' },
+            { rank: 8, name: 'Carlos_AllIn', region: 'Ontario, Canada', vip: 'BRONZE VIP', hands: '15,200', earned: 24500.00, winRate: '54%', game: 'Texas Hold\'em', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200' },
+            { rank: 9, name: 'Emily_RiverCard', region: 'Illinois, USA', vip: 'BRONZE VIP', hands: '12,900', earned: 18900.00, winRate: '53%', game: 'Texas Hold\'em', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=200' },
+            { rank: 10, name: 'Viktor_StackKing', region: 'Berlin, Germany', vip: 'SILVER VIP', hands: '11,400', earned: 15400.00, winRate: '51%', game: 'Pot Limit Omaha', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=200' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile();
+            renderTable(globalPlayers);
+        });
+
+        // Render Leaderboard Table
+        function renderTable(dataset) {
+            const tbody = document.getElementById('leaderboardBody');
+            if (dataset.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding:2rem;">No players match your search filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = dataset.map(p => `
+                <tr>
+                    <td class="rank-number">${p.rank <= 3 ? (p.rank === 1 ? '🥇 #1' : p.rank === 2 ? '🥈 #2' : '🥉 #3') : '#' + p.rank}</td>
+                    <td>
+                        <div class="player-cell">
+                            <img class="player-img" src="${p.avatar}" alt="${p.name}">
+                            <div>
+                                <div>${p.name}</div>
+                                <div class="country-flag"><i class="fa-solid fa-earth-americas"></i> ${p.region}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="vip-badge">${p.vip}</span></td>
+                    <td>${p.hands}</td>
+                    <td class="usd-earn">$${p.earned.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td style="color:#fff; font-weight:600;">${p.winRate}</td>
+                    <td style="color:var(--text-sub);">${p.game}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Search Filter
+        function searchLeaderboard() {
+            const query = document.getElementById('leaderSearch').value.toLowerCase();
+            const filtered = globalPlayers.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                p.region.toLowerCase().includes(query) ||
+                p.game.toLowerCase().includes(query)
+            );
+            renderTable(filtered);
+        }
+
+        // Tab Filter Simulator
+        function filterLeaderboard(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (type === 'tournaments') {
+                const tourneyList = [...globalPlayers].sort((a,b) => b.earned - a.earned).slice(0, 5);
+                renderTable(tourneyList);
+            } else {
+                renderTable(globalPlayers);
+            }
+        }
+
+        // Fetch Logged In User Info for Balance
+        async function loadUserProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) return window.location.href = 'login.html';
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.success && data.user) {
+                    const u = data.user;
+                    const bal = parseFloat(u.balance || 0);
+                    const formatted = `$${bal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    
+                    document.getElementById('navBalance').innerText = formatted;
+                    document.getElementById('myUserName').innerText = u.username || 'Player';
+                    document.getElementById('myTotalEarned').innerText = `$${parseFloat(u.total_earned || 1200).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

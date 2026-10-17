@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotions & Bonuses — PokerRoyale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1A1A2E;
+            --secondary: #16213E;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #00C853;
+            --blue: #0F3460;
+            --cyan: #00D4FF;
+            --purple: #7B2FF7;
+            --bg-dark: #0A0A1A;
+            --text: #FFFFFF;
+            --text-muted: #8892B0;
+            --glass: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.1);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family:'Inter',sans-serif;
+            background:var(--bg-dark);
+            color:var(--text);
+            line-height:1.6;
+            min-height:100vh;
+            overflow-x:hidden;
+        }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+        img { max-width:100%; display:block; }
+        .container { max-width:1280px; margin:0 auto; padding:0 20px; }
+
+        .page-bg {
+            position:fixed; top:0; left:0;
+            width:100%; height:100%; z-index:0; pointer-events:none;
+            background:
+                radial-gradient(circle at 15% 10%, rgba(255,215,0,0.07), transparent 45%),
+                radial-gradient(circle at 85% 30%, rgba(233,69,96,0.07), transparent 50%),
+                radial-gradient(circle at 50% 85%, rgba(123,47,247,0.06), transparent 55%);
+        }
+
+        /* ═══════════════════════════════════════
+           NAVBAR
+        ═══════════════════════════════════════ */
+        .navbar {
+            position:sticky; top:0; width:100%; z-index:1000;
+            background:rgba(10,10,26,.92);
+            backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--glass-border);
+            padding:12px 0;
+        }
+        .navbar .container { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+        .logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.4rem; font-weight:900; color:var(--gold); }
+        .logo i { font-size:1.5rem; color:var(--accent); }
+        .logo span { color:var(--text); font-weight:400; }
+        .nav-links { display:flex; align-items:center; gap:26px; }
+        .nav-links a { font-size:.9rem; font-weight:500; color:var(--text-muted); transition:var(--transition); padding:6px 0; position:relative; }
+        .nav-links a:hover, .nav-links a.active { color:var(--gold); }
+        .nav-links a.active::after { content:''; position:absolute; bottom:-4px; left:0; width:100%; height:2px; background:var(--gold); }
+        .nav-right { display:flex; align-items:center; gap:14px; }
+        .wallet-pill { display:flex; align-items:center; gap:8px; padding:7px 14px; background:rgba(0,200,83,.12); border:1px solid rgba(0,200,83,.3); border-radius:50px; cursor:pointer; transition:var(--transition); }
+        .wallet-pill:hover { transform:translateY(-2px); }
+        .wallet-pill i { color:var(--green); font-size:.85rem; }
+        .wallet-pill .bal { font-family:'Orbitron',sans-serif; font-size:.82rem; font-weight:700; }
+        .user-chip { display:flex; align-items:center; gap:10px; padding:5px 12px 5px 6px; background:var(--glass); border:1px solid var(--glass-border); border-radius:50px; cursor:pointer; }
+        .user-chip img { width:32px; height:32px; border-radius:50%; border:2px solid var(--gold); }
+        .user-chip span { font-size:.85rem; font-weight:600; }
+        .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; }
+        .hamburger span { width:24px; height:2.5px; background:var(--text); border-radius:2px; }
+
+        /* ═══════════════════════════════════════
+           PAGE HEADER
+        ═══════════════════════════════════════ */
+        .page-header {
+            position:relative; z-index:2;
+            text-align:center;
+            padding:50px 0 20px;
+        }
+        .header-tag {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:6px 18px;
+            background:rgba(233,69,96,.12);
+            border:1px solid rgba(233,69,96,.3);
+            border-radius:50px;
+            font-size:.78rem; color:var(--accent);
+            text-transform:uppercase; letter-spacing:2px;
+            margin-bottom:16px; font-weight:700;
+        }
+        .page-header h1 {
+            font-family:'Cinzel',serif;
+            font-size:3rem; font-weight:900;
+            margin-bottom:12px; line-height:1.1;
+        }
+        .page-header h1 .hl {
+            background:linear-gradient(135deg,var(--gold),#FFA500);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .page-header p {
+            color:var(--text-muted); font-size:1rem;
+            max-width:600px; margin:0 auto;
+        }
+
+        /* ═══════════════════════════════════════
+           HERO WELCOME BONUS
+        ═══════════════════════════════════════ */
+        .welcome-hero {
+            position:relative; z-index:2;
+            border-radius:24px;
+            overflow:hidden;
+            margin:30px 0 40px;
+            border:1px solid rgba(255,215,0,.25);
+            box-shadow:0 30px 80px rgba(0,0,0,.5), 0 0 60px rgba(255,215,0,.1);
+        }
+        .welcome-hero-bg {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            background:url('https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1400&q=80') center/cover;
+            filter:brightness(.15) saturate(1.4);
+        }
+        .welcome-hero-bg::after {
+            content:''; position:absolute; top:0; left:0; width:100%; height:100%;
+            background:linear-gradient(135deg, rgba(233,69,96,.85), rgba(123,47,247,.8) 50%, rgba(15,52,96,.9));
+        }
+        .welcome-content {
+            position:relative; z-index:2;
+            padding:50px;
+            display:grid;
+            grid-template-columns:1.2fr 0.8fr;
+            gap:40px;
+            align-items:center;
+        }
+        .welcome-left .badge {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:5px 14px;
+            background:rgba(255,255,255,.15);
+            border:1px solid rgba(255,255,255,.25);
+            border-radius:50px;
+            font-size:.72rem; font-weight:700;
+            text-transform:uppercase; letter-spacing:1.5px;
+            margin-bottom:16px;
+        }
+        .welcome-left h2 {
+            font-family:'Cinzel',serif;
+            font-size:2.8rem; font-weight:900;
+            line-height:1.1; margin-bottom:12px;
+        }
+        .welcome-left h2 .gold {
+            color:var(--gold);
+            text-shadow:0 0 30px rgba(255,215,0,.5);
+        }
+        .welcome-left p {
+            font-size:1rem; opacity:.9;
+            margin-bottom:24px; max-width:480px; line-height:1.7;
+        }
+        .welcome-features {
+            display:flex; gap:20px; margin-bottom:28px; flex-wrap:wrap;
+        }
+        .wf-item {
+            display:flex; align-items:center; gap:8px;
+            font-size:.88rem; font-weight:600;
+        }
+        .wf-item i { color:var(--gold); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 32px; border-radius:50px; font-family:'Inter',sans-serif; font-size:.95rem; font-weight:700; cursor:pointer; transition:var(--transition); border:none; text-decoration:none; }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; box-shadow:0 4px 20px rgba(255,215,0,.3); }
+        .btn-gold:hover { transform:translateY(-2px); box-shadow:0 0 35px rgba(255,215,0,.5); }
+        .btn-glass { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); color:#fff; backdrop-filter:blur(10px); }
+        .btn-glass:hover { background:rgba(255,255,255,.2); }
+        .btn-accent { background:linear-gradient(135deg,var(--accent),#FF6B6B); color:#fff; }
+        .btn-accent:hover { transform:translateY(-2px); box-shadow:0 4px 20px rgba(233,69,96,.4); }
+
+        .welcome-right {
+            text-align:center;
+        }
+        .bonus-amount-ring {
+            width:220px; height:220px;
+            margin:0 auto 20px;
+            border-radius:50%;
+            background:conic-gradient(var(--gold) 0% 75%, rgba(255,255,255,.1) 75% 100%);
+            display:flex; align-items:center; justify-content:center;
+            position:relative;
+            animation:ringPulse 3s ease-in-out infinite;
+        }
+        @keyframes ringPulse {
+            0%,100% { box-shadow:0 0 30px rgba(255,215,0,.2); }
+            50% { box-shadow:0 0 60px rgba(255,215,0,.4); }
+        }
+        .bonus-amount-ring::before {
+            content:''; width:180px; height:180px; border-radius:50%;
+            background:rgba(10,10,26,.9); position:absolute;
+        }
+        .bonus-inner {
+            position:relative; z-index:1; text-align:center;
+        }
+        .bonus-inner .pct {
+            font-family:'Orbitron',sans-serif;
+            font-size:3rem; font-weight:900;
+            color:var(--gold);
+            text-shadow:0 0 20px rgba(255,215,0,.5);
+            line-height:1;
+        }
+        .bonus-inner .lbl {
+            font-size:.78rem; text-transform:uppercase;
+            letter-spacing:2px; opacity:.8;
+        }
+        .bonus-inner .max {
+            font-family:'Orbitron',sans-serif;
+            font-size:.9rem; font-weight:700;
+            color:var(--gold); margin-top:4px;
+        }
+        .welcome-right .terms {
+            font-size:.72rem; opacity:.7; margin-top:8px;
+        }
+
+        /* ═══════════════════════════════════════
+           SECTION HEADERS
+        ═══════════════════════════════════════ */
+        .section-header {
+            position:relative; z-index:2;
+            margin-bottom:30px;
+            display:flex; align-items:flex-end; justify-content:space-between;
+            flex-wrap:wrap; gap:16px;
+        }
+        .section-header h2 {
+            font-family:'Cinzel',serif;
+            font-size:1.8rem; font-weight:900;
+        }
+        .section-header h2 .hl {
+            background:linear-gradient(135deg,var(--gold),#FFA500);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .section-header p { color:var(--text-muted); font-size:.9rem; margin-top:4px; }
+
+        /* ═══════════════════════════════════════
+           PROMOTIONS GRID
+        ═══════════════════════════════════════ */
+        .promos-grid {
+            position:relative; z-index:2;
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:24px;
+            margin-bottom:60px;
+        }
+        .promo-card {
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:var(--radius);
+            overflow:hidden;
+            transition:var(--transition);
+            backdrop-filter:blur(10px);
+            display:flex; flex-direction:column;
+        }
+        .promo-card:hover {
+            transform:translateY(-6px);
+            border-color:var(--gold);
+            box-shadow:0 20px 50px rgba(0,0,0,.4), 0 0 20px rgba(255,215,0,.1);
+        }
+        .promo-banner {
+            position:relative; height:160px; overflow:hidden;
+        }
+        .promo-banner img { width:100%; height:100%; object-fit:cover; transition:transform .5s; }
+        .promo-card:hover .promo-banner img { transform:scale(1.05); }
+        .promo-badge {
+            position:absolute; top:12px; left:12px;
+            padding:4px 12px; border-radius:50px;
+            font-size:.68rem; font-weight:800;
+            text-transform:uppercase; letter-spacing:.5px;
+        }
+        .pb-hot { background:var(--accent); color:#fff; }
+        .pb-new { background:var(--green); color:#000; }
+        .pb-vip { background:var(--gold); color:#000; }
+        .pb-limited { background:var(--purple); color:#fff; }
+        .promo-timer {
+            position:absolute; bottom:10px; right:10px;
+            padding:4px 10px;
+            background:rgba(0,0,0,.7);
+            backdrop-filter:blur(8px);
+            border-radius:6px;
+            font-family:'Orbitron',sans-serif;
+            font-size:.72rem; font-weight:700;
+            color:var(--accent);
+            display:flex; align-items:center; gap:5px;
+        }
+        .promo-body { padding:22px; flex:1; display:flex; flex-direction:column; }
+        .promo-body h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
+        .promo-body .desc { font-size:.85rem; color:var(--text-muted); line-height:1.6; margin-bottom:16px; flex:1; }
+        .promo-details {
+            display:grid; grid-template-columns:1fr 1fr; gap:10px;
+            margin-bottom:16px;
+        }
+        .pd-item { padding:8px 10px; background:rgba(255,255,255,.02); border-radius:8px; }
+        .pd-item .lbl { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; }
+        .pd-item .val { font-size:.85rem; font-weight:700; color:var(--gold); }
+        .promo-footer { display:flex; gap:10px; }
+        .promo-footer .btn { flex:1; padding:10px 14px; font-size:.82rem; }
+
+        /* ═══════════════════════════════════════
+           VIP LOYALTY PROGRAM
+        ═══════════════════════════════════════ */
+        .vip-section {
+            position:relative; z-index:2;
+            margin-bottom:60px;
+        }
+        .vip-tiers {
+            display:grid;
+            grid-template-columns:repeat(5,1fr);
+            gap:16px;
+        }
+        .vip-card {
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:var(--radius);
+            padding:28px 18px;
+            text-align:center;
+            transition:var(--transition);
+            position:relative;
+            overflow:hidden;
+        }
+        .vip-card:hover { transform:translateY(-6px); }
+        .vip-card.current {
+            border-color:var(--gold);
+            box-shadow:0 0 30px rgba(255,215,0,.15);
+        }
+        .vip-card.current::before {
+            content:'YOUR TIER';
+            position:absolute; top:10px; right:-28px;
+            background:var(--gold); color:#000;
+            font-size:.55rem; font-weight:900;
+            padding:3px 30px;
+            transform:rotate(45deg);
+            letter-spacing:1px;
+        }
+        .vip-icon { font-size:2.5rem; margin-bottom:10px; }
+        .vip-card h3 { font-size:1rem; font-weight:800; margin-bottom:4px; }
+        .vip-card .range { font-size:.72rem; color:var(--text-muted); margin-bottom:14px; }
+        .vip-perks { text-align:left; }
+        .vip-perks li {
+            font-size:.78rem; color:var(--text-muted);
+            padding:5px 0;
+            display:flex; align-items:center; gap:6px;
+            border-bottom:1px solid rgba(255,255,255,.03);
+        }
+        .vip-perks li:last-child { border:none; }
+        .vip-perks li i { color:var(--green); font-size:.7rem; }
+        .vip-card.bronze h3 { color:var(--bronze); }
+        .vip-card.silver h3 { color:var(--silver); }
+        .vip-card.gold h3 { color:var(--gold); }
+        .vip-card.platinum h3 { color:var(--cyan); }
+        .vip-card.diamond h3 { color:var(--purple); }
+
+        /* ═══════════════════════════════════════
+           REFERRAL PROGRAM
+        ═══════════════════════════════════════ */
+        .referral-section {
+            position:relative; z-index:2;
+            margin-bottom:60px;
+        }
+        .referral-card {
+            background:linear-gradient(135deg, var(--primary), var(--blue));
+            border:1px solid var(--glass-border);
+            border-radius:24px;
+            padding:40px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:40px;
+            align-items:center;
+            overflow:hidden;
+            position:relative;
+        }
+        .referral-card::before {
+            content:''; position:absolute; top:-50%; right:-20%;
+            width:500px; height:500px;
+            background:radial-gradient(circle, rgba(255,215,0,.1), transparent 60%);
+            pointer-events:none;
+        }
+        .referral-left { position:relative; z-index:1; }
+        .referral-left h2 {
+            font-family:'Cinzel',serif;
+            font-size:2rem; font-weight:900;
+            margin-bottom:12px; line-height:1.2;
+        }
+        .referral-left h2 .hl {
+            background:linear-gradient(135deg,var(--gold),#FFA500);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .referral-left p { color:var(--text-muted); font-size:.92rem; margin-bottom:24px; line-height:1.7; }
+        .referral-steps { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+        .rs-item { display:flex; align-items:center; gap:12px; }
+        .rs-num {
+            width:32px; height:32px; border-radius:50%;
+            background:var(--gold); color:#000;
+            display:flex; align-items:center; justify-content:center;
+            font-family:'Orbitron',sans-serif;
+            font-size:.8rem; font-weight:900; flex-shrink:0;
+        }
+        .rs-text { font-size:.88rem; }
+        .rs-text b { color:var(--gold); }
+
+        .referral-right {
+            position:relative; z-index:1;
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:var(--radius);
+            padding:28px;
+        }
+        .referral-right h3 {
+            font-size:1rem; font-weight:700; margin-bottom:16px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .referral-right h3 i { color:var(--gold); }
+        .referral-link-box {
+            display:flex; gap:8px; margin-bottom:16px;
+        }
+        .referral-link-box input {
+            flex:1; padding:12px 16px;
+            background:rgba(0,0,0,.3);
+            border:1px solid var(--glass-border);
+            border-radius:10px; color:var(--gold);
+            font-family:'Orbitron',sans-serif;
+            font-size:.82rem; font-weight:700;
+            outline:none;
+        }
+        .referral-link-box button {
+            padding:12px 18px;
+            background:var(--gold); color:#000;
+            border:none; border-radius:10px;
+            font-weight:700; cursor:pointer;
+            transition:var(--transition);
+        }
+        .referral-link-box button:hover { box-shadow:0 0 20px rgba(255,215,0,.4); }
+        .referral-stats {
+            display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;
+        }
+        .ref-stat {
+            text-align:center; padding:12px;
+            background:rgba(255,255,255,.03);
+            border-radius:10px;
+        }
+        .ref-stat .val {
+            font-family:'Orbitron',sans-serif;
+            font-size:1.1rem; font-weight:700; color:var(--green);
+        }
+        .ref-stat .lbl { font-size:.68rem; color:var(--text-muted); margin-top:2px; }
+        .share-buttons { display:flex; gap:8px; margin-top:16px; }
+        .share-btn {
+            flex:1; padding:10px;
+            border-radius:10px; border:none;
+            font-size:.82rem; font-weight:700;
+            cursor:pointer; transition:var(--transition);
+            display:flex; align-items:center; justify-content:center; gap:6px;
+            color:#fff;
+        }
+        .share-btn:hover { transform:translateY(-2px); }
+        .sb-wa { background:#25D366; }
+        .sb-fb { background:#1877F2; }
+        .sb-tw { background:#1DA1F2; }
+        .sb-tg { background:#0088cc; }
+
+        /* ═══════════════════════════════════════
+           DAILY REWARDS
+        ═══════════════════════════════════════ */
+        .daily-section {
+            position:relative; z-index:2;
+            margin-bottom:60px;
+        }
+        .daily-grid {
+            display:grid;
+            grid-template-columns:repeat(7,1fr);
+            gap:12px;
+        }
+        .daily-card {
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:14px;
+            padding:20px 12px;
+            text-align:center;
+            transition:var(--transition);
+            cursor:pointer;
+            position:relative;
+        }
+        .daily-card:hover { transform:translateY(-4px); border-color:var(--gold); }
+        .daily-card.claimed {
+            background:rgba(0,200,83,.06);
+            border-color:rgba(0,200,83,.3);
+        }
+        .daily-card.claimed::after {
+            content:'✓'; position:absolute; top:8px; right:8px;
+            width:20px; height:20px; border-radius:50%;
+            background:var(--green); color:#000;
+            display:flex; align-items:center; justify-content:center;
+            font-size:.7rem; font-weight:900;
+        }
+        .daily-card.today {
+            background:rgba(255,215,0,.08);
+            border-color:var(--gold);
+            box-shadow:0 0 20px rgba(255,215,0,.15);
+            animation:todayPulse 2s ease-in-out infinite;
+        }
+        @keyframes todayPulse {
+            0%,100% { box-shadow:0 0 20px rgba(255,215,0,.15); }
+            50% { box-shadow:0 0 35px rgba(255,215,0,.3); }
+        }
+        .daily-day {
+            font-size:.72rem; font-weight:700;
+            color:var(--text-muted);
+            text-transform:uppercase;
+            margin-bottom:8px;
+        }
+        .daily-icon { font-size:1.8rem; margin-bottom:8px; }
+        .daily-amount {
+            font-family:'Orbitron',sans-serif;
+            font-size:.85rem; font-weight:700;
+            color:var(--gold);
+        }
+        .daily-card.today .daily-amount { color:var(--green); }
+
+        /* ═══════════════════════════════════════
+           PROMO CODE SECTION
+        ═══════════════════════════════════════ */
+        .promo-code-section {
+            position:relative; z-index:2;
+            margin-bottom:60px;
+        }
+        .promo-code-card {
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:var(--radius);
+            padding:36px;
+            text-align:center;
+            backdrop-filter:blur(10px);
+            max-width:600px;
+            margin:0 auto;
+        }
+        .promo-code-card h3 {
+            font-family:'Cinzel',serif;
+            font-size:1.4rem; font-weight:900;
+            margin-bottom:8px;
+        }
+        .promo-code-card p {
+            color:var(--text-muted); font-size:.9rem;
+            margin-bottom:20px;
+        }
+        .promo-input-row {
+            display:flex; gap:10px; margin-bottom:12px;
+        }
+        .promo-input-row input {
+            flex:1; padding:14px 20px;
+            background:rgba(0,0,0,.3);
+            border:1.5px solid var(--glass-border);
+            border-radius:12px; color:var(--text);
+            font-family:'Orbitron',sans-serif;
+            font-size:1rem; font-weight:700;
+            text-align:center; letter-spacing:3px;
+            text-transform:uppercase;
+            outline:none; transition:var(--transition);
+        }
+        .promo-input-row input:focus { border-color:var(--gold); }
+        .promo-input-row button {
+            padding:14px 28px;
+            background:linear-gradient(135deg,var(--green),#00E676);
+            color:#000; border:none; border-radius:12px;
+            font-family:'Inter',sans-serif;
+            font-size:.9rem; font-weight:800;
+            cursor:pointer; transition:var(--transition);
+        }
+        .promo-input-row button:hover { transform:translateY(-2px); box-shadow:0 0 25px rgba(0,200,83,.4); }
+        .promo-result {
+            font-size:.85rem; font-weight:600;
+            min-height:24px;
+        }
+        .promo-result.success { color:var(--green); }
+        .promo-result.error { color:var(--accent); }
+
+        /* ═══════════════════════════════════════
+           TERMS ACCORDION
+        ═══════════════════════════════════════ */
+        .terms-section {
+            position:relative; z-index:2;
+            margin-bottom:60px;
+        }
+        .accordion { max-width:800px; }
+        .accordion-item {
+            background:var(--glass);
+            border:1px solid var(--glass-border);
+            border-radius:12px;
+            margin-bottom:8px;
+            overflow:hidden;
+        }
+        .accordion-header {
+            padding:16px 20px;
+            display:flex; align-items:center; justify-content:space-between;
+            cursor:pointer; transition:var(--transition);
+            font-weight:600; font-size:.92rem;
+        }
+        .accordion-header:hover { background:rgba(255,255,255,.03); }
+        .accordion-header i { color:var(--gold); transition:var(--transition); font-size:.8rem; }
+        .accordion-item.open .accordion-header i { transform:rotate(180deg); }
+        .accordion-body {
+            max-height:0; overflow:hidden;
+            transition:max-height .4s ease;
+        }
+        .accordion-item.open .accordion-body { max-height:300px; }
+        .accordion-content {
+            padding:0 20px 16px;
+            font-size:.85rem; color:var(--text-muted); line-height:1.7;
+        }
+
+        /* ═══════════════════════════════════════
+           TOAST
+        ═══════════════════════════════════════ */
+        .toast {
+            position:fixed; bottom:30px; right:30px;
+            padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px;
+            font-size:.88rem; font-weight:600; z-index:3000;
+            transform:translateY(100px); opacity:0;
+            transition:all .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+        .toast.success { background:rgba(0,200,83,.15); border:1px solid rgba(0,200,83,.3); color:var(--green); }
+        .toast.error { background:rgba(233,69,96,.15); border:1px solid rgba(233,69,96,.3); color:var(--accent); }
+
+        /* ═══════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════ */
+        .footer {
+            position:relative; z-index:2;
+            background:rgba(10,10,26,.98);
+            border-top:1px solid var(--glass-border);
+            padding:40px 0 24px; margin-top:40px;
+        }
+        .footer-bottom {
+            display:flex; justify-content:space-between; align-items:center;
+            font-size:.8rem; color:var(--text-muted); flex-wrap:wrap; gap:12px;
+        }
+        .footer-badges { display:flex; gap:12px; }
+        .footer-badges span { display:flex; align-items:center; gap:5px; padding:4px 10px; background:var(--glass); border-radius:50px; }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════ */
+        @media(max-width:1024px){
+            .welcome-content { grid-template-columns:1fr; text-align:center; }
+            .welcome-left p { margin:0 auto 24px; }
+            .welcome-features { justify-content:center; }
+            .promos-grid { grid-template-columns:repeat(2,1fr); }
+            .vip-tiers { grid-template-columns:repeat(3,1fr); }
+            .referral-card { grid-template-columns:1fr; }
+            .daily-grid { grid-template-columns:repeat(4,1fr); }
+        }
+        @media(max-width:768px){
+            .nav-links { display:none; }
+            .hamburger { display:flex; }
+            .page-header h1 { font-size:2rem; }
+            .welcome-left h2 { font-size:2rem; }
+            .welcome-content { padding:30px 20px; }
+            .promos-grid { grid-template-columns:1fr; }
+            .vip-tiers { grid-template-columns:repeat(2,1fr); }
+            .daily-grid { grid-template-columns:repeat(3,1fr); }
+            .referral-card { padding:24px; }
+            .referral-stats { grid-template-columns:1fr; }
+            .user-chip span { display:none; }
+        }
+        @media(max-width:480px){
+            .page-header h1 { font-size:1.6rem; }
+            .welcome-left h2 { font-size:1.6rem; }
+            .bonus-amount-ring { width:160px; height:160px; }
+            .bonus-amount-ring::before { width:130px; height:130px; }
+            .bonus-inner .pct { font-size:2.2rem; }
+            .vip-tiers { grid-template-columns:1fr; }
+            .daily-grid { grid-template-columns:repeat(2,1fr); }
+            .promo-input-row { flex-direction:column; }
+            .share-buttons { flex-wrap:wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-bg"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo"><i class="fas fa-crown"></i>Poker<span>Royale</span></a>
+            <ul class="nav-links">
+                <li><a href="lobby.html">Lobby</a></li>
+                <li><a href="tournaments.html">Tournaments</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="promotions.html" class="active">Promotions</a></li>
+                <li><a href="cashier.html">Cashier</a></li>
+            </ul>
+            <div class="nav-right">
+                <a href="cashier.html" class="wallet-pill"><i class="fas fa-wallet"></i><span class="bal">PKR 25,000</span></a>
+                <a href="profile.html" class="user-chip">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="Avatar">
+                    <span>Ali K.</span>
+                </a>
+                <div class="hamburger"><span></span><span></span><span></span></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <div class="header-tag"><i class="fas fa-gift"></i> Rewards & Bonuses</div>
+            <h1>Promotions & <span class="hl">Bonuses</span></h1>
+            <p>Claim massive bonuses, join the VIP club, and earn rewards every single day!</p>
+        </div>
+
+        <!-- WELCOME BONUS HERO -->
+        <div class="welcome-hero">
+            <div class="welcome-hero-bg"></div>
+            <div class="welcome-content">
+                <div class="welcome-left">
+                    <div class="badge"><i class="fas fa-star"></i> Exclusive Offer</div>
+                    <h2>Get <span class="gold">200% Bonus</span><br>On First Deposit!</h2>
+                    <p>Start your poker journey with a massive bankroll boost. Deposit PKR 5,000 and play with PKR 15,000 instantly. No hidden terms, real money, real winnings!</p>
+                    <div class="welcome-features">
+                        <div class="wf-item"><i class="fas fa-check-circle"></i> Instant Credit</div>
+                        <div class="wf-item"><i class="fas fa-check-circle"></i> No Wagering Lock</div>
+                        <div class="wf-item"><i class="fas fa-check-circle"></i> Withdraw Anytime</div>
+                    </div>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:inherit;">
+                        <a href="cashier.html" class="btn btn-gold"><i class="fas fa-wallet"></i> Deposit & Claim</a>
+                        <button class="btn btn-glass" onclick="document.querySelector('.terms-section').scrollIntoView({behavior:'smooth'})"><i class="fas fa-info-circle"></i> T&Cs Apply</button>
+                    </div>
+                </div>
+                <div class="welcome-right">
+                    <div class="bonus-amount-ring">
+                        <div class="bonus-inner">
+                            <div class="lbl">Up To</div>
+                            <div class="pct">200%</div>
+                            <div class="max">PKR 50,000</div>
+                        </div>
+                    </div>
+                    <p class="terms">*Min deposit PKR 1,000. Valid for new players only.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE PROMOTIONS -->
+        <div class="section-header">
+            <div>
+                <h2>Active <span class="hl">Promotions</span></h2>
+                <p>Limited-time offers — claim before they expire!</p>
+            </div>
+        </div>
+
+        <div class="promos-grid">
+            <!-- Promo 1 -->
+            <div class="promo-card">
+                <div class="promo-banner">
+                    <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&q=80" alt="Promo">
+                    <span class="promo-badge pb-hot"><i class="fas fa-fire"></i> HOT</span>
+                    <span class="promo-timer"><i class="fas fa-clock"></i> 2d 14h</span>
+                </div>
+                <div class="promo-body">
+                    <h3>Weekend Reload Bonus</h3>
+                    <p class="desc">Get 100% bonus on every deposit made during Friday-Sunday. Stack up your chips for the big weekend tournaments!</p>
+                    <div class="promo-details">
+                        <div class="pd-item"><div class="lbl">Bonus</div><div class="val">100%</div></div>
+                        <div class="pd-item"><div class="lbl">Max</div><div class="val">PKR 25K</div></div>
+                        <div class="pd-item"><div class="lbl">Min Deposit</div><div class="val">PKR 1K</div></div>
+                        <div class="pd-item"><div class="lbl">Wagering</div><div class="val">5x</div></div>
+                    </div>
+                    <div class="promo-footer">
+                        <a href="cashier.html" class="btn btn-accent">Claim Now</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo 2 -->
+            <div class="promo-card">
+                <div class="promo-banner">
+                    <img src="https://images.unsplash.com/photo-1541278107931-e006523892df?w=600&q=80" alt="Promo">
+                    <span class="promo-badge pb-new"><i class="fas fa-bolt"></i> NEW</span>
+                    <span class="promo-timer"><i class="fas fa-clock"></i> 5d 08h</span>
+                </div>
+                <div class="promo-body">
+                    <h3>Cashback Tuesdays</h3>
+                    <p class="desc">Lost at the tables? Get 15% cashback on your net losses every Tuesday. Credited automatically to your wallet!</p>
+                    <div class="promo-details">
+                        <div class="pd-item"><div class="lbl">Cashback</div><div class="val">15%</div></div>
+                        <div class="pd-item"><div class="lbl">Max</div><div class="val">PKR 10K</div></div>
+                        <div class="pd-item"><div class="lbl">Min Loss</div><div class="val">PKR 500</div></div>
+                        <div class="pd-item"><div class="lbl">Wagering</div><div class="val">1x</div></div>
+                    </div>
+                    <div class="promo-footer">
+                        <a href="cashier.html" class="btn btn-accent">Learn More</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo 3 -->
+            <div class="promo-card">
+                <div class="promo-banner">
+                    <img src="https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=600&q=80" alt="Promo">
+                    <span class="promo-badge pb-vip"><i class="fas fa-crown"></i> VIP</span>
+                    <span class="promo-timer"><i class="fas fa-infinity"></i> Ongoing</span>
+                </div>
+                <div class="promo-body">
+                    <h3>High Roller Rakeback</h3>
+                    <p class="desc">VIP players earn up to 40% rakeback on all cash game hands played. The more you play, the more you earn back!</p>
+                    <div class="promo-details">
+                        <div class="pd-item"><div class="lbl">Rakeback</div><div class="val">Up to 40%</div></div>
+                        <div class="pd-item"><div class="lbl">Payout</div><div class="val">Weekly</div></div>
+                        <div class="pd-item"><div class="lbl">Min VIP</div><div class="val">Gold</div></div>
+                        <div class="pd-item"><div class="lbl">Games</div><div class="val">All</div></div>
+                    </div>
+                    <div class="promo-footer">
+                        <a href="profile.html" class="btn btn-gold">Check VIP Status</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo 4 -->
+            <div class="promo-card">
+                <div class="promo-banner">
+                    <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&q=80" alt="Promo">
+                    <span class="promo-badge pb-limited"><i class="fas fa-hourglass-half"></i> LIMITED</span>
+                    <span class="promo-timer"><i class="fas fa-clock"></i> 1d 03h</span>
+                </div>
+                <div class="promo-body">
+                    <h3>Freeroll Festival</h3>
+                    <p class="desc">Play 10 freeroll tournaments this week with PKR 500,000 total prize pool. No deposit required to enter!</p>
+                    <div class="promo-details">
+                        <div class="pd-item"><div class="lbl">Prize Pool</div><div class="val">PKR 500K</div></div>
+                        <div class="pd-item"><div class="lbl">Buy-in</div><div class="val">FREE</div></div>
+                        <div class="pd-item"><div class="lbl">Events</div><div class="val">10</div></div>
+                        <div class="pd-item"><div class="lbl">Seats</div><div class="val">2000</div></div>
+                    </div>
+                    <div class="promo-footer">
+                        <a href="tournaments.html" class="btn btn-accent">Join Free</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo 5 -->
+            <div class="promo-card">
+                <div class="promo-banner">
+                    <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80" alt="Promo">
+                    <span class="promo-badge pb-new"><i class="fas fa-star"></i> NEW</span>
+                    <span class="promo-timer"><i class="fas fa-clock"></i> 12d 06h</span>
+                </div>
+                <div class="promo-body">
+                    <h3>EasyPaisa First Deposit</h3>
+                    <p class="desc">Make your first deposit via EasyPaisa and get an extra PKR 2,000 bonus on top of the welcome offer!</p>
+                    <div class="promo-details">
+                        <div class="pd-item"><div class="lbl">Extra Bonus</div><div class="val">PKR 2K</div></div>
+                        <div class="pd-item"><div class="lbl">Method</div><div class="val">EasyPaisa</div></div>
+                        <div class="pd-item"><div class="lbl">Min Deposit</div><div class="val">PKR 500</div></div>
+                        <div class="pd-item"><div class="lbl">Wagering</div><div class="val">3x</div></div>
+                    </div>
+                    <div class="promo-footer">
+                        <a href="cashier.html" class="btn btn-accent">Deposit Now</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo 6 -->
+            <div class="promo-card">
+                <div class="promo-banner">
+                    <img src="https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=600&q=80" alt="Promo">
+                    <span class="promo-badge pb-hot"><i class="fas fa-fire"></i> HOT</span>
+                    <span class="promo-timer"><i class="fas fa-infinity"></i> Ongoing</span>
+                </div>
+                <div class="promo-body">
+                    <h3>Bad Beat Jackpot</h3>
+                    <p class="desc">Lose with a full house or better? Win a share of the PKR 2,000,000 Bad Beat Jackpot! Auto-qualified on all tables.</p>
+                    <div class="promo-details">
+                        <div class="pd-item"><div class="lbl">Jackpot</div><div class="val">PKR 2M</div></div>
+                        <div class="pd-item"><div class="lbl">Qualify</div><div class="val">Full House+</div></div>
+                        <div class="pd-item"><div class="lbl">Tables</div><div class="val">All</div></div>
+                        <div class="pd-item"><div class="lbl">Cost</div><div class="val">PKR 1/hand</div></div>
+                    </div>
+                    <div class="promo-footer">
+                        <a href="lobby.html" class="btn btn-accent">Play Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIP LOYALTY PROGRAM -->
+        <div class="vip-section">
+            <div class="section-header">
+                <div>
+                    <h2>VIP <span class="hl">Loyalty Program</span></h2>
+                    <p>Play more, earn more. Climb the tiers and unlock exclusive rewards!</p>
+                </div>
+            </div>
+
+            <div class="vip-tiers">
+                <div class="vip-card bronze">
+                    <div class="vip-icon">🥉</div>
+                    <h3>Bronze</h3>
+                    <div class="range">0 - 5,000 Points</div>
+                    <ul class="vip-perks">
+                        <li><i class="fas fa-check"></i> 5% Rakeback</li>
+                        <li><i class="fas fa-check"></i> Weekly Freerolls</li>
+                        <li><i class="fas fa-check"></i> Birthday Bonus</li>
+                    </ul>
+                </div>
+                <div class="vip-card silver">
+                    <div class="vip-icon">🥈</div>
+                    <h3>Silver</h3>
+                    <div class="range">5,001 - 15,000 Points</div>
+                    <ul class="vip-perks">
+                        <li><i class="fas fa-check"></i> 10% Rakeback</li>
+                        <li><i class="fas fa-check"></i> Priority Support</li>
+                        <li><i class="fas fa-check"></i> Monthly Cashback</li>
+                        <li><i class="fas fa-check"></i> Free Tournament Tickets</li>
+                    </ul>
+                </div>
+                <div class="vip-card gold current">
+                    <div class="vip-icon">🥇</div>
+                    <h3>Gold</h3>
+                    <div class="range">15,001 - 50,000 Points</div>
+                    <ul class="vip-perks">
+                        <li><i class="fas fa-check"></i> 20% Rakeback</li>
+                        <li><i class="fas fa-check"></i> Personal Manager</li>
+                        <li><i class="fas fa-check"></i> Exclusive Promos</li>
+                        <li><i class="fas fa-check"></i> Fast Withdrawals</li>
+                    </ul>
+                </div>
+                <div class="vip-card platinum">
+                    <div class="vip-icon">💎</div>
+                    <h3>Platinum</h3>
+                    <div class="range">50,001 - 150,000 Points</div>
+                    <ul class="vip-perks">
+                        <li><i class="fas fa-check"></i> 30% Rakeback</li>
+                        <li><i class="fas fa-check"></i> VIP Events</li>
+                        <li><i class="fas fa-check"></i> Higher Limits</li>
+                        <li><i class="fas fa-check"></i> Luxury Gifts</li>
+                    </ul>
+                </div>
+                <div class="vip-card diamond">
+                    <div class="vip-icon">👑</div>
+                    <h3>Diamond</h3>
+                    <div class="range">150,000+ Points</div>
+                    <ul class="vip-perks">
+                        <li><i class="fas fa-check"></i> 40% Rakeback</li>
+                        <li><i class="fas fa-check"></i> Private Tables</li>
+                        <li><i class="fas fa-check"></i> Unlimited Everything</li>
+                        <li><i class="fas fa-check"></i> International Trips</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- REFERRAL PROGRAM -->
+        <div class="referral-section">
+            <div class="section-header">
+                <div>
+                    <h2>Refer & <span class="hl">Earn</span></h2>
+                    <p>Invite friends and earn PKR 1,000 for every friend who deposits!</p>
+                </div>
+            </div>
+
+            <div class="referral-card">
+                <div class="referral-left">
+                    <h2>Earn <span class="hl">PKR 1,000</span><br>Per Friend Referred!</h2>
+                    <p>Share your unique referral link with friends. When they sign up and make their first deposit, you both get rewarded instantly!</p>
+                    <div class="referral-steps">
+                        <div class="rs-item"><div class="rs-num">1</div><div class="rs-text"><b>Share</b> your unique referral link</div></div>
+                        <div class="rs-item"><div class="rs-num">2</div><div class="rs-text">Friend <b>signs up</b> & makes first deposit</div></div>
+                        <div class="rs-item"><div class="rs-num">3</div><div class="rs-text">You both receive <b>PKR 1,000</b> bonus!</div></div>
+                    </div>
+                </div>
+                <div class="referral-right">
+                    <h3><i class="fas fa-link"></i> Your Referral Link</h3>
+                    <div class="referral-link-box">
+                        <input type="text" value="pokerroyale.com/ref/ALI2024" id="refLink" readonly>
+                        <button onclick="copyRefLink()"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                    <div class="referral-stats">
+                        <div class="ref-stat"><div class="val">23</div><div class="lbl">Friends Referred</div></div>
+                        <div class="ref-stat"><div class="val">PKR 18K</div><div class="lbl">Total Earned</div></div>
+                        <div class="ref-stat"><div class="val">PKR 5K</div><div class="lbl">Pending</div></div>
+                    </div>
+                    <div class="share-buttons">
+                        <button class="share-btn sb-wa"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                        <button class="share-btn sb-fb"><i class="fab fa-facebook-f"></i> Facebook</button>
+                        <button class="share-btn sb-tw"><i class="fab fa-twitter"></i> Twitter</button>
+                        <button class="share-btn sb-tg"><i class="fab fa-telegram"></i> Telegram</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAILY REWARDS -->
+        <div class="daily-section">
+            <div class="section-header">
+                <div>
+                    <h2>Daily <span class="hl">Login Rewards</span></h2>
+                    <p>Log in every day to claim increasing streak bonuses!</p>
+                </div>
+            </div>
+
+            <div class="daily-grid">
+                <div class="daily-card claimed"><div class="daily-day">Mon</div><div class="daily-icon">🪙</div><div class="daily-amount">PKR 100</div></div>
+                <div class="daily-card claimed"><div class="daily-day">Tue</div><div class="daily-icon">🪙</div><div class="daily-amount">PKR 200</div></div>
+                <div class="daily-card claimed"><div class="daily-day">Wed</div><div class="daily-icon">💰</div><div class="daily-amount">PKR 300</div></div>
+                <div class="daily-card today" onclick="claimDaily()"><div class="daily-day">Thu</div><div class="daily-icon">🎁</div><div class="daily-amount">PKR 500</div></div>
+                <div class="daily-card"><div class="daily-day">Fri</div><div class="daily-icon">💎</div><div class="daily-amount">PKR 750</div></div>
+                <div class="daily-card"><div class="daily-day">Sat</div><div class="daily-icon">🏆</div><div class="daily-amount">PKR 1K</div></div>
+                <div class="daily-card"><div class="daily-day">Sun</div><div class="daily-icon">👑</div><div class="daily-amount">PKR 2K</div></div>
+            </div>
+        </div>
+
+        <!-- PROMO CODE -->
+        <div class="promo-code-section">
+            <div class="section-header" style="justify-content:center;text-align:center;">
+                <div>
+                    <h2>Have a <span class="hl">Promo Code</span>?</h2>
+                    <p>Enter your code below to unlock exclusive bonuses</p>
+                </div>
+            </div>
+
+            <div class="promo-code-card">
+                <h3>🎟️ Redeem Promo Code</h3>
+                <p>Got a special code from an event or promotion? Enter it here!</p>
+                <div class="promo-input-row">
+                    <input type="text" id="promoCodeInput" placeholder="ENTER CODE" maxlength="20">
+                    <button onclick="redeemPromo()"><i class="fas fa-check"></i> Redeem</button>
+                </div>
+                <div class="promo-result" id="promoResult"></div>
+            </div>
+        </div>
+
+        <!-- TERMS ACCORDION -->
+        <div class="terms-section">
+            <div class="section-header">
+                <div>
+                    <h2>Bonus <span class="hl">Terms & Conditions</span></h2>
+                    <p>Important information about all promotions</p>
+                </div>
+            </div>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>How do I claim the Welcome Bonus?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="accordion-content">Simply create a new account, make your first deposit of at least PKR 1,000 via any payment method, and the 200% bonus will be automatically credited to your bonus balance. No promo code required.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>What are the wagering requirements?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="accordion-content">Most bonuses have a 5x wagering requirement, meaning you need to generate 5x the bonus amount in rake before the bonus converts to real cash. For example, a PKR 10,000 bonus requires PKR 50,000 in rake. VIP players enjoy reduced wagering.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>Can I withdraw bonus funds?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="accordion-content">Bonus funds cannot be withdrawn directly. They must first be converted to real balance by meeting the wagering requirements. Once converted, you can withdraw freely via EasyPaisa, JazzCash, or bank transfer.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>Do bonuses expire?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="accordion-content">Yes, most bonuses expire 30 days after being claimed if the wagering requirements are not met. Daily login rewards expire after 24 hours if not claimed. VIP tier benefits reset quarterly.</div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>How does the referral program work?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="accordion-content">Share your unique referral link. When a friend signs up using your link and makes a minimum deposit of PKR 1,000, both you and your friend receive PKR 1,000 bonus each. There is no limit to how many friends you can refer!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toastBox"><i class="fas fa-check-circle"></i><span id="toastMsg">Success!</span></div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 PokerRoyale. All rights reserved. 18+ Only.</p>
+                <div class="footer-badges">
+                    <span><i class="fas fa-shield-halved" style="color:var(--green)"></i> SSL</span>
+                    <span><i class="fas fa-certificate" style="color:var(--gold)"></i> RNG Certified</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ─── TOAST ───
+        function showToast(msg, type='success') {
+            const t = document.getElementById('toastBox');
+            document.getElementById('toastMsg').textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+        // ─── COPY REFERRAL LINK ───
+        function copyRefLink() {
+            const input = document.getElementById('refLink');
+            input.select();
+            document.execCommand('copy');
+            showToast('Referral link copied to clipboard!');
+        }
+
+        // ─── CLAIM DAILY REWARD ───
+        function claimDaily() {
+            const today = document.querySelector('.daily-card.today');
+            if (today && !today.classList.contains('claimed')) {
+                today.classList.add('claimed');
+                today.classList.remove('today');
+                showToast('PKR 500 daily reward claimed! 🎉');
+            }
+        }
+
+        // ─── REDEEM PROMO CODE ───
+        function redeemPromo() {
+            const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+            const result = document.getElementById('promoResult');
+
+            if (!code) {
+                result.className = 'promo-result error';
+                result.textContent = 'Please enter a promo code.';
+                return;
+            }
+
+            const validCodes = {
+                'WELCOME200': '200% Welcome Bonus activated! PKR 50,000 max.',
+                'POKER50': 'PKR 500 free chips added to your account!',
+                'VIPBOOST': '2x Loyalty Points for 7 days activated!',
+                'EASYPAISA': 'PKR 2,000 EasyPaisa bonus credited!',
+                'FREEROLL': '5 Free Tournament Tickets added!'
+            };
+
+            if (validCodes[code]) {
+                result.className = 'promo-result success';
+                result.innerHTML = `<i class="fas fa-check-circle"></i> ${validCodes[code]}`;
+                showToast('Promo code redeemed successfully! 🎉');
+            } else {
+                result.className = 'promo-result error';
+                result.innerHTML = `<i class="fas fa-times-circle"></i> Invalid or expired promo code.`;
+                showToast('Invalid promo code', 'error');
+            }
+        }
+
+        // Enter key for promo code
+        document.getElementById('promoCodeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') redeemPromo();
+        });
+
+        // ─── ACCORDION ───
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        }
+
+        // ─── PROMO COUNTDOWN TIMERS ───
+        function startPromoTimers() {
+            document.querySelectorAll('.promo-timer').forEach(timer => {
+                const text = timer.textContent;
+                const match = text.match(/(\d+)d\s+(\d+)h/);
+                if (!match) return;
+
+                let totalSec = parseInt(match[1]) * 86400 + parseInt(match[2]) * 3600;
+
+                setInterval(() => {
+                    if (totalSec <= 0) return;
+                    totalSec--;
+                    const d = Math.floor(totalSec / 86400);
+                    const h = Math.floor((totalSec % 86400) / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    timer.innerHTML = `<i class="fas fa-clock"></i> ${d}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
+                }, 1000);
+            });
+        }
+
+        startPromoTimers();
+
+        // ─── SCROLL REVEAL ───
+        const revealEls = document.querySelectorAll('.promo-card, .vip-card, .daily-card, .referral-card, .promo-code-card, .accordion-item');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, i * 60);
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        revealEls.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s cubic-bezier(0.4,0,0.2,1)';
+            revealObserver.observe(el);
+        });
+
+        // ─── SHARE BUTTONS ───
+        document.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const link = document.getElementById('refLink').value;
+                const text = 'Join me on PokerRoyale and get PKR 1,000 bonus! 🃏';
+
+                if (this.classList.contains('sb-wa')) {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + link)}`, '_blank');
+                } else if (this.classList.contains('sb-fb')) {
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
+                } else if (this.classList.contains('sb-tw')) {
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`, '_blank');
+                } else if (this.classList.contains('sb-tg')) {
+                    window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`, '_blank');
+                }
+            });
+        });
+
+        console.log('🎁 PokerRoyale — Promotions Page Loaded');
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournaments — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+        }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.red { background:rgba(233,69,96,.15); color:var(--accent); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .ms-icon.purple { background:rgba(123,47,247,.15); color:var(--purple); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.25rem; font-weight:900; margin-top:2px; }
+
+        /* Toolbar */
+        .toolbar {
+            display:flex; align-items:center; justify-content:space-between; gap:16px;
+            margin-bottom:20px; flex-wrap:wrap;
+        }
+        .toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .toolbar-right { display:flex; align-items:center; gap:10px; }
+
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            padding:10px 14px 10px 36px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem;
+            outline:none; width:220px;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+
+        .filter-select {
+            padding:10px 32px 10px 14px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem;
+            outline:none; cursor:pointer; appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-warning { background:var(--warning); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+        .btn:disabled { opacity:.55; cursor:not-allowed; }
+
+        /* Featured banner */
+        .featured-banner {
+            background:linear-gradient(135deg, rgba(233,69,96,.15), rgba(123,47,247,.12));
+            border:1px solid rgba(255,215,0,.25);
+            border-radius:var(--radius);
+            padding:20px 24px;
+            margin-bottom:20px;
+            display:grid;
+            grid-template-columns:1.5fr auto auto;
+            gap:20px;
+            align-items:center;
+        }
+        .fb-info h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; margin-bottom:4px; }
+        .fb-info p { font-size:.85rem; color:var(--text-muted); }
+        .fb-prize {
+            text-align:center;
+        }
+        .fb-prize .amt {
+            font-family:'Orbitron',sans-serif; font-size:1.8rem; font-weight:900; color:var(--gold);
+        }
+        .fb-prize .lbl { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; }
+        .fb-timer { display:flex; gap:8px; }
+        .fb-timer .tb {
+            background:rgba(0,0,0,.3); border:1px solid var(--border); border-radius:8px;
+            padding:8px 12px; text-align:center; min-width:54px;
+        }
+        .fb-timer .tb .n { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:var(--accent); }
+        .fb-timer .tb .l { font-size:.6rem; color:var(--text-muted); text-transform:uppercase; }
+
+        /* Table */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 14px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none;
+        }
+        .admin-table th:hover { color:var(--gold); }
+        .admin-table td {
+            padding:14px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .t-name { font-weight:700; }
+        .t-sub { font-size:.72rem; color:var(--text-muted); margin-top:2px; }
+
+        .status-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.registration { background:rgba(6,182,212,.12); color:var(--cyan); }
+        .status-badge.running { background:rgba(233,69,96,.12); color:var(--accent); }
+        .status-badge.paused { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.completed { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.cancelled { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-badge .dot {
+            width:6px; height:6px; border-radius:50%; background:currentColor;
+            animation:pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        .progress-mini {
+            width:100px; height:5px; background:rgba(255,255,255,.06); border-radius:5px; overflow:hidden; margin-top:4px;
+        }
+        .progress-fill { height:100%; border-radius:5px; background:linear-gradient(90deg,var(--green),var(--gold)); }
+
+        .action-btns { display:flex; gap:4px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+        .action-btn.edit:hover { background:rgba(255,215,0,.15); color:var(--gold); border-color:var(--gold); }
+        .action-btn.pause:hover { background:rgba(245,158,11,.15); color:var(--warning); border-color:var(--warning); }
+        .action-btn.play:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+        .action-btn.cancel:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.msg:hover { background:rgba(6,182,212,.15); color:var(--cyan); border-color:var(--cyan); }
+
+        .pagination-bar {
+            padding:14px 20px; border-top:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .page-info { font-size:.82rem; color:var(--text-muted); }
+        .page-btns { display:flex; gap:4px; }
+        .page-btn {
+            min-width:36px; height:36px; padding:0 10px; border-radius:8px;
+            background:var(--glass); border:1px solid var(--border); color:var(--text-muted);
+            font-size:.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .page-btn:hover { border-color:var(--primary); color:var(--text); }
+        .page-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .page-btn.disabled { opacity:.4; pointer-events:none; }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:720px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; background:#1a1f2e; z-index:2;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+            position:sticky; bottom:0; background:#1a1f2e;
+        }
+
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-group label .req { color:var(--accent); }
+        .form-input, .form-select, .form-textarea {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--primary); }
+        .form-select { cursor:pointer; }
+        .form-select option { background:var(--card-bg); }
+        .form-textarea { min-height:80px; resize:vertical; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        .input-prefix { display:flex; align-items:center; }
+        .input-prefix .prefix {
+            padding:11px 12px; background:rgba(255,255,255,.04); border:1.5px solid var(--border);
+            border-right:none; border-radius:10px 0 0 10px; color:var(--gold);
+            font-family:'Orbitron',sans-serif; font-weight:700; font-size:.85rem;
+        }
+        .input-prefix .form-input { border-radius:0 10px 10px 0; }
+        .form-hint { font-size:.72rem; color:var(--text-muted); margin-top:4px; }
+
+        .section-title {
+            font-size:.9rem; font-weight:700; color:var(--gold); margin:20px 0 12px;
+            padding-bottom:8px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:8px;
+        }
+
+        .detail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+        .detail-item { padding:12px; background:var(--glass); border:1px solid var(--border); border-radius:10px; }
+        .detail-item .lbl { font-size:.68rem; color:var(--text-muted); text-transform:uppercase; }
+        .detail-item .val { font-size:.9rem; font-weight:600; margin-top:3px; }
+        .detail-item .val.big { font-family:'Orbitron',sans-serif; font-size:1.15rem; color:var(--gold); }
+
+        .structure-table { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:8px; }
+        .structure-table th {
+            padding:8px 10px; text-align:left; font-size:.68rem; color:var(--text-muted);
+            text-transform:uppercase; background:rgba(255,255,255,.02); border-bottom:1px solid var(--border);
+        }
+        .structure-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.03); }
+
+        .empty-state { text-align:center; padding:50px 20px; display:none; }
+        .empty-state.show { display:block; }
+        .empty-state .icon { font-size:2.5rem; opacity:.3; margin-bottom:10px; }
+        .empty-state h3 { font-size:1.1rem; margin-bottom:4px; }
+        .empty-state p { color:var(--text-muted); font-size:.88rem; }
+
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+            .featured-banner { grid-template-columns:1fr; text-align:center; }
+            .fb-timer { justify-content:center; }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .toolbar { flex-direction:column; align-items:stretch; }
+            .form-row, .form-row-3, .detail-grid { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .admin-table { font-size:.78rem; }
+            .admin-table th, .admin-table td { padding:10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link active"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold" id="navTourneyBadge">24</span></a>
+                <a href="hand-history.html" class="nav-link"><i class="fas fa-history"></i><span class="nav-text">Hand History</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Tournament Management</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Tournaments</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="loadTournaments()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Featured -->
+            <div class="featured-banner" id="featuredBanner">
+                <div class="fb-info">
+                    <h3 id="fbName">🏆 Sunday Million Championship</h3>
+                    <p id="fbMeta">NL Hold'em · Freezeout · 642/1000 registered · Starts soon</p>
+                </div>
+                <div class="fb-prize">
+                    <div class="amt" id="fbPrize">$50,000</div>
+                    <div class="lbl">Guaranteed Prize Pool</div>
+                </div>
+                <div class="fb-timer" id="fbTimer">
+                    <div class="tb"><div class="n" id="cdD">02</div><div class="l">Days</div></div>
+                    <div class="tb"><div class="n" id="cdH">14</div><div class="l">Hrs</div></div>
+                    <div class="tb"><div class="n" id="cdM">36</div><div class="l">Min</div></div>
+                    <div class="tb"><div class="n" id="cdS">45</div><div class="l">Sec</div></div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat active-filter" data-status="all" onclick="filterByStat('all', this)">
+                    <div class="ms-icon blue"><i class="fas fa-trophy"></i></div>
+                    <div><div class="ms-label">Total Events</div><div class="ms-value" id="statTotal">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="registration" onclick="filterByStat('registration', this)">
+                    <div class="ms-icon cyan"><i class="fas fa-ticket"></i></div>
+                    <div><div class="ms-label">Registering</div><div class="ms-value" id="statReg" style="color:var(--cyan)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="running" onclick="filterByStat('running', this)">
+                    <div class="ms-icon red"><i class="fas fa-fire"></i></div>
+                    <div><div class="ms-label">Running Live</div><div class="ms-value" id="statRun" style="color:var(--accent)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="completed" onclick="filterByStat('completed', this)">
+                    <div class="ms-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div><div class="ms-label">Completed</div><div class="ms-value" id="statDone" style="color:var(--green)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-coins"></i></div>
+                    <div><div class="ms-label">Prize Pool (Active)</div><div class="ms-value" id="statPrize" style="color:var(--gold)">$0</div></div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search tournaments...">
+                    </div>
+                    <select class="filter-select" id="filterType">
+                        <option value="">All Types</option>
+                        <option value="freezeout">Freezeout</option>
+                        <option value="rebuy">Rebuy</option>
+                        <option value="reentry">Re-entry</option>
+                        <option value="bounty">Bounty / PKO</option>
+                        <option value="satellite">Satellite</option>
+                        <option value="freeroll">Freeroll</option>
+                        <option value="turbo">Turbo</option>
+                    </select>
+                    <select class="filter-select" id="filterGame">
+                        <option value="">All Games</option>
+                        <option value="texas_holdem">Texas Hold'em</option>
+                        <option value="omaha">Omaha</option>
+                        <option value="short_deck">Short Deck</option>
+                    </select>
+                    <select class="filter-select" id="filterBuyin">
+                        <option value="">All Buy-ins</option>
+                        <option value="free">Free</option>
+                        <option value="low">Low ($1–$50)</option>
+                        <option value="mid">Mid ($50–$250)</option>
+                        <option value="high">High ($250+)</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
+                    <button class="btn btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i> Export</button>
+                    <button class="btn btn-gold" onclick="openCreateModal()"><i class="fas fa-plus"></i> Create Tournament</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-trophy"></i> All Tournaments <span style="color:var(--text-muted);font-weight:400;font-size:.82rem;" id="resultCount"></span></h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="admin-table" id="tourneysTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="id">ID</th>
+                                <th data-sort="name">Tournament</th>
+                                <th data-sort="type">Type</th>
+                                <th data-sort="buyin">Buy-in</th>
+                                <th data-sort="prize">Prize Pool</th>
+                                <th data-sort="players">Players</th>
+                                <th data-sort="start">Start Time</th>
+                                <th data-sort="status">Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tourneysBody"></tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">🏆</div>
+                    <h3>No tournaments found</h3>
+                    <p>Try adjusting filters or create a new event</p>
+                </div>
+                <div class="pagination-bar">
+                    <div class="page-info" id="pageInfo">Showing 0 of 0</div>
+                    <div class="page-btns" id="pageBtns"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CREATE / EDIT MODAL -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="createModalTitle"><i class="fas fa-plus-circle" style="color:var(--gold);margin-right:8px;"></i>Create Tournament</h3>
+            <button class="modal-close" onclick="closeModal('createModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId" value="">
+
+            <div class="section-title"><i class="fas fa-info-circle"></i> Basic Info</div>
+            <div class="form-group">
+                <label>Tournament Name <span class="req">*</span></label>
+                <input class="form-input" id="tName" placeholder="e.g. Sunday Million Championship">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea class="form-textarea" id="tDesc" placeholder="Short description for players..."></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Game Type</label>
+                    <select class="form-select" id="tGame">
+                        <option value="texas_holdem">Texas Hold'em</option>
+                        <option value="omaha">Pot Limit Omaha</option>
+                        <option value="omaha_hilo">Omaha Hi-Lo</option>
+                        <option value="short_deck">Short Deck</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tournament Type</label>
+                    <select class="form-select" id="tType">
+                        <option value="freezeout">Freezeout</option>
+                        <option value="rebuy">Rebuy</option>
+                        <option value="reentry">Re-entry</option>
+                        <option value="bounty">Bounty / PKO</option>
+                        <option value="satellite">Satellite</option>
+                        <option value="freeroll">Freeroll</option>
+                        <option value="turbo">Turbo</option>
+                        <option value="hyper_turbo">Hyper Turbo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-coins"></i> Buy-in & Prize</div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Buy-in Amount</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="tBuyin" type="number" value="50" min="0" step="1"></div>
+                </div>
+                <div class="form-group">
+                    <label>Entry Fee (rake)</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="tFee" type="number" value="5" min="0" step="1"></div>
+                </div>
+                <div class="form-group">
+                    <label>Guaranteed Prize</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="tPrize" type="number" value="5000" min="0" step="1"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Starting Chips</label>
+                    <input class="form-input" id="tChips" type="number" value="10000" min="1000" step="500">
+                </div>
+                <div class="form-group">
+                    <label>Level Duration (minutes)</label>
+                    <input class="form-input" id="tLevel" type="number" value="10" min="1" max="60">
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-users"></i> Players & Schedule</div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Min Players</label>
+                    <input class="form-input" id="tMinP" type="number" value="2" min="2">
+                </div>
+                <div class="form-group">
+                    <label>Max Players</label>
+                    <input class="form-input" id="tMaxP" type="number" value="1000" min="2">
+                </div>
+                <div class="form-group">
+                    <label>Late Reg (levels)</label>
+                    <input class="form-input" id="tLate" type="number" value="3" min="0" max="20">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date & Time <span class="req">*</span></label>
+                    <input class="form-input" id="tStart" type="datetime-local">
+                </div>
+                <div class="form-group">
+                    <label>Registration Ends</label>
+                    <input class="form-input" id="tRegEnd" type="datetime-local">
+                    <div class="form-hint">Leave empty = start time</div>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-layer-group"></i> Blind Structure (preview)</div>
+            <table class="structure-table">
+                <thead>
+                    <tr><th>Level</th><th>SB</th><th>BB</th><th>Ante</th><th>Duration</th></tr>
+                </thead>
+                <tbody id="blindPreview">
+                    <tr><td>1</td><td>50</td><td>100</td><td>—</td><td>10 min</td></tr>
+                    <tr><td>2</td><td>75</td><td>150</td><td>15</td><td>10 min</td></tr>
+                    <tr><td>3</td><td>100</td><td>200</td><td>25</td><td>10 min</td></tr>
+                    <tr><td>4</td><td>150</td><td>300</td><td>50</td><td>10 min</td></tr>
+                    <tr><td colspan="5" style="color:var(--text-muted);font-size:.75rem;">… continues automatically</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('createModal')">Cancel</button>
+            <button class="btn btn-gold" id="btnSaveTourney" onclick="saveTournament()">
+                <i class="fas fa-check"></i> Create Tournament
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- DETAIL / CONTROL MODAL -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-box" style="max-width:640px;">
+        <div class="modal-header">
+            <h3 id="detailTitle">Tournament Details</h3>
+            <button class="modal-close" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid" id="detailGrid"></div>
+
+            <div class="section-title"><i class="fas fa-sliders"></i> Live Control</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;" id="liveControls"></div>
+
+            <div class="form-group">
+                <label>Broadcast Message to All Players</label>
+                <div style="display:flex;gap:8px;">
+                    <input class="form-input" id="broadcastMsg" placeholder="e.g. Break in 5 minutes...">
+                    <button class="btn btn-primary" onclick="broadcastMessage()"><i class="fas fa-bullhorn"></i></button>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-list-ol"></i> Blind Structure</div>
+            <table class="structure-table">
+                <thead><tr><th>Lvl</th><th>SB</th><th>BB</th><th>Ante</th><th>Time</th></tr></thead>
+                <tbody id="detailBlinds"></tbody>
+            </table>
+        </div>
+        <div class="modal-footer" id="detailFooter"></div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  TOURNAMENTS DATA
+// ═══════════════════════════════════════
+const TOURNAMENTS = [
+    { id:1, name:'Sunday Million Championship', type:'freezeout', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:250, fee:25, prize:50000, chips:20000, players:642, max:1000, min:10, status:'registration', start:'2025-03-16T18:00', level:10, late:4, desc:'Flagship weekly event with massive guaranteed pool.' },
+    { id:2, name:'Daily Freeroll Bonanza', type:'freeroll', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:0, fee:0, prize:2500, chips:5000, players:1420, max:2000, min:50, status:'registration', start:'2025-03-15T20:00', level:8, late:2, desc:'Free entry, real prizes.' },
+    { id:3, name:'High Roller Super Stakes', type:'freezeout', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:1000, fee:50, prize:25000, chips:50000, players:88, max:150, min:20, status:'running', start:'2025-03-14T14:00', level:12, late:3, desc:'High stakes deepstack.' },
+    { id:4, name:'Omaha Knockout PKO', type:'bounty', game:'omaha', gameLabel:'PL Omaha', buyin:75, fee:7, prize:5000, chips:10000, players:310, max:500, min:20, status:'registration', start:'2025-03-15T22:00', level:8, late:5, desc:'Progressive knockout bounty.' },
+    { id:5, name:'Mega Satellite to Sunday Million', type:'satellite', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:15, fee:1.5, prize:2500, chips:7500, players:230, max:300, min:10, status:'running', start:'2025-03-14T16:00', level:6, late:2, desc:'Win a Sunday Million seat.' },
+    { id:6, name:'Midnight Hyper Turbo', type:'turbo', game:'short_deck', gameLabel:'NL Short Deck', buyin:40, fee:4, prize:1500, chips:10000, players:165, max:250, min:10, status:'registration', start:'2025-03-16T00:00', level:5, late:1, desc:'Fast blinds, quick finish.' },
+    { id:7, name:'Weekly Grand Finale', type:'freezeout', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:100, fee:10, prize:15000, chips:15000, players:480, max:800, min:20, status:'completed', start:'2025-03-09T18:00', level:10, late:3, desc:'Last week champion event.' },
+    { id:8, name:'Micro Rebuy Madness', type:'rebuy', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:5, fee:0.5, prize:1000, chips:3000, players:890, max:1500, min:30, status:'registration', start:'2025-03-15T12:00', level:8, late:6, desc:'Unlimited rebuys first hour.' },
+    { id:9, name:'VIP Invitational', type:'freezeout', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:500, fee:40, prize:20000, chips:30000, players:45, max:100, min:15, status:'paused', start:'2025-03-14T20:00', level:15, late:2, desc:'Gold VIP+ only.' },
+    { id:10, name:'Beginner Freeroll', type:'freeroll', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:0, fee:0, prize:500, chips:2000, players:2100, max:3000, min:100, status:'completed', start:'2025-03-13T10:00', level:6, late:2, desc:'New player welcome freeroll.' },
+    { id:11, name:'Omaha Hi-Lo Special', type:'reentry', game:'omaha', gameLabel:'Omaha Hi-Lo', buyin:60, fee:6, prize:4000, chips:12000, players:0, max:400, min:20, status:'registration', start:'2025-03-17T19:00', level:10, late:4, desc:'Split pot action.' },
+    { id:12, name:'Turbo Bounty Hunter', type:'bounty', game:'texas_holdem', gameLabel:"NL Hold'em", buyin:30, fee:3, prize:3000, chips:8000, players:0, max:600, min:20, status:'cancelled', start:'2025-03-12T21:00', level:5, late:2, desc:'Cancelled due to low turnout.' },
+];
+
+let filtered = [];
+let currentStatus = 'all';
+let currentPage = 1;
+const perPage = 8;
+let nextId = 13;
+let currentDetail = null;
+
+// ─── RENDER ───
+function render() {
+    applyFilters(false);
+    updateStats();
+    updateFeatured();
+
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+    const tbody = document.getElementById('tourneysBody');
+    const empty = document.getElementById('emptyState');
+
+    if (!page.length) {
+        tbody.innerHTML = '';
+        empty.classList.add('show');
+        document.getElementById('resultCount').textContent = '';
+        renderPagination();
+        return;
+    }
+    empty.classList.remove('show');
+
+    tbody.innerHTML = page.map(t => {
+        const pct = Math.min(100, Math.round((t.players / t.max) * 100));
+        const buyinText = t.buyin === 0 ? 'FREE' : '$' + t.buyin + (t.fee ? ' + $' + t.fee : '');
+        return `
+        <tr>
+            <td style="font-family:'Orbitron';font-size:.75rem;">#${t.id}</td>
+            <td>
+                <div class="t-name">${t.name}</div>
+                <div class="t-sub">${t.gameLabel} · ${t.chips.toLocaleString()} chips</div>
+            </td>
+            <td style="text-transform:capitalize;">${t.type.replace('_',' ')}</td>
+            <td style="font-family:'Orbitron';color:var(--gold);font-weight:700;">${buyinText}</td>
+            <td style="font-family:'Orbitron';font-weight:700;color:var(--green);">$${t.prize.toLocaleString()}</td>
+            <td>
+                <strong>${t.players}</strong> / ${t.max}
+                <div class="progress-mini"><div class="progress-fill" style="width:${pct}%"></div></div>
+            </td>
+            <td style="font-size:.8rem;white-space:nowrap;">${formatDate(t.start)}</td>
+            <td><span class="status-badge ${t.status}"><span class="dot"></span>${t.status}</span></td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn view" title="Details" onclick="openDetail(${t.id})"><i class="fas fa-eye"></i></button>
+                    <button class="action-btn edit" title="Edit" onclick="openEdit(${t.id})"><i class="fas fa-pen"></i></button>
+                    ${t.status === 'running' ? `<button class="action-btn pause" title="Pause" onclick="pauseTourney(${t.id})"><i class="fas fa-pause"></i></button>` : ''}
+                    ${t.status === 'paused' ? `<button class="action-btn play" title="Resume" onclick="resumeTourney(${t.id})"><i class="fas fa-play"></i></button>` : ''}
+                    ${['registration','running','paused'].includes(t.status) ? `<button class="action-btn cancel" title="Cancel" onclick="cancelTourney(${t.id})"><i class="fas fa-ban"></i></button>` : ''}
+                    ${t.status === 'running' || t.status === 'registration' ? `<button class="action-btn msg" title="Broadcast" onclick="openDetail(${t.id})"><i class="fas fa-bullhorn"></i></button>` : ''}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('resultCount').textContent = `(${filtered.length})`;
+    renderPagination();
+}
+
+function updateStats() {
+    const all = TOURNAMENTS;
+    const reg = all.filter(t => t.status === 'registration').length;
+    const run = all.filter(t => t.status === 'running' || t.status === 'paused').length;
+    const done = all.filter(t => t.status === 'completed').length;
+    const prize = all.filter(t => ['registration','running','paused'].includes(t.status))
+        .reduce((s, t) => s + t.prize, 0);
+
+    document.getElementById('statTotal').textContent = all.length;
+    document.getElementById('statReg').textContent = reg;
+    document.getElementById('statRun').textContent = run;
+    document.getElementById('statDone').textContent = done;
+    document.getElementById('statPrize').textContent = '$' + prize.toLocaleString();
+    document.getElementById('navTourneysBadge').textContent = reg + run;
+}
+
+function updateFeatured() {
+    const feat = TOURNAMENTS.find(t => t.status === 'registration' && t.prize >= 10000)
+        || TOURNAMENTS.find(t => t.status === 'registration')
+        || TOURNAMENTS[0];
+    if (!feat) return;
+    document.getElementById('fbName').textContent = '🏆 ' + feat.name;
+    document.getElementById('fbMeta').textContent = `${feat.gameLabel} · ${feat.type} · ${feat.players}/${feat.max} registered`;
+    document.getElementById('fbPrize').textContent = '$' + feat.prize.toLocaleString();
+}
+
+function renderPagination() {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    const start = filtered.length ? (currentPage - 1) * perPage + 1 : 0;
+    const end = Math.min(currentPage * perPage, filtered.length);
+    document.getElementById('pageInfo').textContent = `Showing ${start}–${end} of ${filtered.length}`;
+
+    let html = `<button class="page-btn ${currentPage===1?'disabled':''}" onclick="goPage(${currentPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= total; i++) {
+        if (i===1 || i===total || Math.abs(i-currentPage)<=2) {
+            html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+        } else if (Math.abs(i-currentPage)===3) {
+            html += `<span style="color:var(--text-muted);padding:0 4px;">…</span>`;
+        }
+    }
+    html += `<button class="page-btn ${currentPage===total?'disabled':''}" onclick="goPage(${currentPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+    document.getElementById('pageBtns').innerHTML = html;
+}
+
+function goPage(p) {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    if (p < 1 || p > total) return;
+    currentPage = p;
+    render();
+}
+
+// ─── FILTERS ───
+function applyFilters(resetPage = true) {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const type = document.getElementById('filterType').value;
+    const game = document.getElementById('filterGame').value;
+    const buyin = document.getElementById('filterBuyin').value;
+
+    filtered = TOURNAMENTS.filter(t => {
+        if (currentStatus !== 'all') {
+            if (currentStatus === 'running' && t.status !== 'running' && t.status !== 'paused') return false;
+            else if (currentStatus !== 'running' && t.status !== currentStatus) return false;
+        }
+        if (q && !(`${t.name} ${t.type} ${t.gameLabel} ${t.id}`).toLowerCase().includes(q)) return false;
+        if (type && t.type !== type) return false;
+        if (game && t.game !== game) return false;
+        if (buyin === 'free' && t.buyin !== 0) return false;
+        if (buyin === 'low' && (t.buyin === 0 || t.buyin > 50)) return false;
+        if (buyin === 'mid' && (t.buyin <= 50 || t.buyin > 250)) return false;
+        if (buyin === 'high' && t.buyin <= 250) return false;
+        return true;
+    });
+    if (resetPage) currentPage = 1;
+}
+
+function filterByStat(status, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if (el) el.classList.add('active-filter');
+    currentStatus = status;
+    applyFilters(true);
+    render();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterGame').value = '';
+    document.getElementById('filterBuyin').value = '';
+    currentStatus = 'all';
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    document.querySelector('.mini-stat[data-status="all"]')?.classList.add('active-filter');
+    applyFilters(true);
+    render();
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(() => { applyFilters(true); render(); }, 250));
+document.getElementById('filterType').addEventListener('change', () => { applyFilters(true); render(); });
+document.getElementById('filterGame').addEventListener('change', () => { applyFilters(true); render(); });
+document.getElementById('filterBuyin').addEventListener('change', () => { applyFilters(true); render(); });
+
+// ─── CRUD ───
+function openCreateModal() {
+    document.getElementById('editId').value = '';
+    document.getElementById('createModalTitle').innerHTML = '<i class="fas fa-plus-circle" style="color:var(--gold);margin-right:8px;"></i>Create Tournament';
+    document.getElementById('btnSaveTourney').innerHTML = '<i class="fas fa-check"></i> Create Tournament';
+    document.getElementById('tName').value = '';
+    document.getElementById('tDesc').value = '';
+    document.getElementById('tGame').value = 'texas_holdem';
+    document.getElementById('tType').value = 'freezeout';
+    document.getElementById('tBuyin').value = 50;
+    document.getElementById('tFee').value = 5;
+    document.getElementById('tPrize').value = 5000;
+    document.getElementById('tChips').value = 10000;
+    document.getElementById('tLevel').value = 10;
+    document.getElementById('tMinP').value = 2;
+    document.getElementById('tMaxP').value = 1000;
+    document.getElementById('tLate').value = 3;
+    // default start = tomorrow 18:00
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(18, 0, 0, 0);
+    document.getElementById('tStart').value = toLocalInput(d);
+    document.getElementById('tRegEnd').value = '';
+    openModal('createModal');
+}
+
+function openEdit(id) {
+    const t = TOURNAMENTS.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('editId').value = t.id;
+    document.getElementById('createModalTitle').innerHTML = '<i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Edit Tournament';
+    document.getElementById('btnSaveTourney').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    document.getElementById('tName').value = t.name;
+    document.getElementById('tDesc').value = t.desc || '';
+    document.getElementById('tGame').value = t.game;
+    document.getElementById('tType').value = t.type;
+    document.getElementById('tBuyin').value = t.buyin;
+    document.getElementById('tFee').value = t.fee;
+    document.getElementById('tPrize').value = t.prize;
+    document.getElementById('tChips').value = t.chips;
+    document.getElementById('tLevel').value = t.level;
+    document.getElementById('tMinP').value = t.min;
+    document.getElementById('tMaxP').value = t.max;
+    document.getElementById('tLate').value = t.late;
+    document.getElementById('tStart').value = t.start.length === 16 ? t.start : t.start.slice(0, 16);
+    document.getElementById('tRegEnd').value = '';
+    openModal('createModal');
+}
+
+function saveTournament() {
+    const name = document.getElementById('tName').value.trim();
+    const start = document.getElementById('tStart').value;
+    if (!name) return showToast('Tournament name is required', 'error');
+    if (!start) return showToast('Start time is required', 'error');
+
+    const game = document.getElementById('tGame').value;
+    const labels = {
+        texas_holdem: "NL Hold'em",
+        omaha: 'PL Omaha',
+        omaha_hilo: 'Omaha Hi-Lo',
+        short_deck: 'NL Short Deck'
+    };
+
+    const payload = {
+        name,
+        desc: document.getElementById('tDesc').value.trim(),
+        game,
+        gameLabel: labels[game] || game,
+        type: document.getElementById('tType').value,
+        buyin: parseFloat(document.getElementById('tBuyin').value) || 0,
+        fee: parseFloat(document.getElementById('tFee').value) || 0,
+        prize: parseFloat(document.getElementById('tPrize').value) || 0,
+        chips: parseInt(document.getElementById('tChips').value) || 10000,
+        level: parseInt(document.getElementById('tLevel').value) || 10,
+        min: parseInt(document.getElementById('tMinP').value) || 2,
+        max: parseInt(document.getElementById('tMaxP').value) || 1000,
+        late: parseInt(document.getElementById('tLate').value) || 0,
+        start: start,
+        status: 'registration',
+        players: 0
+    };
+
+    const editId = document.getElementById('editId').value;
+    if (editId) {
+        const t = TOURNAMENTS.find(x => x.id === parseInt(editId));
+        if (t) {
+            Object.assign(t, payload, { id: t.id, players: t.players, status: t.status });
+            showToast(`Tournament #${t.id} updated`, 'success');
+        }
+    } else {
+        payload.id = nextId++;
+        TOURNAMENTS.unshift(payload);
+        showToast(`Tournament "${name}" created!`, 'success');
+
+        // API attempt
+        try {
+            const token = localStorage.getItem('pr_admin_token');
+            fetch('http://localhost:3000/api/admin/tournaments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    tournament_name: name,
+                    description: payload.desc,
+                    game_type: payload.game,
+                    tournament_type: payload.type,
+                    buyin_amount: payload.buyin,
+                    entry_fee: payload.fee,
+                    guaranteed_prize: payload.prize,
+                    starting_chips: payload.chips,
+                    max_players: payload.max,
+                    min_players: payload.min,
+                    level_duration: payload.level * 60,
+                    start_time: payload.start
+                })
+            }).catch(() => {});
+        } catch (e) {}
+    }
+
+    closeModal('createModal');
+    applyFilters(true);
+    render();
+}
+
+function pauseTourney(id) {
+    const t = TOURNAMENTS.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`Pause "${t.name}"?`)) return;
+    t.status = 'paused';
+    callApi('pause', id);
+    render();
+    showToast(`Tournament #${id} paused`, 'warning');
+}
+
+function resumeTourney(id) {
+    const t = TOURNAMENTS.find(x => x.id === id);
+    if (!t) return;
+    t.status = 'running';
+    render();
+    showToast(`Tournament #${id} resumed`, 'success');
+}
+
+function cancelTourney(id) {
+    const t = TOURNAMENTS.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`Cancel "${t.name}"?\nAll ${t.players} buy-ins will be refunded.`)) return;
+    t.status = 'cancelled';
+    callApi('cancel', id);
+    render();
+    showToast(`Tournament #${id} cancelled — ${t.players} refunds queued`, 'error');
+}
+
+function callApi(action, id) {
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        fetch(`http://localhost:3000/api/admin/tournaments/${id}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+        }).catch(() => {});
+    } catch (e) {}
+}
+
+// ─── DETAIL ───
+function openDetail(id) {
+    const t = TOURNAMENTS.find(x => x.id === id);
+    if (!t) return;
+    currentDetail = t;
+
+    document.getElementById('detailTitle').textContent = t.name;
+    document.getElementById('detailGrid').innerHTML = `
+        <div class="detail-item"><div class="lbl">Status</div><div class="val"><span class="status-badge ${t.status}"><span class="dot"></span>${t.status}</span></div></div>
+        <div class="detail-item"><div class="lbl">Type</div><div class="val" style="text-transform:capitalize">${t.type.replace('_',' ')}</div></div>
+        <div class="detail-item"><div class="lbl">Game</div><div class="val">${t.gameLabel}</div></div>
+        <div class="detail-item"><div class="lbl">Buy-in</div><div class="val" style="color:var(--gold)">${t.buyin===0?'FREE':'$'+t.buyin+(t.fee?' + $'+t.fee:'')}</div></div>
+        <div class="detail-item"><div class="lbl">Prize Pool</div><div class="val big">$${t.prize.toLocaleString()}</div></div>
+        <div class="detail-item"><div class="lbl">Starting Chips</div><div class="val">${t.chips.toLocaleString()}</div></div>
+        <div class="detail-item"><div class="lbl">Players</div><div class="val"><strong>${t.players}</strong> / ${t.max} (min ${t.min})</div></div>
+        <div class="detail-item"><div class="lbl">Start Time</div><div class="val">${formatDate(t.start)}</div></div>
+        <div class="detail-item"><div class="lbl">Level Duration</div><div class="val">${t.level} min · Late reg ${t.late} lvl</div></div>
+    `;
+
+    // Live controls
+    let controls = '';
+    if (t.status === 'running') {
+        controls += `<button class="btn btn-sm btn-warning" onclick="pauseTourney(${t.id});closeModal('detailModal')"><i class="fas fa-pause"></i> Pause</button>`;
+        controls += `<button class="btn btn-sm btn-outline" onclick="showToast('Break added for 5 minutes','info')"><i class="fas fa-coffee"></i> Add Break</button>`;
+        controls += `<button class="btn btn-sm btn-outline" onclick="showToast('Blind level advanced','info')"><i class="fas fa-forward"></i> Next Blind Level</button>`;
+    }
+    if (t.status === 'paused') {
+        controls += `<button class="btn btn-sm btn-green" onclick="resumeTourney(${t.id});closeModal('detailModal')"><i class="fas fa-play"></i> Resume</button>`;
+    }
+    if (['registration','running','paused'].includes(t.status)) {
+        controls += `<button class="btn btn-sm btn-danger" onclick="cancelTourney(${t.id});closeModal('detailModal')"><i class="fas fa-ban"></i> Cancel & Refund</button>`;
+    }
+    if (t.status === 'registration') {
+        controls += `<button class="btn btn-sm btn-primary" onclick="t.status='running';render();showToast('Tournament started!','success');closeModal('detailModal')"><i class="fas fa-flag-checkered"></i> Force Start</button>`;
+    }
+    document.getElementById('liveControls').innerHTML = controls || '<span style="color:var(--text-muted);font-size:.85rem;">No live controls for this status</span>';
+
+    // Blinds
+    const lvl = t.level || 10;
+    let blinds = '';
+    let sb = 50, bb = 100, ante = 0;
+    for (let i = 1; i <= 8; i++) {
+        blinds += `<tr><td>${i}</td><td>${sb}</td><td>${bb}</td><td>${ante || '—'}</td><td>${lvl} min</td></tr>`;
+        sb = Math.round(sb * 1.5);
+        bb = sb * 2;
+        ante = i >= 2 ? Math.round(sb * 0.2) : 0;
+    }
+    document.getElementById('detailBlinds').innerHTML = blinds;
+
+    document.getElementById('detailFooter').innerHTML = `
+        <button class="btn btn-outline" onclick="closeModal('detailModal')">Close</button>
+        <button class="btn btn-gold btn-sm" onclick="closeModal('detailModal');openEdit(${t.id})"><i class="fas fa-pen"></i> Edit</button>
+    `;
+    document.getElementById('broadcastMsg').value = '';
+    openModal('detailModal');
+}
+
+function broadcastMessage() {
+    if (!currentDetail) return;
+    const msg = document.getElementById('broadcastMsg').value.trim();
+    if (!msg) return showToast('Enter a message', 'error');
+    showToast(`Broadcast sent to ${currentDetail.players} players at "${currentDetail.name}"`, 'success');
+    document.getElementById('broadcastMsg').value = '';
+}
+
+// ─── EXPORT ───
+function exportCSV() {
+    const headers = ['ID','Name','Type','Game','Buyin','Fee','Prize','Players','Max','Status','Start'];
+    const rows = filtered.map(t => [t.id,t.name,t.type,t.gameLabel,t.buyin,t.fee,t.prize,t.players,t.max,t.status,t.start]);
+    const csv = headers.join(',') + '\n' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+    a.download = `tournaments_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV exported', 'success');
+}
+
+function loadTournaments() {
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        fetch('http://localhost:3000/api/admin/tournaments', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }).then(r => r.json()).then(() => {}).catch(() => {});
+    } catch (e) {}
+    render();
+    showToast('Tournaments refreshed', 'info');
+}
+
+// ─── HELPERS ───
+function formatDate(str) {
+    try {
+        const d = new Date(str);
+        return d.toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    } catch { return str; }
+}
+function toLocalInput(d) {
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+function showToast(msg, type='success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]||icons.success}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+function debounce(fn, wait) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Sort
+document.querySelectorAll('#tourneysTable th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        const map = { id:'id', name:'name', type:'type', buyin:'buyin', prize:'prize', players:'players', start:'start', status:'status' };
+        const field = map[key];
+        if (!field) return;
+        const asc = th.classList.contains('sort-asc');
+        document.querySelectorAll('#tourneysTable th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+        filtered.sort((a,b) => {
+            let av=a[field], bv=b[field];
+            if (typeof av==='string') av=av.toLowerCase();
+            if (typeof bv==='string') bv=bv.toLowerCase();
+            if (av<bv) return asc?1:-1;
+            if (av>bv) return asc?-1:1;
+            return 0;
+        });
+        render();
+    });
+});
+
+// Countdown
+let sec=45, min=36, hr=14, days=2;
+setInterval(() => {
+    sec--; if (sec<0){sec=59;min--;} if(min<0){min=59;hr--;} if(hr<0){hr=23;days--;}
+    const el = id => document.getElementById(id);
+    if (el('cdS')) {
+        el('cdS').textContent = String(sec).padStart(2,'0');
+        el('cdM').textContent = String(min).padStart(2,'0');
+        el('cdH').textContent = String(hr).padStart(2,'0');
+        el('cdD').textContent = String(days).padStart(2,'0');
+    }
+}, 1000);
+
+// Init
+applyFilters(true);
+render();
+console.log('🏆 PokerRoyale Admin — Tournaments Loaded');
+</script>
+<script src="../currency-override.js"></script>
+</body>
+</html>

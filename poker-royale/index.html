@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerRoyale — Play. Win. Earn Real Money.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1A1A2E;
+            --secondary: #16213E;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #00C853;
+            --blue: #0F3460;
+            --cyan: #00D4FF;
+            --purple: #7B2FF7;
+            --bg-dark: #0A0A1A;
+            --text: #FFFFFF;
+            --text-muted: #8892B0;
+            --glass: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.1);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-dark); color:var(--text); line-height:1.6; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+        img { max-width:100%; display:block; }
+        .container { max-width:1280px; margin:0 auto; padding:0 20px; }
+
+        .bg-particles { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; overflow:hidden; }
+        .bg-particles span { position:absolute; width:4px; height:4px; background:var(--gold); border-radius:50%; opacity:0; animation:floatP 8s infinite; }
+        .bg-particles span:nth-child(1){left:10%;animation-delay:0s;animation-duration:7s}
+        .bg-particles span:nth-child(2){left:25%;animation-delay:1s;animation-duration:9s}
+        .bg-particles span:nth-child(3){left:40%;animation-delay:2s;animation-duration:6s}
+        .bg-particles span:nth-child(4){left:55%;animation-delay:.5s;animation-duration:8s}
+        .bg-particles span:nth-child(5){left:70%;animation-delay:3s;animation-duration:10s}
+        .bg-particles span:nth-child(6){left:85%;animation-delay:1.5s;animation-duration:7s}
+        .bg-particles span:nth-child(7){left:15%;animation-delay:4s;animation-duration:9s}
+        .bg-particles span:nth-child(8){left:60%;animation-delay:2.5s;animation-duration:6s}
+        @keyframes floatP { 0%{transform:translateY(100vh) scale(0);opacity:0} 20%{opacity:.5} 80%{opacity:.2} 100%{transform:translateY(-10vh) scale(1.2);opacity:0} }
+
+        .navbar { position:fixed; top:0; left:0; width:100%; z-index:1000; padding:16px 0; transition:var(--transition); background:transparent; }
+        .navbar.scrolled { background:rgba(10,10,26,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--glass-border); padding:10px 0; }
+        .navbar .container { display:flex; align-items:center; justify-content:space-between; }
+        .logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.5rem; font-weight:900; color:var(--gold); }
+        .logo i { font-size:1.6rem; color:var(--accent); }
+        .logo span { color:var(--text); font-weight:400; }
+        .nav-links { display:flex; align-items:center; gap:28px; }
+        .nav-links a { font-size:.9rem; font-weight:500; color:var(--text-muted); transition:var(--transition); position:relative; }
+        .nav-links a:hover { color:var(--gold); }
+        .nav-links a::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:2px; background:var(--gold); transition:var(--transition); }
+        .nav-links a:hover::after { width:100%; }
+        .nav-buttons { display:flex; gap:10px; }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 26px; border-radius:50px; font-family:'Inter',sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; }
+        .btn-outline { background:transparent; border:2px solid var(--glass-border); color:var(--text); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-primary { background:linear-gradient(135deg,var(--accent),#FF6B6B); color:#fff; box-shadow:0 4px 20px rgba(233,69,96,.4); }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(233,69,96,.6); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { transform:translateY(-2px); box-shadow:0 0 30px rgba(255,215,0,.4); }
+        .btn-lg { padding:15px 36px; font-size:1.05rem; }
+        .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; z-index:1001; }
+        .hamburger span { width:26px; height:3px; background:var(--text); border-radius:3px; transition:var(--transition); }
+        .hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,6px)}
+        .hamburger.active span:nth-child(2){opacity:0}
+        .hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-6px)}
+
+        .hero { position:relative; min-height:100vh; display:flex; align-items:center; padding-top:80px; overflow:hidden; }
+        .hero-bg { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }
+        .hero-bg img { width:100%; height:100%; object-fit:cover; filter:brightness(.2) saturate(1.2); }
+        .hero-bg::after { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,rgba(10,10,26,.95),rgba(26,26,46,.8) 40%,rgba(15,52,96,.5) 70%,rgba(10,10,26,.9)); }
+        .hero .container { position:relative; z-index:2; display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; }
+        .hero-content { animation:fadeInUp 1s ease; }
+        .hero-badge { display:inline-flex; align-items:center; gap:8px; padding:8px 18px; background:var(--glass); border:1px solid var(--glass-border); border-radius:50px; font-size:.82rem; color:var(--gold); margin-bottom:22px; backdrop-filter:blur(10px); }
+        .hero-badge .dot { width:8px; height:8px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
+        .hero h1 { font-family:'Cinzel',serif; font-size:3.5rem; font-weight:900; line-height:1.1; margin-bottom:18px; }
+        .hero h1 .hl { background:linear-gradient(135deg,var(--gold),#FFA500); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .hero h1 .ac { color:var(--accent); -webkit-text-fill-color:var(--accent); }
+        .hero-desc { font-size:1.1rem; color:var(--text-muted); margin-bottom:32px; max-width:500px; line-height:1.8; }
+        .hero-buttons { display:flex; gap:14px; margin-bottom:45px; flex-wrap:wrap; }
+        .hero-stats { display:flex; gap:36px; }
+        .hero-stat .num { font-family:'Orbitron',sans-serif; font-size:1.8rem; font-weight:900; color:var(--gold); }
+        .hero-stat .lbl { font-size:.82rem; color:var(--text-muted); margin-top:2px; }
+        .hero-visual { position:relative; display:flex; align-items:center; justify-content:center; animation:fadeInRight 1s ease .3s both; }
+        .hero-cards { position:relative; width:380px; height:420px; }
+        .floating-card { position:absolute; width:130px; height:190px; border-radius:12px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.5); }
+        .floating-card img { width:100%; height:100%; object-fit:cover; }
+        .floating-card:nth-child(1){top:20px;left:20px;transform:rotate(-15deg);z-index:1;animation:fc1 4s ease-in-out infinite}
+        .floating-card:nth-child(2){top:50px;left:120px;transform:rotate(5deg);z-index:3;animation:fc2 4s ease-in-out infinite .5s}
+        .floating-card:nth-child(3){top:90px;left:220px;transform:rotate(15deg);z-index:2;animation:fc3 4s ease-in-out infinite 1s}
+        @keyframes fc1{0%,100%{transform:rotate(-15deg) translateY(0)}50%{transform:rotate(-12deg) translateY(-15px)}}
+        @keyframes fc2{0%,100%{transform:rotate(5deg) translateY(0)}50%{transform:rotate(7deg) translateY(-20px)}}
+        @keyframes fc3{0%,100%{transform:rotate(15deg) translateY(0)}50%{transform:rotate(12deg) translateY(-10px)}}
+        .hero-glow { position:absolute; width:280px; height:280px; border-radius:50%; background:radial-gradient(circle,rgba(233,69,96,.3),transparent 70%); top:50%; left:50%; transform:translate(-50%,-50%); filter:blur(40px); animation:glowP 3s ease-in-out infinite; }
+        @keyframes glowP{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:.8;transform:translate(-50%,-50%) scale(1.1)}}
+
+        .marquee { background:linear-gradient(90deg,var(--accent),var(--purple),var(--accent)); padding:11px 0; overflow:hidden; position:relative; z-index:2; }
+        .marquee-track { display:flex; animation:marq 20s linear infinite; white-space:nowrap; }
+        .marquee-track span { font-weight:700; font-size:.85rem; padding:0 36px; text-transform:uppercase; letter-spacing:2px; }
+        .marquee-track span i { color:var(--gold); margin:0 6px; }
+        @keyframes marq{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+        section { position:relative; z-index:2; padding:90px 0; }
+        .section-header { text-align:center; margin-bottom:55px; }
+        .section-tag { display:inline-flex; align-items:center; gap:8px; padding:6px 16px; background:var(--glass); border:1px solid var(--glass-border); border-radius:50px; font-size:.78rem; color:var(--cyan); text-transform:uppercase; letter-spacing:2px; margin-bottom:14px; }
+        .section-header h2 { font-family:'Cinzel',serif; font-size:2.6rem; font-weight:900; margin-bottom:14px; }
+        .section-header h2 .hl { background:linear-gradient(135deg,var(--gold),#FFA500); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .section-header p { color:var(--text-muted); font-size:1.05rem; max-width:580px; margin:0 auto; }
+
+        .features { background:linear-gradient(180deg,var(--bg-dark),var(--primary)); }
+        .features-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:22px; }
+        .feature-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius); padding:32px 24px; text-align:center; transition:var(--transition); backdrop-filter:blur(10px); position:relative; overflow:hidden; }
+        .feature-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background:linear-gradient(90deg,var(--accent),var(--gold)); transform:scaleX(0); transition:var(--transition); }
+        .feature-card:hover::before { transform:scaleX(1); }
+        .feature-card:hover { transform:translateY(-8px); border-color:rgba(255,215,0,.3); box-shadow:0 20px 50px rgba(0,0,0,.3); }
+        .feature-icon { width:65px; height:65px; margin:0 auto 18px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:#fff; }
+        .fi-1{background:linear-gradient(135deg,var(--accent),var(--purple));box-shadow:0 8px 25px rgba(233,69,96,.3)}
+        .fi-2{background:linear-gradient(135deg,var(--gold),#FFA500);box-shadow:0 8px 25px rgba(255,215,0,.3)}
+        .fi-3{background:linear-gradient(135deg,var(--green),#00E676);box-shadow:0 8px 25px rgba(0,200,83,.3)}
+        .fi-4{background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 8px 25px rgba(0,212,255,.3)}
+        .feature-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
+        .feature-card p { color:var(--text-muted); font-size:.88rem; line-height:1.7; }
+
+        .tournaments-sec { background:var(--primary); }
+        .tournaments-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:26px; }
+        .t-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius); overflow:hidden; transition:var(--transition); }
+        .t-card:hover { transform:translateY(-6px); box-shadow:0 20px 50px rgba(0,0,0,.4); border-color:var(--gold); }
+        .t-banner { position:relative; height:170px; overflow:hidden; }
+        .t-banner img { width:100%; height:100%; object-fit:cover; transition:var(--transition); }
+        .t-card:hover .t-banner img { transform:scale(1.05); }
+        .t-badge { position:absolute; top:10px; left:10px; padding:4px 12px; border-radius:50px; font-size:.72rem; font-weight:700; text-transform:uppercase; }
+        .badge-live { background:var(--accent); animation:pulse 2s infinite; }
+        .badge-hot { background:var(--gold); color:#000; }
+        .badge-soon { background:var(--green); color:#000; }
+        .t-prize { position:absolute; bottom:10px; right:10px; padding:5px 12px; background:rgba(0,0,0,.8); backdrop-filter:blur(10px); border-radius:8px; font-family:'Orbitron',sans-serif; font-size:.85rem; font-weight:700; color:var(--gold); }
+        .t-info { padding:22px; }
+        .t-info h3 { font-size:1.1rem; font-weight:700; margin-bottom:10px; }
+        .t-meta { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
+        .t-meta span { display:flex; align-items:center; gap:5px; font-size:.82rem; color:var(--text-muted); }
+        .t-meta span i { color:var(--accent); font-size:.75rem; }
+        .t-timer { display:flex; gap:6px; margin-bottom:14px; }
+        .t-timer .tb { background:rgba(233,69,96,.12); border:1px solid rgba(233,69,96,.25); border-radius:8px; padding:7px 10px; text-align:center; flex:1; }
+        .t-timer .tb .n { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:var(--accent); }
+        .t-timer .tb .l { font-size:.6rem; color:var(--text-muted); text-transform:uppercase; }
+        .t-card .btn { width:100%; }
+
+        .how-works { background:linear-gradient(180deg,var(--primary),var(--bg-dark)); }
+        .steps-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:28px; position:relative; }
+        .steps-grid::before { content:''; position:absolute; top:45px; left:12%; width:76%; height:2px; background:linear-gradient(90deg,var(--accent),var(--gold),var(--green),var(--cyan)); }
+        .step-card { text-align:center; position:relative; z-index:1; }
+        .step-num { width:72px; height:72px; margin:0 auto 20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; border:4px solid var(--bg-dark); }
+        .sn-1{background:linear-gradient(135deg,var(--accent),var(--purple));box-shadow:0 0 25px rgba(233,69,96,.3)}
+        .sn-2{background:linear-gradient(135deg,var(--gold),#FFA500);box-shadow:0 0 25px rgba(255,215,0,.3)}
+        .sn-3{background:linear-gradient(135deg,var(--green),#00E676);box-shadow:0 0 25px rgba(0,200,83,.3)}
+        .sn-4{background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 0 25px rgba(0,212,255,.3)}
+        .step-card h3 { font-size:1.05rem; font-weight:700; margin-bottom:6px; }
+        .step-card p { color:var(--text-muted); font-size:.88rem; }
+
+        .payments-sec { background:var(--bg-dark); }
+        .payments-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:18px; }
+        .pay-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius); padding:28px 16px; text-align:center; transition:var(--transition); }
+        .pay-card:hover { transform:translateY(-4px); border-color:var(--gold); }
+        .pay-icon { width:55px; height:55px; margin:0 auto 10px; background:var(--glass); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; }
+        .pay-card h4 { font-size:.88rem; font-weight:600; margin-bottom:3px; }
+        .pay-card span { font-size:.72rem; color:var(--green); }
+
+        .winners-sec { background:linear-gradient(180deg,var(--bg-dark),var(--primary)); }
+        .winners-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:26px; }
+        .w-card { background:var(--glass); border:1px solid var(--glass-border); border-radius:var(--radius); padding:30px; text-align:center; transition:var(--transition); }
+        .w-card:hover { transform:translateY(-6px); box-shadow:0 20px 50px rgba(0,0,0,.3); }
+        .w-card .trophy { font-size:2.2rem; margin-bottom:10px; }
+        .w-avatar { width:72px; height:72px; border-radius:50%; margin:0 auto 14px; border:3px solid var(--gold); overflow:hidden; }
+        .w-avatar img { width:100%; height:100%; object-fit:cover; }
+        .w-card h3 { font-size:1.05rem; margin-bottom:4px; }
+        .w-card .w-amt { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; color:var(--green); margin:6px 0; }
+        .w-card .w-game { font-size:.82rem; color:var(--text-muted); }
+
+        .cta-sec { background:linear-gradient(135deg,var(--accent),var(--purple)); padding:75px 0; text-align:center; position:relative; overflow:hidden; }
+        .cta-sec::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:radial-gradient(circle,rgba(255,255,255,.05),transparent 60%); animation:rotBg 20s linear infinite; }
+        @keyframes rotBg{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+        .cta-sec h2 { font-family:'Cinzel',serif; font-size:2.8rem; font-weight:900; margin-bottom:14px; position:relative; z-index:1; }
+        .cta-sec p { font-size:1.15rem; opacity:.9; margin-bottom:28px; position:relative; z-index:1; }
+        .cta-sec .btn { position:relative; z-index:1; }
+
+        .footer { background:var(--bg-dark); border-top:1px solid var(--glass-border); padding:55px 0 28px; position:relative; z-index:2; }
+        .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:36px; margin-bottom:36px; }
+        .footer-brand .logo { margin-bottom:14px; }
+        .footer-brand p { color:var(--text-muted); font-size:.88rem; line-height:1.8; margin-bottom:18px; }
+        .footer-social { display:flex; gap:10px; }
+        .footer-social a { width:40px; height:40px; background:var(--glass); border:1px solid var(--glass-border); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text-muted); transition:var(--transition); }
+        .footer-social a:hover { background:var(--accent); color:#fff; border-color:var(--accent); transform:translateY(-3px); }
+        .footer-col h4 { font-size:.95rem; font-weight:700; margin-bottom:18px; color:var(--gold); }
+        .footer-col ul li { margin-bottom:9px; }
+        .footer-col ul li a { color:var(--text-muted); font-size:.88rem; transition:var(--transition); }
+        .footer-col ul li a:hover { color:var(--text); padding-left:5px; }
+        .footer-bottom { border-top:1px solid var(--glass-border); padding-top:22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+        .footer-bottom p { color:var(--text-muted); font-size:.82rem; }
+        .footer-badges { display:flex; gap:12px; }
+        .footer-badges span { display:flex; align-items:center; gap:5px; font-size:.75rem; color:var(--text-muted); padding:4px 10px; background:var(--glass); border-radius:50px; }
+        .footer-badges span i { color:var(--green); }
+
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+        .reveal { opacity:0; transform:translateY(30px); transition:all .8s cubic-bezier(.4,0,.2,1); }
+        .reveal.active { opacity:1; transform:translateY(0); }
+
+        @media(max-width:1024px){
+            .hero .container{grid-template-columns:1fr;text-align:center}
+            .hero-desc{margin:0 auto 32px}
+            .hero-buttons{justify-content:center}
+            .hero-stats{justify-content:center}
+            .hero-visual{display:none}
+            .features-grid{grid-template-columns:repeat(2,1fr)}
+            .tournaments-grid{grid-template-columns:repeat(2,1fr)}
+            .steps-grid{grid-template-columns:repeat(2,1fr)}
+            .steps-grid::before{display:none}
+            .payments-grid{grid-template-columns:repeat(3,1fr)}
+            .footer-grid{grid-template-columns:repeat(2,1fr)}
+        }
+        @media(max-width:768px){
+            .nav-links,.nav-buttons{display:none}
+            .hamburger{display:flex}
+            .nav-links.open{display:flex;flex-direction:column;position:fixed;top:0;left:0;width:100%;height:100vh;background:rgba(10,10,26,.98);backdrop-filter:blur(20px);justify-content:center;align-items:center;gap:28px;z-index:999}
+            .nav-links.open a{font-size:1.3rem;color:var(--text)}
+            .hero h1{font-size:2.2rem}
+            .section-header h2{font-size:1.9rem}
+            .features-grid,.tournaments-grid,.winners-grid{grid-template-columns:1fr}
+            .steps-grid{grid-template-columns:1fr}
+            .payments-grid{grid-template-columns:repeat(2,1fr)}
+            .footer-grid{grid-template-columns:1fr}
+            .cta-sec h2{font-size:1.8rem}
+            .hero-stats{flex-wrap:wrap;gap:18px}
+        }
+        @media(max-width:480px){
+            .hero h1{font-size:1.8rem}
+            .hero-buttons{flex-direction:column;align-items:center}
+            .payments-grid{grid-template-columns:repeat(2,1fr)}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="index.html" class="logo"><i class="fas fa-crown"></i>Poker<span>Royale</span></a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home">Home</a></li>
+                <li><a href="lobby.html">Lobby</a></li>
+                <li><a href="tournaments.html">Tournaments</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="promotions.html">Promotions</a></li>
+                <li><a href="cashier.html">Cashier</a></li>
+            </ul>
+            <div class="nav-buttons">
+                <a href="login.html" class="btn btn-outline">Log In</a>
+                <a href="register.html" class="btn btn-primary">Sign Up <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-bg"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&q=80" alt="Poker"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge"><span class="dot"></span> 12,847 Players Online</div>
+                <h1>Play Poker.<br>Win <span class="hl">Real Money.</span><br><span class="ac">Anytime.</span></h1>
+                <p class="hero-desc">World's #1 real money poker platform. Play Texas Hold'em, Omaha & more. Deposit via PayPal, Skrill, Bank Transfer, Crypto & more. Withdraw instantly!</p>
+                <div class="hero-buttons">
+                    <a href="register.html" class="btn btn-gold btn-lg"><i class="fas fa-play"></i> Start Playing</a>
+                    <a href="tournaments.html" class="btn btn-outline btn-lg"><i class="fas fa-trophy"></i> Tournaments</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat"><div class="num" data-target="50000">0</div><div class="lbl">Active Players</div></div>
+                    <div class="hero-stat"><div class="num" data-target="125000">0</div><div class="lbl">Prize Pool USD</div></div>
+                    <div class="hero-stat"><div class="num" data-target="150">0</div><div class="lbl">Daily Tournaments</div></div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-glow"></div>
+                <div class="hero-cards">
+                    <div class="floating-card"><img src="https://images.unsplash.com/photo-1541278107931-e006523892df?w=300&q=80" alt="Card"></div>
+                    <div class="floating-card"><img src="https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=300&q=80" alt="Card"></div>
+                    <div class="floating-card"><img src="https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=300&q=80" alt="Card"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="marquee">
+        <div class="marquee-track">
+            <span><i class="fas fa-trophy"></i> $25,000 Guaranteed</span>
+            <span><i class="fas fa-bolt"></i> Instant Withdrawals</span>
+            <span><i class="fas fa-gift"></i> 200% Welcome Bonus</span>
+            <span><i class="fas fa-shield-halved"></i> 100% Secure & Fair</span>
+            <span><i class="fas fa-fire"></i> Sunday Mega $50,000</span>
+            <span><i class="fas fa-trophy"></i> $25,000 Guaranteed</span>
+            <span><i class="fas fa-bolt"></i> Instant Withdrawals</span>
+            <span><i class="fas fa-gift"></i> 200% Welcome Bonus</span>
+            <span><i class="fas fa-shield-halved"></i> 100% Secure & Fair</span>
+            <span><i class="fas fa-fire"></i> Sunday Mega $50,000</span>
+        </div>
+    </div>
+
+    <section class="features">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-tag"><i class="fas fa-star"></i> Why Choose Us</div>
+                <h2>The Ultimate <span class="hl">Poker Experience</span></h2>
+                <p>Everything you need for the best real money poker worldwide.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card reveal"><div class="feature-icon fi-1"><i class="fas fa-wallet"></i></div><h3>Multiple Payment Methods</h3><p>Deposit and withdraw instantly using PayPal, Skrill, Visa, Mastercard or Crypto.</p></div>
+                <div class="feature-card reveal"><div class="feature-icon fi-2"><i class="fas fa-trophy"></i></div><h3>Daily Tournaments</h3><p>150+ daily tournaments with guaranteed prize pools up to $50,000.</p></div>
+                <div class="feature-card reveal"><div class="feature-icon fi-3"><i class="fas fa-shield-halved"></i></div><h3>100% Secure & Fair</h3><p>Certified RNG, SSL encryption and anti-fraud systems for fair play.</p></div>
+                <div class="feature-card reveal"><div class="feature-icon fi-4"><i class="fas fa-bolt"></i></div><h3>Instant Withdrawals</h3><p>Cash out winnings in minutes. No delays, no hidden fees.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tournaments-sec">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-tag"><i class="fas fa-fire"></i> Hot Now</div>
+                <h2>Featured <span class="hl">Tournaments</span></h2>
+                <p>Join the biggest tournaments and compete for massive prizes.</p>
+            </div>
+            <div class="tournaments-grid">
+                <div class="t-card reveal">
+                    <div class="t-banner"><img src="https://images.unsplash.com/photo-1541278107931-e006523892df?w=600&q=80" alt="T"><span class="t-badge badge-live"><i class="fas fa-circle"></i> LIVE</span><span class="t-prize">$25,000</span></div>
+                    <div class="t-info"><h3>Sunday Mega Championship</h3><div class="t-meta"><span><i class="fas fa-coins"></i> $250</span><span><i class="fas fa-users"></i> 342/500</span><span><i class="fas fa-gamepad"></i> NL Hold'em</span></div><div class="t-timer"><div class="tb"><div class="n">02</div><div class="l">Hrs</div></div><div class="tb"><div class="n">34</div><div class="l">Min</div></div><div class="tb"><div class="n">56</div><div class="l">Sec</div></div></div><a href="register.html" class="btn btn-primary">Register Now</a></div>
+                </div>
+                <div class="t-card reveal">
+                    <div class="t-banner"><img src="https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=600&q=80" alt="T"><span class="t-badge badge-hot"><i class="fas fa-fire"></i> HOT</span><span class="t-prize">$50,000</span></div>
+                    <div class="t-info"><h3>Monthly Grand Finale</h3><div class="t-meta"><span><i class="fas fa-coins"></i> $500</span><span><i class="fas fa-users"></i> 189/1000</span><span><i class="fas fa-gamepad"></i> NL Hold'em</span></div><div class="t-timer"><div class="tb"><div class="n">05</div><div class="l">Days</div></div><div class="tb"><div class="n">12</div><div class="l">Hrs</div></div><div class="tb"><div class="n">45</div><div class="l">Min</div></div></div><a href="register.html" class="btn btn-gold">Register Now</a></div>
+                </div>
+                <div class="t-card reveal">
+                    <div class="t-banner"><img src="https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=600&q=80" alt="T"><span class="t-badge badge-soon"><i class="fas fa-clock"></i> SOON</span><span class="t-prize">FREE</span></div>
+                    <div class="t-info"><h3>Daily Freeroll $2,500</h3><div class="t-meta"><span><i class="fas fa-coins"></i> FREE</span><span><i class="fas fa-users"></i> 876/2000</span><span><i class="fas fa-gamepad"></i> NL Hold'em</span></div><div class="t-timer"><div class="tb"><div class="n">00</div><div class="l">Hrs</div></div><div class="tb"><div class="n">45</div><div class="l">Min</div></div><div class="tb"><div class="n">12</div><div class="l">Sec</div></div></div><a href="register.html" class="btn btn-primary">Join Free</a></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-works">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-tag"><i class="fas fa-route"></i> Simple Steps</div>
+                <h2>How It <span class="hl">Works</span></h2>
+                <p>Start earning real money in 4 easy steps.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card reveal"><div class="step-num sn-1">1</div><h3>Create Account</h3><p>Sign up in 30 seconds with email or phone.</p></div>
+                <div class="step-card reveal"><div class="step-num sn-2">2</div><h3>Deposit Funds</h3><p>Add money via PayPal, Skrill, card or crypto.</p></div>
+                <div class="step-card reveal"><div class="step-num sn-3">3</div><h3>Play & Win</h3><p>Join cash games or tournaments and win big.</p></div>
+                <div class="step-card reveal"><div class="step-num sn-4">4</div><h3>Withdraw Cash</h3><p>Cash out to your bank or wallet instantly.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="payments-sec">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-tag"><i class="fas fa-credit-card"></i> Trusted Payments</div>
+                <h2>Deposit & Withdraw <span class="hl">Your Way</span></h2>
+                <p>All major international payment methods supported.</p>
+            </div>
+            <div class="payments-grid">
+                <div class="pay-card reveal"><div class="pay-icon" style="color:#003087"><i class="fab fa-paypal"></i></div><h4>PayPal</h4><span><i class="fas fa-check-circle"></i> Instant</span></div>
+                <div class="pay-card reveal"><div class="pay-icon" style="color:#862165"><i class="fas fa-mobile-screen-button"></i></div><h4>Skrill</h4><span><i class="fas fa-check-circle"></i> Instant</span></div>
+                <div class="pay-card reveal"><div class="pay-icon" style="color:#0066B2"><i class="fas fa-building-columns"></i></div><h4>Bank Transfer</h4><span><i class="fas fa-check-circle"></i> 1-3 Hrs</span></div>
+                <div class="pay-card reveal"><div class="pay-icon" style="color:#1A1F71"><i class="fab fa-cc-visa"></i></div><h4>Visa</h4><span><i class="fas fa-check-circle"></i> Instant</span></div>
+                <div class="pay-card reveal"><div class="pay-icon" style="color:#EB001B"><i class="fab fa-cc-mastercard"></i></div><h4>MasterCard</h4><span><i class="fas fa-check-circle"></i> Instant</span></div>
+                <div class="pay-card reveal"><div class="pay-icon" style="color:#F7931A"><i class="fab fa-bitcoin"></i></div><h4>Crypto</h4><span><i class="fas fa-check-circle"></i> 30 Min</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="winners-sec">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="section-tag"><i class="fas fa-crown"></i> Real Winners</div>
+                <h2>Our <span class="hl">Big Winners</span></h2>
+                <p>Real players, real winnings. You could be next!</p>
+            </div>
+            <div class="winners-grid">
+                <div class="w-card reveal"><div class="trophy">🏆</div><div class="w-avatar"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80" alt="W"></div><h3>Ali K.</h3><div class="w-amt">$62,500</div><div class="w-game">Sunday Mega Championship</div></div>
+                <div class="w-card reveal"><div class="trophy">🥇</div><div class="w-avatar"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80" alt="W"></div><h3>Sara M.</h3><div class="w-amt">$43,750</div><div class="w-game">Monthly Grand Finale</div></div>
+                <div class="w-card reveal"><div class="trophy">🎉</div><div class="w-avatar"><img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80" alt="W"></div><h3>Ahmed R.</h3><div class="w-amt">$26,000</div><div class="w-game">High Roller Cash Game</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-sec">
+        <div class="container">
+            <h2>Ready to Win Big? 🃏</h2>
+            <p>Join 50,000+ players and start earning real money today!</p>
+            <a href="register.html" class="btn btn-gold btn-lg"><i class="fas fa-rocket"></i> Create Free Account</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo"><i class="fas fa-crown"></i>Poker<span>Royale</span></a>
+                    <p>World's most trusted real money poker platform. Play, compete, and earn with complete security.</p>
+                    <div class="footer-social">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col"><h4>Quick Links</h4><ul><li><a href="lobby.html">Game Lobby</a></li><li><a href="tournaments.html">Tournaments</a></li><li><a href="leaderboard.html">Leaderboard</a></li><li><a href="promotions.html">Promotions</a></li><li><a href="cashier.html">Cashier</a></li></ul></div>
+                <div class="footer-col"><h4>Support</h4><ul><li><a href="#">How to Play</a></li><li><a href="#">FAQ</a></li><li><a href="contact.html">Contact Us</a></li><li><a href="#">Responsible Gaming</a></li><li><a href="#">Live Chat</a></li></ul></div>
+                <div class="footer-col"><h4>Legal</h4><ul><li><a href="terms.html">Terms & Conditions</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="#">AML Policy</a></li><li><a href="#">Cookie Policy</a></li><li><a href="#">KYC Policy</a></li></ul></div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 PokerRoyale. All rights reserved. 18+ Only.</p>
+                <div class="footer-badges">
+                    <span><i class="fas fa-lock"></i> SSL</span>
+                    <span><i class="fas fa-shield-halved"></i> Fair Play</span>
+                    <span><i class="fas fa-certificate"></i> Licensed</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => navbar.classList.toggle('scrolled', window.scrollY > 50));
+
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+        hamburger.addEventListener('click', () => { hamburger.classList.toggle('active'); navLinks.classList.toggle('open'); });
+        navLinks.querySelectorAll('a').forEach(l => l.addEventListener('click', () => { hamburger.classList.remove('active'); navLinks.classList.remove('open'); }));
+
+        function animateCounters() {
+            document.querySelectorAll('.hero-stat .num').forEach(c => {
+                const t = +c.dataset.target, d = 2000, s = t / (d / 16);
+                let cur = 0;
+                const up = () => { cur += s; if (cur < t) { c.textContent = t >= 1e6 ? (cur/1e6).toFixed(1)+'M+' : t >= 1e3 ? Math.floor(cur/1e3)+'K+' : Math.floor(cur)+'+'; requestAnimationFrame(up); } else { c.textContent = t >= 1e6 ? (t/1e6).toFixed(1)+'M+' : t >= 1e3 ? (t/1e3)+'K+' : t+'+'; } };
+                up();
+            });
+        }
+        const ho = new IntersectionObserver(e => { if(e[0].isIntersecting){ animateCounters(); ho.disconnect(); }}, {threshold:.5});
+        const hs = document.querySelector('.hero-stats'); if(hs) ho.observe(hs);
+
+        const ro = new IntersectionObserver(e => e.forEach((en,i) => { if(en.isIntersecting){ setTimeout(()=>en.target.classList.add('active'), i*100); ro.unobserve(en.target); }}), {threshold:.1});
+        document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
+
+        document.querySelectorAll('.t-timer').forEach(timer => {
+            const b = timer.querySelectorAll('.n');
+            if(b.length<3) return;
+            let total = (+b[0].textContent)*3600 + (+b[1].textContent)*60 + (+b[2].textContent);
+            setInterval(()=>{ if(total<=0)return; total--; b[0].textContent=String(Math.floor(total/3600)).padStart(2,'0'); b[1].textContent=String(Math.floor((total%3600)/60)).padStart(2,'0'); b[2].textContent=String(total%60).padStart(2,'0'); },1000);
+        });
+
+        const lb = document.querySelector('.hero-badge');
+        if(lb) setInterval(()=>{ lb.innerHTML = `<span class="dot"></span> ${(12847+Math.floor(Math.random()*200)-100).toLocaleString()} Players Online`; },5000);
+
+        window.addEventListener('scroll', ()=>{ const s=window.scrollY, bg=document.querySelector('.hero-bg img'); if(bg&&s<innerHeight) bg.style.transform=`translateY(${s*.3}px)`; });
+    </script>
+</body>
+</html>

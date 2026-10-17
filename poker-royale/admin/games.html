@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Games — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+            --felt: #0d5e35;
+            --felt-dark: #073d22;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .live-dot {
+            width:8px; height:8px; background:var(--green); border-radius:50%;
+            animation:pulse 1.5s infinite; display:inline-block; margin-right:6px;
+        }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.3)} }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        /* CONTENT */
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition);
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+        }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.red { background:rgba(233,69,96,.15); color:var(--accent); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.25rem; font-weight:900; margin-top:2px; }
+
+        /* Toolbar */
+        .toolbar {
+            display:flex; align-items:center; justify-content:space-between; gap:16px;
+            margin-bottom:20px; flex-wrap:wrap;
+        }
+        .toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .toolbar-right { display:flex; align-items:center; gap:10px; }
+
+        .filter-select {
+            padding:10px 32px 10px 14px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem;
+            outline:none; cursor:pointer; appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            padding:10px 14px 10px 36px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem;
+            outline:none; width:220px;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+        .btn-warning { background:var(--warning); color:#000; font-weight:700; }
+
+        .view-toggle {
+            display:flex; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; overflow:hidden;
+        }
+        .view-btn {
+            width:38px; height:38px; border:none; background:transparent; color:var(--text-muted);
+            cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition);
+        }
+        .view-btn.active { background:var(--primary); color:#fff; }
+        .view-btn:hover:not(.active) { color:var(--text); }
+
+        /* Games Grid */
+        .games-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+            gap:18px;
+            margin-bottom:28px;
+        }
+
+        .game-card {
+            background:var(--card-bg);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            overflow:hidden;
+            transition:var(--transition);
+        }
+        .game-card:hover {
+            transform:translateY(-4px);
+            border-color:var(--primary);
+            box-shadow:0 12px 40px rgba(0,0,0,.35);
+        }
+        .game-card.full { border-color:rgba(233,69,96,.4); }
+        .game-card.paused { opacity:.7; border-color:var(--warning); }
+
+        .gc-header {
+            padding:14px 16px;
+            display:flex; align-items:center; justify-content:space-between;
+            border-bottom:1px solid var(--border);
+            background:rgba(255,255,255,.02);
+        }
+        .gc-status {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:3px 10px; border-radius:50px;
+            font-size:.68rem; font-weight:700; text-transform:uppercase;
+        }
+        .gc-status.active { background:rgba(16,185,129,.12); color:var(--green); }
+        .gc-status.waiting { background:rgba(245,158,11,.12); color:var(--warning); }
+        .gc-status.full { background:rgba(233,69,96,.12); color:var(--accent); }
+        .gc-status.paused { background:rgba(245,158,11,.12); color:var(--warning); }
+        .gc-status .dot {
+            width:6px; height:6px; border-radius:50%; background:currentColor;
+            animation:pulse 1.5s infinite;
+        }
+        .gc-id { font-family:'Orbitron',sans-serif; font-size:.72rem; color:var(--text-muted); }
+
+        /* Mini table preview */
+        .gc-table-preview {
+            position:relative; height:120px;
+            background:radial-gradient(ellipse at center, #0a5e35, var(--felt-dark));
+            overflow:hidden;
+        }
+        .gc-table-preview::before {
+            content:''; position:absolute;
+            top:50%; left:50%; transform:translate(-50%,-50%);
+            width:78%; height:65%;
+            border:3px solid #5a3a00; border-radius:50%;
+            background:radial-gradient(ellipse, #0d6b3c, #052e18);
+            box-shadow:inset 0 0 30px rgba(0,0,0,.5);
+        }
+        .gc-pot {
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            z-index:2; text-align:center;
+        }
+        .gc-pot .lbl { font-size:.55rem; color:rgba(255,215,0,.7); text-transform:uppercase; letter-spacing:1px; }
+        .gc-pot .amt { font-family:'Orbitron',sans-serif; font-size:.95rem; font-weight:700; color:var(--gold); text-shadow:0 2px 6px rgba(0,0,0,.8); }
+
+        .mini-seat {
+            position:absolute; width:22px; height:22px; border-radius:50%;
+            border:2px solid rgba(255,255,255,.25); background:rgba(0,0,0,.5); z-index:2;
+        }
+        .mini-seat.filled {
+            border-color:var(--gold); background:var(--gold);
+            box-shadow:0 0 8px rgba(255,215,0,.4);
+        }
+        .ms-1 { top:6px; left:50%; transform:translateX(-50%); }
+        .ms-2 { top:18px; right:18px; }
+        .ms-3 { top:50%; right:6px; transform:translateY(-50%); }
+        .ms-4 { bottom:18px; right:18px; }
+        .ms-5 { bottom:6px; left:50%; transform:translateX(-50%); }
+        .ms-6 { bottom:18px; left:18px; }
+        .ms-7 { top:50%; left:6px; transform:translateY(-50%); }
+        .ms-8 { top:18px; left:18px; }
+        .ms-9 { top:8px; left:30%; }
+
+        .gc-body { padding:16px; }
+        .gc-name {
+            font-size:1rem; font-weight:700; margin-bottom:8px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .gc-name i { color:var(--accent); font-size:.8rem; }
+
+        .gc-meta {
+            display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;
+        }
+        .gc-meta-item .lbl { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; }
+        .gc-meta-item .val { font-size:.85rem; font-weight:600; }
+        .gc-meta-item .val.gold { color:var(--gold); font-family:'Orbitron',sans-serif; }
+        .gc-meta-item .val.green { color:var(--green); font-family:'Orbitron',sans-serif; }
+
+        .gc-players-bar {
+            margin-bottom:14px;
+        }
+        .gc-players-header {
+            display:flex; justify-content:space-between; font-size:.75rem; color:var(--text-muted); margin-bottom:4px;
+        }
+        .gc-progress {
+            height:5px; background:rgba(255,255,255,.06); border-radius:5px; overflow:hidden;
+        }
+        .gc-progress-fill {
+            height:100%; border-radius:5px;
+            background:linear-gradient(90deg, var(--green), var(--gold));
+            transition:width .5s ease;
+        }
+        .gc-progress-fill.full { background:linear-gradient(90deg, var(--accent), #FF6B6B); }
+
+        .gc-actions {
+            display:flex; gap:6px;
+        }
+        .gc-actions .btn { flex:1; }
+
+        /* List View Table */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            overflow:hidden; display:none; margin-bottom:28px;
+        }
+        .table-card.show { display:block; }
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 16px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap;
+        }
+        .admin-table td {
+            padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .status-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.active { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.waiting { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.full { background:rgba(233,69,96,.12); color:var(--accent); }
+        .status-badge.paused { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge .dot {
+            width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1.5s infinite;
+        }
+
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition); margin-right:3px;
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+        .action-btn.pause:hover { background:rgba(245,158,11,.15); color:var(--warning); border-color:var(--warning); }
+        .action-btn.close:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.msg:hover { background:rgba(6,182,212,.15); color:var(--cyan); border-color:var(--cyan); }
+
+        /* Create Table Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:600px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+        }
+
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-input, .form-select {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus, .form-select:focus { border-color:var(--primary); }
+        .form-select { cursor:pointer; }
+        .form-select option { background:var(--card-bg); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        .input-prefix { display:flex; align-items:center; }
+        .input-prefix .prefix {
+            padding:11px 12px; background:rgba(255,255,255,.04); border:1.5px solid var(--border);
+            border-right:none; border-radius:10px 0 0 10px; color:var(--gold);
+            font-family:'Orbitron',sans-serif; font-weight:700; font-size:.85rem;
+        }
+        .input-prefix .form-input { border-radius:0 10px 10px 0; }
+
+        /* Watch Modal - Live Table View */
+        .watch-table {
+            position:relative; height:280px;
+            background:radial-gradient(ellipse at center, #0a5e35, #052e18);
+            border-radius:16px; overflow:hidden; margin-bottom:16px;
+            border:4px solid #3d2800;
+        }
+        .watch-table::before {
+            content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            width:80%; height:70%; border:2px dashed rgba(255,215,0,.15); border-radius:50%;
+        }
+        .watch-pot {
+            position:absolute; top:42%; left:50%; transform:translate(-50%,-50%);
+            text-align:center; z-index:2;
+        }
+        .watch-pot .lbl { font-size:.65rem; color:rgba(255,215,0,.6); text-transform:uppercase; letter-spacing:1px; }
+        .watch-pot .amt { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; color:var(--gold); }
+
+        .watch-seat {
+            position:absolute; text-align:center; z-index:3;
+        }
+        .watch-seat .ws-avatar {
+            width:36px; height:36px; border-radius:50%; border:2px solid var(--gold);
+            background:var(--card-bg); margin:0 auto 2px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:.75rem; font-weight:700; color:var(--gold);
+            overflow:hidden;
+        }
+        .watch-seat .ws-avatar img { width:100%; height:100%; object-fit:cover; }
+        .watch-seat .ws-name { font-size:.65rem; font-weight:600; white-space:nowrap; }
+        .watch-seat .ws-chips { font-family:'Orbitron',sans-serif; font-size:.6rem; color:var(--gold); }
+        .ws-pos-1 { bottom:8px; left:50%; transform:translateX(-50%); }
+        .ws-pos-2 { bottom:20px; left:12%; }
+        .ws-pos-3 { top:50%; left:4%; transform:translateY(-50%); }
+        .ws-pos-4 { top:20px; left:12%; }
+        .ws-pos-5 { top:8px; left:50%; transform:translateX(-50%); }
+        .ws-pos-6 { top:20px; right:12%; }
+        .ws-pos-7 { top:50%; right:4%; transform:translateY(-50%); }
+        .ws-pos-8 { bottom:20px; right:12%; }
+        .ws-pos-9 { bottom:30px; left:30%; }
+
+        .watch-info-grid {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px;
+        }
+        .wi-item {
+            background:var(--glass); border:1px solid var(--border); border-radius:10px;
+            padding:12px; text-align:center;
+        }
+        .wi-item .lbl { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; }
+        .wi-item .val { font-family:'Orbitron',sans-serif; font-size:.95rem; font-weight:700; margin-top:2px; }
+
+        .players-list-mini { max-height:180px; overflow-y:auto; }
+        .pl-item {
+            display:flex; align-items:center; gap:10px; padding:8px 0;
+            border-bottom:1px solid rgba(255,255,255,.03); font-size:.82rem;
+        }
+        .pl-seat-num {
+            width:24px; height:24px; border-radius:6px; background:var(--glass);
+            display:flex; align-items:center; justify-content:center;
+            font-family:'Orbitron',sans-serif; font-size:.7rem; font-weight:700; color:var(--gold);
+        }
+        .pl-name { flex:1; font-weight:600; }
+        .pl-chips { font-family:'Orbitron',sans-serif; color:var(--green); font-weight:700; }
+        .pl-status { font-size:.7rem; color:var(--text-muted); }
+
+        /* Empty State */
+        .empty-state {
+            text-align:center; padding:60px 20px; display:none;
+        }
+        .empty-state.show { display:block; }
+        .empty-state .icon { font-size:3rem; margin-bottom:12px; opacity:.3; }
+        .empty-state h3 { font-size:1.2rem; margin-bottom:6px; }
+        .empty-state p { color:var(--text-muted); font-size:.9rem; }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        /* Auto-refresh indicator */
+        .refresh-indicator {
+            display:flex; align-items:center; gap:6px; font-size:.75rem; color:var(--text-muted);
+        }
+        .refresh-indicator .spin {
+            animation:spin 2s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .games-grid { grid-template-columns:1fr; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .toolbar { flex-direction:column; align-items:stretch; }
+            .form-row, .form-row-3 { grid-template-columns:1fr; }
+            .watch-info-grid { grid-template-columns:1fr 1fr; }
+            .admin-topbar { padding:10px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link active"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+                <a href="hand-history.html" class="nav-link"><i class="fas fa-history"></i><span class="nav-text">Hand History</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title"><span class="live-dot"></span>Live Games</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Live Games</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="refresh-indicator">
+                    <i class="fas fa-sync-alt spin" id="refreshIcon"></i>
+                    <span>Auto-refresh 15s</span>
+                </div>
+                <button class="topbar-btn" title="Refresh Now" onclick="loadGames()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <div class="ms-icon green"><i class="fas fa-circle"></i></div>
+                    <div><div class="ms-label">Active Tables</div><div class="ms-value" id="statActive" style="color:var(--green)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon blue"><i class="fas fa-users"></i></div>
+                    <div><div class="ms-label">Players Seated</div><div class="ms-value" id="statPlayers" style="color:var(--primary)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-coins"></i></div>
+                    <div><div class="ms-label">Total Pots</div><div class="ms-value" id="statPots" style="color:var(--gold)">$0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon cyan"><i class="fas fa-percentage"></i></div>
+                    <div><div class="ms-label">Rake Today</div><div class="ms-value" id="statRake" style="color:var(--cyan)">$0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon red"><i class="fas fa-hand"></i></div>
+                    <div><div class="ms-label">Hands Played</div><div class="ms-value" id="statHands">0</div></div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search tables..." oninput="filterGames()">
+                    </div>
+                    <select class="filter-select" id="filterGame" onchange="filterGames()">
+                        <option value="">All Games</option>
+                        <option value="texas_holdem">Texas Hold'em</option>
+                        <option value="omaha">Omaha</option>
+                        <option value="omaha_hilo">Omaha Hi-Lo</option>
+                        <option value="short_deck">Short Deck</option>
+                    </select>
+                    <select class="filter-select" id="filterStatus" onchange="filterGames()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="waiting">Waiting</option>
+                        <option value="full">Full</option>
+                        <option value="paused">Paused</option>
+                    </select>
+                    <select class="filter-select" id="filterStakes" onchange="filterGames()">
+                        <option value="">All Stakes</option>
+                        <option value="micro">Micro ($0.5/$1)</option>
+                        <option value="low">Low ($1–$5)</option>
+                        <option value="mid">Mid ($5–$25)</option>
+                        <option value="high">High ($25+)</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="btnGrid" onclick="setView('grid')" title="Grid View"><i class="fas fa-th-large"></i></button>
+                        <button class="view-btn" id="btnList" onclick="setView('list')" title="List View"><i class="fas fa-list"></i></button>
+                    </div>
+                    <button class="btn btn-gold" onclick="openCreateModal()">
+                        <i class="fas fa-plus"></i> Create Table
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="closeAllTables()">
+                        <i class="fas fa-times-circle"></i> Close All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div class="games-grid" id="gamesGrid"></div>
+
+            <!-- List View -->
+            <div class="table-card" id="gamesList">
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Table Name</th>
+                                <th>Game</th>
+                                <th>Stakes</th>
+                                <th>Players</th>
+                                <th>Pot</th>
+                                <th>Rake</th>
+                                <th>Hands</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gamesListBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty -->
+            <div class="empty-state" id="emptyState">
+                <div class="icon">🃏</div>
+                <h3>No tables found</h3>
+                <p>Try adjusting filters or create a new table</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ═══ CREATE TABLE MODAL ═══ -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle" style="color:var(--gold);margin-right:8px;"></i>Create New Table</h3>
+            <button class="modal-close" onclick="closeModal('createModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Table Name *</label>
+                <input class="form-input" id="newName" placeholder="e.g. Royal Flush Lounge" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Game Type *</label>
+                    <select class="form-select" id="newGameType">
+                        <option value="texas_holdem">Texas Hold'em</option>
+                        <option value="omaha">Pot Limit Omaha</option>
+                        <option value="omaha_hilo">Omaha Hi-Lo</option>
+                        <option value="short_deck">Short Deck (6+)</option>
+                        <option value="seven_card_stud">7-Card Stud</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Betting Type</label>
+                    <select class="form-select" id="newBetting">
+                        <option value="no_limit">No Limit</option>
+                        <option value="pot_limit">Pot Limit</option>
+                        <option value="fixed_limit">Fixed Limit</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Small Blind *</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="newSB" type="number" value="1" min="0.01" step="0.01"></div>
+                </div>
+                <div class="form-group">
+                    <label>Big Blind *</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="newBB" type="number" value="2" min="0.02" step="0.01"></div>
+                </div>
+                <div class="form-group">
+                    <label>Ante</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="newAnte" type="number" value="0" min="0" step="0.01"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Min Buy-in</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="newMinBuy" type="number" value="40" min="1"></div>
+                </div>
+                <div class="form-group">
+                    <label>Max Buy-in</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="newMaxBuy" type="number" value="200" min="1"></div>
+                </div>
+            </div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Max Players</label>
+                    <select class="form-select" id="newMaxPlayers">
+                        <option value="2">Heads-Up (2)</option>
+                        <option value="6">6-Max</option>
+                        <option value="9" selected>9-Max</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Rake %</label>
+                    <input class="form-input" id="newRake" type="number" value="5" min="0" max="20" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Rake Cap</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="newRakeCap" type="number" value="50" min="0"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('createModal')">Cancel</button>
+            <button class="btn btn-gold" onclick="createTable()"><i class="fas fa-plus"></i> Create Table</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ WATCH / DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="watchModal">
+    <div class="modal-box" style="max-width:700px;">
+        <div class="modal-header">
+            <h3 id="watchTitle">Table Monitor</h3>
+            <button class="modal-close" onclick="closeModal('watchModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="watch-table" id="watchTableFelt">
+                <div class="watch-pot">
+                    <div class="lbl">Total Pot</div>
+                    <div class="amt" id="watchPot">$0</div>
+                </div>
+                <div id="watchSeats"></div>
+            </div>
+
+            <div class="watch-info-grid">
+                <div class="wi-item"><div class="lbl">Game</div><div class="val" id="watchGame">—</div></div>
+                <div class="wi-item"><div class="lbl">Stakes</div><div class="val" style="color:var(--gold)" id="watchStakes">—</div></div>
+                <div class="wi-item"><div class="lbl">Rake</div><div class="val" style="color:var(--green)" id="watchRake">—</div></div>
+                <div class="wi-item"><div class="lbl">Hands</div><div class="val" id="watchHands">—</div></div>
+            </div>
+
+            <h4 style="font-size:.9rem;font-weight:700;margin-bottom:10px;"><i class="fas fa-users" style="color:var(--gold);margin-right:6px;"></i>Seated Players</h4>
+            <div class="players-list-mini" id="watchPlayersList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('watchModal')">Close</button>
+            <button class="btn btn-warning btn-sm" id="watchPauseBtn" onclick="pauseFromWatch()"><i class="fas fa-pause"></i> Pause</button>
+            <button class="btn btn-danger btn-sm" id="watchCloseBtn" onclick="closeFromWatch()"><i class="fas fa-times-circle"></i> Close Table</button>
+            <button class="btn btn-primary btn-sm" onclick="messageTable()"><i class="fas fa-comment"></i> Message</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ MESSAGE MODAL ═══ -->
+<div class="modal-overlay" id="msgModal">
+    <div class="modal-box" style="max-width:440px;">
+        <div class="modal-header">
+            <h3>Send Table Message</h3>
+            <button class="modal-close" onclick="closeModal('msgModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Message to all players at this table</label>
+                <textarea class="form-input" id="tableMsg" rows="4" placeholder="e.g. This table will close in 5 minutes..." style="resize:vertical;min-height:100px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('msgModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="sendTableMsg()"><i class="fas fa-paper-plane"></i> Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  LIVE GAMES DATA & LOGIC
+// ═══════════════════════════════════════
+
+const TABLES = [
+    { id:1, name:'Royal Flush Lounge', game:'texas_holdem', gameLabel:"NL Hold'em", sb:2, bb:5, players:7, max:9, pot:1250, rake:62, hands:148, status:'active', stakes:'mid' },
+    { id:2, name:'Diamond Players', game:'texas_holdem', gameLabel:"NL Hold'em", sb:10, bb:25, players:9, max:9, pot:4500, rake:225, hands:89, status:'full', stakes:'high' },
+    { id:3, name:'Omaha Masters', game:'omaha', gameLabel:'PL Omaha', sb:5, bb:10, players:6, max:6, pot:1820, rake:91, hands:112, status:'full', stakes:'mid' },
+    { id:4, name:'High Roller VIP', game:'texas_holdem', gameLabel:"NL Hold'em", sb:50, bb:100, players:4, max:6, pot:12500, rake:625, hands:34, status:'active', stakes:'high' },
+    { id:5, name:'Beginner Friendly', game:'texas_holdem', gameLabel:"NL Hold'em", sb:0.5, bb:1, players:8, max:9, pot:45, rake:2, hands:267, status:'active', stakes:'micro' },
+    { id:6, name:'Short Deck Showdown', game:'short_deck', gameLabel:'NL Short Deck', sb:2, bb:5, players:5, max:6, pot:740, rake:37, hands:95, status:'active', stakes:'mid' },
+    { id:7, name:'Heads Up Arena', game:'texas_holdem', gameLabel:"NL Hold'em", sb:5, bb:10, players:1, max:2, pot:0, rake:0, hands:0, status:'waiting', stakes:'mid' },
+    { id:8, name:'Night Owl Table', game:'texas_holdem', gameLabel:"NL Hold'em", sb:1, bb:2, players:3, max:9, pot:180, rake:9, hands:56, status:'active', stakes:'low' },
+    { id:9, name:'Omaha Hi-Lo Elite', game:'omaha_hilo', gameLabel:'PL Omaha Hi-Lo', sb:5, bb:10, players:5, max:9, pot:980, rake:49, hands:78, status:'active', stakes:'mid' },
+    { id:10, name:'Turbo Speed Desk', game:'texas_holdem', gameLabel:"NL Hold'em", sb:2, bb:5, players:0, max:6, pot:0, rake:0, hands:0, status:'waiting', stakes:'mid' },
+    { id:11, name:'Weekend Warriors', game:'texas_holdem', gameLabel:"NL Hold'em", sb:5, bb:10, players:8, max:9, pot:2200, rake:110, hands:201, status:'active', stakes:'mid' },
+    { id:12, name:'Micro Grinders', game:'texas_holdem', gameLabel:"NL Hold'em", sb:0.25, bb:0.5, players:6, max:9, pot:28, rake:1, hands:412, status:'active', stakes:'micro' },
+];
+
+const PLAYER_NAMES = ['Ali K.','Sara M.','Ahmed R.','Zainab A.','Raza K.','Hassan Y.','Emma B.','Mike W.','Omar F.','Lisa C.'];
+let filtered = [...TABLES];
+let currentView = 'grid';
+let watchTableId = null;
+let nextId = 13;
+
+// ─── RENDER ───
+function renderGames() {
+    updateStats();
+
+    if (filtered.length === 0) {
+        document.getElementById('gamesGrid').innerHTML = '';
+        document.getElementById('gamesListBody').innerHTML = '';
+        document.getElementById('emptyState').classList.add('show');
+        return;
+    }
+    document.getElementById('emptyState').classList.remove('show');
+
+    // Grid
+    document.getElementById('gamesGrid').innerHTML = filtered.map(t => {
+        const pct = Math.min(100, Math.round((t.players / t.max) * 100));
+        const statusClass = t.status;
+        let seatsHtml = '';
+        for (let i = 1; i <= Math.min(t.max, 9); i++) {
+            seatsHtml += `<div class="mini-seat ms-${i} ${i <= t.players ? 'filled' : ''}"></div>`;
+        }
+        return `
+        <div class="game-card ${t.status}" data-id="${t.id}">
+            <div class="gc-header">
+                <span class="gc-status ${statusClass}"><span class="dot"></span> ${t.status}</span>
+                <span class="gc-id">#${t.id}</span>
+            </div>
+            <div class="gc-table-preview">
+                ${seatsHtml}
+                <div class="gc-pot"><div class="lbl">POT</div><div class="amt">$${t.pot.toLocaleString()}</div></div>
+            </div>
+            <div class="gc-body">
+                <div class="gc-name"><i class="fas fa-diamond"></i> ${t.name}</div>
+                <div class="gc-meta">
+                    <div class="gc-meta-item"><div class="lbl">Game</div><div class="val">${t.gameLabel}</div></div>
+                    <div class="gc-meta-item"><div class="lbl">Stakes</div><div class="val gold">$${t.sb}/$${t.bb}</div></div>
+                    <div class="gc-meta-item"><div class="lbl">Rake</div><div class="val green">$${t.rake}</div></div>
+                    <div class="gc-meta-item"><div class="lbl">Hands</div><div class="val">${t.hands}</div></div>
+                </div>
+                <div class="gc-players-bar">
+                    <div class="gc-players-header">
+                        <span><i class="fas fa-users"></i> ${t.players} / ${t.max}</span>
+                        <span>${pct}%</span>
+                    </div>
+                    <div class="gc-progress"><div class="gc-progress-fill ${pct>=100?'full':''}" style="width:${pct}%"></div></div>
+                </div>
+                <div class="gc-actions">
+                    <button class="btn btn-sm btn-primary" onclick="watchTable(${t.id})"><i class="fas fa-eye"></i> Watch</button>
+                    ${t.status === 'paused'
+                        ? `<button class="btn btn-sm btn-green" onclick="resumeTable(${t.id})"><i class="fas fa-play"></i></button>`
+                        : `<button class="btn btn-sm btn-warning" onclick="pauseTable(${t.id})"><i class="fas fa-pause"></i></button>`
+                    }
+                    <button class="btn btn-sm btn-outline" onclick="openMsgModal(${t.id})"><i class="fas fa-comment"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="closeTable(${t.id})"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // List
+    document.getElementById('gamesListBody').innerHTML = filtered.map(t => `
+        <tr>
+            <td style="font-family:'Orbitron';font-size:.78rem;">#${t.id}</td>
+            <td><strong>${t.name}</strong></td>
+            <td>${t.gameLabel}</td>
+            <td style="font-family:'Orbitron';color:var(--gold);">$${t.sb}/$${t.bb}</td>
+            <td><strong>${t.players}</strong> / ${t.max}</td>
+            <td style="font-family:'Orbitron';font-weight:700;color:var(--gold);">$${t.pot.toLocaleString()}</td>
+            <td style="font-family:'Orbitron';color:var(--green);">$${t.rake}</td>
+            <td>${t.hands}</td>
+            <td><span class="status-badge ${t.status}"><span class="dot"></span> ${t.status}</span></td>
+            <td>
+                <button class="action-btn view" title="Watch" onclick="watchTable(${t.id})"><i class="fas fa-eye"></i></button>
+                ${t.status === 'paused'
+                    ? `<button class="action-btn pause" title="Resume" onclick="resumeTable(${t.id})"><i class="fas fa-play"></i></button>`
+                    : `<button class="action-btn pause" title="Pause" onclick="pauseTable(${t.id})"><i class="fas fa-pause"></i></button>`
+                }
+                <button class="action-btn msg" title="Message" onclick="openMsgModal(${t.id})"><i class="fas fa-comment"></i></button>
+                <button class="action-btn close" title="Close" onclick="closeTable(${t.id})"><i class="fas fa-times"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateStats() {
+    const active = TABLES.filter(t => t.status === 'active' || t.status === 'full').length;
+    const players = TABLES.reduce((s, t) => s + t.players, 0);
+    const pots = TABLES.reduce((s, t) => s + t.pot, 0);
+    const rake = TABLES.reduce((s, t) => s + t.rake, 0);
+    const hands = TABLES.reduce((s, t) => s + t.hands, 0);
+
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statPlayers').textContent = players.toLocaleString();
+    document.getElementById('statPots').textContent = '$' + pots.toLocaleString();
+    document.getElementById('statRake').textContent = '$' + rake.toLocaleString();
+    document.getElementById('statHands').textContent = hands.toLocaleString();
+}
+
+// ─── FILTERS ───
+function filterGames() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const game = document.getElementById('filterGame').value;
+    const status = document.getElementById('filterStatus').value;
+    const stakes = document.getElementById('filterStakes').value;
+
+    filtered = TABLES.filter(t => {
+        if (q && !t.name.toLowerCase().includes(q) && !String(t.id).includes(q)) return false;
+        if (game && t.game !== game) return false;
+        if (status && t.status !== status) return false;
+        if (stakes && t.stakes !== stakes) return false;
+        return true;
+    });
+    renderGames();
+}
+
+// ─── VIEW TOGGLE ───
+function setView(view) {
+    currentView = view;
+    document.getElementById('btnGrid').classList.toggle('active', view === 'grid');
+    document.getElementById('btnList').classList.toggle('active', view === 'list');
+    document.getElementById('gamesGrid').style.display = view === 'grid' ? 'grid' : 'none';
+    document.getElementById('gamesList').classList.toggle('show', view === 'list');
+}
+
+// ─── TABLE ACTIONS ───
+function pauseTable(id) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`Pause table "${t.name}"?`)) return;
+    t.status = 'paused';
+    filterGames();
+    showToast(`Table #${id} paused`, 'warning');
+}
+
+function resumeTable(id) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+    t.status = t.players >= t.max ? 'full' : t.players >= 2 ? 'active' : 'waiting';
+    filterGames();
+    showToast(`Table #${id} resumed`, 'success');
+}
+
+function closeTable(id) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`Close "${t.name}"?\n${t.players} player(s) will be refunded their chips.`)) return;
+    const idx = TABLES.findIndex(x => x.id === id);
+    if (idx >= 0) TABLES.splice(idx, 1);
+    filterGames();
+    showToast(`Table #${id} closed — ${t.players} players refunded`, 'success');
+    if (watchTableId === id) closeModal('watchModal');
+}
+
+function closeAllTables() {
+    const active = TABLES.filter(t => t.status !== 'waiting');
+    if (active.length === 0) return showToast('No active tables to close', 'info');
+    if (!confirm(`Close ALL ${active.length} active tables and refund all players?`)) return;
+    const count = active.reduce((s, t) => s + t.players, 0);
+    // Remove non-waiting or mark closed — for demo remove all active/full/paused
+    for (let i = TABLES.length - 1; i >= 0; i--) {
+        if (TABLES[i].status !== 'waiting') TABLES.splice(i, 1);
+    }
+    filterGames();
+    showToast(`Closed tables — ${count} players refunded`, 'success');
+}
+
+// ─── CREATE TABLE ───
+function openCreateModal() {
+    openModal('createModal');
+}
+
+function createTable() {
+    const name = document.getElementById('newName').value.trim();
+    const game = document.getElementById('newGameType').value;
+    const sb = parseFloat(document.getElementById('newSB').value) || 1;
+    const bb = parseFloat(document.getElementById('newBB').value) || 2;
+    const maxP = parseInt(document.getElementById('newMaxPlayers').value) || 9;
+    const minBuy = parseFloat(document.getElementById('newMinBuy').value) || sb * 20;
+    const rake = parseFloat(document.getElementById('newRake').value) || 5;
+
+    if (!name) return showToast('Table name is required', 'error');
+    if (bb <= sb) return showToast('Big blind must be greater than small blind', 'error');
+
+    const labels = {
+        texas_holdem: "NL Hold'em",
+        omaha: 'PL Omaha',
+        omaha_hilo: 'PL Omaha Hi-Lo',
+        short_deck: 'NL Short Deck',
+        seven_card_stud: '7-Card Stud'
+    };
+
+    let stakesKey = 'mid';
+    if (bb <= 1) stakesKey = 'micro';
+    else if (bb <= 5) stakesKey = 'low';
+    else if (bb <= 25) stakesKey = 'mid';
+    else stakesKey = 'high';
+
+    TABLES.unshift({
+        id: nextId++,
+        name,
+        game,
+        gameLabel: labels[game] || game,
+        sb, bb,
+        players: 0,
+        max: maxP,
+        pot: 0,
+        rake: 0,
+        hands: 0,
+        status: 'waiting',
+        stakes: stakesKey,
+        minBuyin: minBuy,
+        rakePct: rake
+    });
+
+    // Try API
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        fetch('http://localhost:3000/api/admin/games/tables', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+                table_name: name,
+                game_type: game,
+                small_blind: sb,
+                big_blind: bb,
+                min_buyin: minBuy,
+                max_buyin: parseFloat(document.getElementById('newMaxBuy').value) || bb * 100,
+                max_players: maxP,
+                rake_percentage: rake,
+                rake_cap: parseFloat(document.getElementById('newRakeCap').value) || 50,
+                ante: parseFloat(document.getElementById('newAnte').value) || 0,
+                betting_type: document.getElementById('newBetting').value
+            })
+        }).catch(() => {});
+    } catch (e) {}
+
+    closeModal('createModal');
+    filterGames();
+    showToast(`Table "${name}" created successfully!`, 'success');
+
+    // Reset form
+    document.getElementById('newName').value = '';
+}
+
+// ─── WATCH TABLE ───
+function watchTable(id) {
+    const t = TABLES.find(x => x.id === id);
+    if (!t) return;
+    watchTableId = id;
+
+    document.getElementById('watchTitle').innerHTML = `<i class="fas fa-eye" style="color:var(--cyan);margin-right:8px;"></i>${t.name} <span style="font-size:.8rem;color:var(--text-muted);font-weight:400;">#${t.id}</span>`;
+    document.getElementById('watchPot').textContent = '$' + t.pot.toLocaleString();
+    document.getElementById('watchGame').textContent = t.gameLabel;
+    document.getElementById('watchStakes').textContent = `$${t.sb}/$${t.bb}`;
+    document.getElementById('watchRake').textContent = '$' + t.rake;
+    document.getElementById('watchHands').textContent = t.hands;
+
+    // Seats on felt
+    let seatsHtml = '';
+    for (let i = 1; i <= Math.min(t.players, 9); i++) {
+        const name = PLAYER_NAMES[(i - 1) % PLAYER_NAMES.length];
+        const chips = Math.floor(Math.random() * 3000) + 200;
+        seatsHtml += `
+            <div class="watch-seat ws-pos-${i}">
+                <div class="ws-avatar">${name[0]}</div>
+                <div class="ws-name">${name}</div>
+                <div class="ws-chips">$${chips}</div>
+            </div>`;
+    }
+    document.getElementById('watchSeats').innerHTML = seatsHtml;
+
+    // Players list
+    let listHtml = '';
+    for (let i = 1; i <= t.players; i++) {
+        const name = PLAYER_NAMES[(i - 1) % PLAYER_NAMES.length];
+        const chips = Math.floor(Math.random() * 3000) + 200;
+        const statuses = ['In Hand', 'Waiting', 'In Hand', 'Sitting Out', 'In Hand'];
+        listHtml += `
+            <div class="pl-item">
+                <div class="pl-seat-num">${i}</div>
+                <div class="pl-name">${name}</div>
+                <div class="pl-status">${statuses[i % statuses.length]}</div>
+                <div class="pl-chips">$${chips.toLocaleString()}</div>
+            </div>`;
+    }
+    if (t.players === 0) listHtml = '<p style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:20px;">No players seated</p>';
+    document.getElementById('watchPlayersList').innerHTML = listHtml;
+
+    document.getElementById('watchPauseBtn').onclick = () => {
+        if (t.status === 'paused') resumeTable(id);
+        else pauseTable(id);
+        closeModal('watchModal');
+    };
+    document.getElementById('watchPauseBtn').innerHTML = t.status === 'paused'
+        ? '<i class="fas fa-play"></i> Resume'
+        : '<i class="fas fa-pause"></i> Pause';
+
+    openModal('watchModal');
+}
+
+function pauseFromWatch() {
+    if (watchTableId) pauseTable(watchTableId);
+}
+function closeFromWatch() {
+    if (watchTableId) closeTable(watchTableId);
+}
+
+// ─── MESSAGE ───
+let msgTableId = null;
+function openMsgModal(id) {
+    msgTableId = id;
+    document.getElementById('tableMsg').value = '';
+    openModal('msgModal');
+}
+function messageTable() {
+    if (watchTableId) openMsgModal(watchTableId);
+}
+function sendTableMsg() {
+    const msg = document.getElementById('tableMsg').value.trim();
+    if (!msg) return showToast('Enter a message', 'error');
+    const t = TABLES.find(x => x.id === msgTableId);
+    showToast(`Message sent to ${t ? t.name : 'table'} (${t ? t.players : 0} players)`, 'success');
+    closeModal('msgModal');
+}
+
+// ─── LOAD / REFRESH ───
+function loadGames() {
+    // Simulate live pot/hand updates
+    TABLES.forEach(t => {
+        if (t.status === 'active' || t.status === 'full') {
+            t.pot += Math.floor(Math.random() * 50);
+            t.rake = Math.floor(t.pot * 0.05);
+            if (Math.random() > 0.7) t.hands++;
+            // Random player join/leave
+            if (Math.random() > 0.9 && t.players < t.max) t.players++;
+            if (Math.random() > 0.95 && t.players > 0) t.players--;
+            t.status = t.players >= t.max ? 'full' : t.players >= 2 ? 'active' : t.players === 0 ? 'waiting' : 'active';
+        }
+    });
+
+    // Try fetch from API
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        fetch('http://localhost:3000/api/admin/games/active', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.data && data.data.tables && data.data.tables.length) {
+                // Could merge API data here
+            }
+        })
+        .catch(() => {});
+    } catch (e) {}
+
+    filterGames();
+}
+
+// ─── MODALS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+// ─── TOAST ───
+function showToast(msg, type = 'success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]||icons.success}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// ─── SIDEBAR ───
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Auto-refresh every 15s
+setInterval(loadGames, 15000);
+
+// Auto-calc buyin when blinds change
+document.getElementById('newSB').addEventListener('input', function() {
+    const sb = parseFloat(this.value) || 1;
+    document.getElementById('newBB').value = sb * 2;
+    document.getElementById('newMinBuy').value = sb * 20;
+    document.getElementById('newMaxBuy').value = sb * 100;
+});
+
+// Init
+setView('grid');
+renderGames();
+console.log('🎮 PokerRoyale Admin — Live Games Loaded');
+</script>
+</body>
+</html>

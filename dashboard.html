@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerRoyale - Player Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b0e14;
+            --bg-card: #121620;
+            --bg-card-alt: #181d2a;
+            --gold: #ffb703;
+            --gold-bright: #ffd700;
+            --gold-gradient: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: rgba(255, 183, 3, 0.2);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 3rem;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            background: rgba(18, 22, 32, 0.95);
+            border-bottom: 1px solid var(--border-card);
+            padding: 0.9rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+        }
+
+        .nav-link:hover, .nav-link.active { color: var(--gold-bright); }
+
+        .balance-badge {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 2rem auto 0;
+            padding: 0 1.5rem;
+        }
+
+        /* Top User Banner Card */
+        .profile-banner {
+            background: linear-gradient(135deg, #131722 0%, #0d1017 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 1.5rem;
+        }
+
+        .user-info-left {
+            display: flex;
+            align-items: center;
+            gap: 1.8rem;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            cursor: pointer;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--gold);
+            box-shadow: 0 0 15px rgba(255, 183, 3, 0.3);
+            background: #1e2330;
+        }
+
+        .vip-tag {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gold-gradient);
+            color: #000;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+        }
+
+        .camera-badge {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: #ef4444;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg-card);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .camera-badge:hover { transform: scale(1.15); }
+
+        .user-details h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: var(--gold-bright);
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+            text-transform: capitalize;
+        }
+
+        .user-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kyc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #4ade80;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .banner-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-action-gold {
+            background: var(--gold-gradient);
+            color: #000;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-action-gold:hover { opacity: 0.9; }
+
+        .btn-action-dark {
+            background: var(--bg-card-alt);
+            color: #fff;
+            border: 1px solid var(--border-card);
+            padding: 0.7rem 1.4rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Stats Grid */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.8rem;
+        }
+
+        @media (max-width: 1024px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 600px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .profile-banner { flex-direction: column; text-align: center; gap: 1.5rem; }
+            .user-info-left { flex-direction: column; }
+        }
+
+        .stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.2rem 1rem;
+            text-align: center;
+        }
+
+        .stat-icon { font-size: 1.3rem; color: var(--gold); margin-bottom: 0.4rem; }
+        .stat-number { font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem; }
+        .stat-label { font-size: 0.72rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+        /* Navigation Tabs (Green Line Options) */
+        .tabs-bar {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-card);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            padding: 0.7rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.03); }
+
+        .tab-btn.active {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        /* Dynamic Tab Panels */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 850px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 1.8rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold-bright);
+            margin-bottom: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-label { display: block; font-size: 0.85rem; color: var(--text-sub); margin-bottom: 0.4rem; font-weight: 500; }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--gold); }
+
+        .alert-box {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-size: 0.9rem;
+        }
+        .alert-success { background: rgba(34, 197, 94, 0.15); border: 1px solid var(--success); color: #4ade80; }
+        .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #f87171; }
+
+        /* Tables & Lists Styling */
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .custom-table th, .custom-table td {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .custom-table th { color: var(--gold); font-weight: 600; text-transform: uppercase; font-size: 0.78rem; }
+        .win-tag { color: #4ade80; font-weight: 700; }
+        .loss-tag { color: #f87171; font-weight: 700; }
+
+        /* Achievements Grid */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.2rem;
+        }
+        .achievement-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .achievement-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 183, 3, 0.1);
+            border: 1px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-bright);
+            font-size: 1.5rem;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+        }
+        .modal-card {
+            background: #121620;
+            border: 1px solid var(--gold);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 550px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .modal-close {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.4rem;
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: #fff; }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 1.2rem 0;
+        }
+        .method-btn {
+            background: #181d2a;
+            border: 1px solid var(--border-card);
+            border-radius: 10px;
+            padding: 0.8rem;
+            color: #fff;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .method-btn.active, .method-btn:hover {
+            border-color: var(--gold);
+            background: rgba(255,183,3,0.1);
+            color: var(--gold-bright);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Input for File Upload -->
+    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+
+    <!-- Top Navbar (Red Line Options) -->
+    <nav class="navbar">
+        <a href="dashboard.html" class="brand"><i class="fa-solid fa-crown"></i> POKER ROYALE</a>
+        <div class="nav-links">
+            <a href="table.html" class="nav-link"><i class="fa-solid fa-gamepad"></i> Lobby</a>
+            <button onclick="openModal('tournamentsModal')" class="nav-link"><i class="fa-solid fa-trophy"></i> Tournaments</button>
+            <button onclick="openModal('leaderboardModal')" class="nav-link"><i class="fa-solid fa-ranking-star"></i> Leaderboard</button>
+            <button onclick="openModal('promotionsModal')" class="nav-link"><i class="fa-solid fa-gift"></i> Promotions</button>
+            <button onclick="openModal('cashierModal')" class="nav-link"><i class="fa-solid fa-cash-register"></i> Cashier</button>
+            
+            <div class="balance-badge" onclick="openModal('cashierModal')" title="Click to Open Cashier">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="navBalance">$1,000.00</span>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:var(--text-sub); cursor:pointer;" title="Logout">
+                <i class="fa-solid fa-right-from-bracket fa-lg"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div id="alertBox" class="alert-box"></div>
+
+        <!-- Top Profile Banner Card -->
+        <div class="profile-banner">
+            <div class="user-info-left">
+                <div class="avatar-container" onclick="triggerPhotoUpload()" title="Click to change profile picture">
+                    <div class="vip-tag">GOLD VIP</div>
+                    <img id="headerAvatar" class="avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e2330'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='40' fill='%23ffd700'>♠</text></svg>" alt="Avatar">
+                    <div class="camera-badge">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                </div>
+
+                <div class="user-details">
+                    <h2 id="headerName">Player</h2>
+                    <div class="user-meta">
+                        <span class="meta-item" style="color:var(--gold);"><i class="fa-solid fa-at"></i> <span id="headerUsername">player</span></span>
+                        <span class="meta-item"><i class="fa-solid fa-envelope"></i> <span id="headerEmail">user@example.com</span></span>
+                        <span class="meta-item"><i class="fa-solid fa-phone"></i> <span id="headerPhone">+1 (000) 000-0000</span></span>
+                        <span class="meta-item"><i class="fa-solid fa-location-dot"></i> <span id="headerLocation">United States</span></span>
+                        <span class="meta-item"><i class="fa-solid fa-calendar"></i> Member since Jan 2024</span>
+                    </div>
+                    <div class="kyc-badge">
+                        <i class="fa-solid fa-shield-halved"></i> KYC Verified
+                    </div>
+                </div>
+            </div>
+
+            <div class="banner-actions">
+                <button class="btn-action-gold" onclick="switchTab('settings')"><i class="fa-solid fa-pen"></i> Edit Profile</button>
+                <button class="btn-action-dark" onclick="openModal('cashierModal')"><i class="fa-solid fa-wallet"></i> Cashier</button>
+            </div>
+        </div>
+
+        <!-- 6 Stats Cards Row -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-icon"><i class="fa-solid fa-gamepad"></i></div>
+                <div class="stat-number" id="statGames">1,247</div>
+                <div class="stat-label">Games Played</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-icon"><i class="fa-solid fa-cards"></i></div>
+                <div class="stat-number" id="statHands">34,892</div>
+                <div class="stat-label">Hands Played</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div class="stat-number" id="statTournaments">23</div>
+                <div class="stat-label">Tournaments Won</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="stat-number" id="statTotalEarned">$1,200.00</div>
+                <div class="stat-label">Total Earned</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-icon"><i class="fa-solid fa-bullseye"></i></div>
+                <div class="stat-number" id="statWinRate">67%</div>
+                <div class="stat-label">Win Rate</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-icon"><i class="fa-solid fa-star"></i></div>
+                <div class="stat-number" id="statLoyalty">12,450</div>
+                <div class="stat-label">Loyalty Points</div>
+            </div>
+        </div>
+
+        <!-- Dynamic Navigation Tabs (Green Line Options) -->
+        <div class="tabs-bar">
+            <button class="tab-btn" onclick="switchTab('overview')" id="btn-tab-overview"><i class="fa-solid fa-chart-line"></i> Overview</button>
+            <button class="tab-btn" onclick="switchTab('history')" id="btn-tab-history"><i class="fa-solid fa-clock-rotate-left"></i> Game History</button>
+            <button class="tab-btn" onclick="switchTab('transactions')" id="btn-tab-transactions"><i class="fa-solid fa-receipt"></i> Transactions</button>
+            <button class="tab-btn" onclick="switchTab('achievements')" id="btn-tab-achievements"><i class="fa-solid fa-award"></i> Achievements</button>
+            <button class="tab-btn active" onclick="switchTab('settings')" id="btn-tab-settings"><i class="fa-solid fa-gear"></i> Settings</button>
+            <button class="tab-btn" onclick="switchTab('kyc')" id="btn-tab-kyc"><i class="fa-solid fa-id-card"></i> KYC</button>
+        </div>
+
+        <!-- ================= TAB 1: OVERVIEW ================= -->
+        <div class="tab-content" id="tab-overview">
+            <div class="form-grid">
+                <div class="form-card">
+                    <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Player Performance</div>
+                    <p style="color:var(--text-sub); margin-bottom:1rem; font-size:0.9rem;">Your lifetime performance statistics across Texas Hold'em and Omaha games.</p>
+                    <div style="background:var(--bg-dark); padding:1rem; border-radius:10px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <span>VIP Rank Progress (Gold VIP)</span>
+                            <span style="color:var(--gold);">75%</span>
+                        </div>
+                        <div style="background:#1e2330; height:10px; border-radius:5px; overflow:hidden;">
+                            <div style="width:75%; background:var(--gold-gradient); height:100%;"></div>
+                        </div>
+                    </div>
+                    <ul style="list-style:none; color:var(--text-sub); font-size:0.9rem; line-height:2;">
+                        <li><i class="fa-solid fa-check-circle" style="color:var(--gold);"></i> Best Hand Played: <strong>Royal Flush ($450.00 Pot)</strong></li>
+                        <li><i class="fa-solid fa-check-circle" style="color:var(--gold);"></i> Favorite Variant: <strong>No-Limit Texas Hold'em</strong></li>
+                        <li><i class="fa-solid fa-check-circle" style="color:var(--gold);"></i> Highest Single Win: <strong>$1,250.00</strong></li>
+                    </ul>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-title"><i class="fa-solid fa-bolt"></i> Quick Actions</div>
+                    <button class="btn-action-gold" onclick="window.location.href='table.html'" style="width:100%; justify-content:center; margin-bottom:1rem; padding:0.9rem;">
+                        <i class="fa-solid fa-play"></i> Play Poker Now
+                    </button>
+                    <button class="btn-action-dark" onclick="openModal('cashierModal')" style="width:100%; justify-content:center; padding:0.9rem;">
+                        <i class="fa-solid fa-plus-circle"></i> Deposit Funds
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: GAME HISTORY ================= -->
+        <div class="tab-content" id="tab-history">
+            <div class="form-card">
+                <div class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Hand & Session History</div>
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Game ID</th>
+                            <th>Variant</th>
+                            <th>Stakes</th>
+                            <th>Result</th>
+                            <th>Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#NLH-90412</td>
+                            <td>Texas Hold'em</td>
+                            <td>$5.00 / $10.00</td>
+                            <td class="win-tag">+$240.00</td>
+                            <td>2026-03-30 14:22</td>
+                        </tr>
+                        <tr>
+                            <td>#PLO-88123</td>
+                            <td>Omaha Pot-Limit</td>
+                            <td>$2.00 / $4.00</td>
+                            <td class="loss-tag">-$50.00</td>
+                            <td>2026-03-29 21:15</td>
+                        </tr>
+                        <tr>
+                            <td>#NLH-77192</td>
+                            <td>Texas Hold'em</td>
+                            <td>$10.00 / $20.00</td>
+                            <td class="win-tag">+$510.00</td>
+                            <td>2026-03-28 18:40</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: TRANSACTIONS ================= -->
+        <div class="tab-content" id="tab-transactions">
+            <div class="form-card">
+                <div class="card-title"><i class="fa-solid fa-receipt"></i> Wallet Transaction Logs</div>
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Type</th>
+                            <th>Payment Method</th>
+                            <th>Amount ($ USD)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        <tr>
+                            <td>TXN-994102</td>
+                            <td>Deposit</td>
+                            <td>PayPal</td>
+                            <td class="win-tag">+$500.00</td>
+                            <td><span style="color:#4ade80;">Completed</span></td>
+                        </tr>
+                        <tr>
+                            <td>TXN-881204</td>
+                            <td>Withdrawal</td>
+                            <td>Cash App</td>
+                            <td class="loss-tag">-$200.00</td>
+                            <td><span style="color:#4ade80;">Completed</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: ACHIEVEMENTS ================= -->
+        <div class="tab-content" id="tab-achievements">
+            <div class="achievements-grid">
+                <div class="achievement-card">
+                    <div class="achievement-icon"><i class="fa-solid fa-crown"></i></div>
+                    <div>
+                        <h4 style="color:var(--gold);">First Victory</h4>
+                        <p style="color:var(--text-sub); font-size:0.8rem;">Won your first real-money poker hand.</p>
+                    </div>
+                </div>
+
+                <div class="achievement-card">
+                    <div class="achievement-icon"><i class="fa-solid fa-fire"></i></div>
+                    <div>
+                        <h4 style="color:var(--gold);">High Roller</h4>
+                        <p style="color:var(--text-sub); font-size:0.8rem;">Earned over $1,000 in cash games.</p>
+                    </div>
+                </div>
+
+                <div class="achievement-card">
+                    <div class="achievement-icon"><i class="fa-solid fa-gem"></i></div>
+                    <div>
+                        <h4 style="color:var(--gold);">Royal Flush Master</h4>
+                        <p style="color:var(--text-sub); font-size:0.8rem;">Hit the rarest hand in Hold'em.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: SETTINGS ================= -->
+        <div class="tab-content active" id="tab-settings">
+            <form id="profileSettingsForm" onsubmit="saveProfileChanges(event)">
+                <div class="form-grid">
+                    <div class="form-card">
+                        <div class="card-title"><i class="fa-solid fa-user-pen"></i> Personal Information</div>
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="inputFullName" class="form-input" required placeholder="Enter full name" oninput="syncNamePreview(this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="inputEmail" class="form-input" required placeholder="name@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" id="inputPhone" class="form-input" placeholder="+1 (555) 000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Country / Region</label>
+                            <input type="text" id="inputCountry" class="form-input" value="United States" readonly style="opacity: 0.7;">
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <div class="card-title"><i class="fa-solid fa-shield-halved"></i> Security & Preferences</div>
+                        <div class="form-group">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" class="form-input" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="form-input" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Default Currency</label>
+                            <input type="text" class="form-input" value="USD ($)" readonly style="opacity: 0.7;">
+                        </div>
+                        <button type="submit" id="saveBtn" class="btn-action-gold" style="width: 100%; justify-content: center; border-radius: 10px; margin-top: 1rem; padding: 0.85rem;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ================= TAB 6: KYC VERIFICATION ================= -->
+        <div class="tab-content" id="tab-kyc">
+            <div class="form-card">
+                <div class="card-title"><i class="fa-solid fa-id-card"></i> Identity Verification (KYC)</div>
+                <div style="background:rgba(34, 197, 94, 0.1); border:1px solid #22c55e; color:#4ade80; padding:1rem; border-radius:10px; margin-bottom:1.5rem;">
+                    <i class="fa-solid fa-circle-check"></i> Your account is fully verified. You have unlimited deposits and withdrawals.
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Document Type</label>
+                    <input type="text" class="form-input" value="Passport / Driver's License" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Verification Status</label>
+                    <input type="text" class="form-input" value="VERIFIED (United States Jurisdiction)" readonly style="color:#4ade80; font-weight:700;">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= MODALS SECTION ================= -->
+
+    <!-- CASHIER MODAL -->
+    <div class="modal-overlay" id="cashierModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal('cashierModal')">&times;</button>
+            <h3 style="color:var(--gold-bright); font-family:'Cinzel', serif; margin-bottom:1rem;"><i class="fa-solid fa-wallet"></i> Cashier - Deposit & Withdraw</h3>
+            
+            <div class="payment-methods">
+                <div class="method-btn active" onclick="selectPaymentMethod(this)">PayPal</div>
+                <div class="method-btn" onclick="selectPaymentMethod(this)">Cash App</div>
+                <div class="method-btn" onclick="selectPaymentMethod(this)">Crypto</div>
+                <div class="method-btn" onclick="selectPaymentMethod(this)">Card</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Amount ($ USD)</label>
+                <input type="number" id="cashierAmount" class="form-input" placeholder="100.00" value="100">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:1.5rem;">
+                <button class="btn-action-gold" onclick="executeDeposit()" style="flex:1; justify-content:center;"><i class="fa-solid fa-plus-circle"></i> Deposit Funds</button>
+                <button class="btn-action-dark" onclick="executeWithdraw()" style="flex:1; justify-content:center;"><i class="fa-solid fa-arrow-down-to-line"></i> Withdraw</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOURNAMENTS MODAL -->
+    <div class="modal-overlay" id="tournamentsModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal('tournamentsModal')">&times;</button>
+            <h3 style="color:var(--gold-bright); font-family:'Cinzel', serif; margin-bottom:1rem;"><i class="fa-solid fa-trophy"></i> Active Tournaments</h3>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Tournament</th>
+                        <th>Buy-in</th>
+                        <th>Prize Pool</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Sunday Royale GTD</td>
+                        <td>$50.00</td>
+                        <td style="color:var(--gold); font-weight:700;">$10,000.00</td>
+                        <td><button class="btn-action-gold" style="padding:4px 10px; font-size:0.75rem;" onclick="alert('Registered for Tournament!')">Register</button></td>
+                    </tr>
+                    <tr>
+                        <td>Daily Turbo Knockout</td>
+                        <td>$10.00</td>
+                        <td style="color:var(--gold); font-weight:700;">$2,500.00</td>
+                        <td><button class="btn-action-gold" style="padding:4px 10px; font-size:0.75rem;" onclick="alert('Registered for Tournament!')">Register</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- LEADERBOARD MODAL -->
+    <div class="modal-overlay" id="leaderboardModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal('leaderboardModal')">&times;</button>
+            <h3 style="color:var(--gold-bright); font-family:'Cinzel', serif; margin-bottom:1rem;"><i class="fa-solid fa-ranking-star"></i> Global Leaderboard</h3>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Earnings ($ USD)</th>
+                        <th>Win Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="color:var(--gold); font-weight:800;">#1 🥇</td>
+                        <td>Saeed ullah</td>
+                        <td class="win-tag">$45,820.00</td>
+                        <td>72%</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#cbd5e1; font-weight:800;">#2 🥈</td>
+                        <td>Alex_Texas</td>
+                        <td class="win-tag">$38,200.00</td>
+                        <td>68%</td>
+                    </tr>
+                    <tr>
+                        <td style="color:#b45309; font-weight:800;">#3 🥉</td>
+                        <td>PokerKing_USA</td>
+                        <td class="win-tag">$29,150.00</td>
+                        <td>64%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PROMOTIONS MODAL -->
+    <div class="modal-overlay" id="promotionsModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal('promotionsModal')">&times;</button>
+            <h3 style="color:var(--gold-bright); font-family:'Cinzel', serif; margin-bottom:1rem;"><i class="fa-solid fa-gift"></i> Exclusive Promotions</h3>
+            <div style="background:var(--bg-dark); padding:1rem; border-radius:10px; border:1px solid var(--border-color); margin-bottom:10px;">
+                <h4 style="color:var(--gold);">100% First Deposit Match (Up to $500)</h4>
+                <p style="color:var(--text-sub); font-size:0.85rem; margin-top:4px;">Double your playing stack instantly on your first deposit via PayPal or Crypto.</p>
+            </div>
+            <div style="background:var(--bg-dark); padding:1rem; border-radius:10px; border:1px solid var(--border-color);">
+                <h4 style="color:var(--gold);">Weekly VIP Rakeback (30%)</h4>
+                <p style="color:var(--text-sub); font-size:0.85rem; margin-top:4px;">Get 30% cash rakeback delivered straight to your wallet every Monday.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Section -->
+    <script src="js/currency-override.js"></script>
+    <script>
+        let currentCompressedAvatar = null;
+        let activePaymentMethod = 'PayPal';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile();
+        });
+
+        // ================= DYNAMIC TAB SWITCHER (GREEN LINE ENGINE) =================
+        function switchTab(tabName) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Deactivate all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab content & highlight button
+            const targetContent = document.getElementById(`tab-${tabName}`);
+            const targetBtn = document.getElementById(`btn-tab-${tabName}`);
+
+            if (targetContent) targetContent.classList.add('active');
+            if (targetBtn) targetBtn.classList.add('active');
+        }
+
+        // ================= MODAL CONTROLLERS =================
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        function selectPaymentMethod(btn) {
+            document.querySelectorAll('.method-btn').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            activePaymentMethod = btn.innerText;
+        }
+
+        // ================= CASHIER ENGINE =================
+        function executeDeposit() {
+            const amt = parseFloat(document.getElementById('cashierAmount').value) || 0;
+            if (amt <= 0) return alert('Please enter a valid amount.');
+
+            let currentBal = parseFloat(document.getElementById('navBalance').innerText.replace(/[^0-9.-]+/g,"")) || 1000;
+            currentBal += amt;
+            const formatted = `$${currentBal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            
+            document.getElementById('navBalance').innerText = formatted;
+
+            // Add to transaction log
+            const tbody = document.getElementById('transactionsTableBody');
+            const row = `<tr><td>TXN-${Math.floor(100000 + Math.random() * 900000)}</td><td>Deposit</td><td>${activePaymentMethod}</td><td class="win-tag">+$${amt.toFixed(2)}</td><td><span style="color:#4ade80;">Completed</span></td></tr>`;
+            tbody.innerHTML = row + tbody.innerHTML;
+
+            closeModal('cashierModal');
+            showAlert(`Successfully deposited $${amt.toFixed(2)} via ${activePaymentMethod}!`, 'success');
+        }
+
+        function executeWithdraw() {
+            const amt = parseFloat(document.getElementById('cashierAmount').value) || 0;
+            let currentBal = parseFloat(document.getElementById('navBalance').innerText.replace(/[^0-9.-]+/g,"")) || 1000;
+            if (amt <= 0 || amt > currentBal) return alert('Insufficient balance.');
+
+            currentBal -= amt;
+            const formatted = `$${currentBal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('navBalance').innerText = formatted;
+
+            // Add to transaction log
+            const tbody = document.getElementById('transactionsTableBody');
+            const row = `<tr><td>TXN-${Math.floor(100000 + Math.random() * 900000)}</td><td>Withdrawal</td><td>${activePaymentMethod}</td><td class="loss-tag">-$${amt.toFixed(2)}</td><td><span style="color:#4ade80;">Completed</span></td></tr>`;
+            tbody.innerHTML = row + tbody.innerHTML;
+
+            closeModal('cashierModal');
+            showAlert(`Successfully requested withdrawal of $${amt.toFixed(2)} to ${activePaymentMethod}!`, 'success');
+        }
+
+        // ================= PROFILE & PHOTO UPLOADER =================
+        function triggerPhotoUpload() {
+            document.getElementById('avatarFileInput').click();
+        }
+
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 300;
+                    canvas.height = 300;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 300, 300);
+
+                    currentCompressedAvatar = canvas.toDataURL('image/jpeg', 0.85);
+                    document.getElementById('headerAvatar').src = currentCompressedAvatar;
+                    showAlert('New photo selected. Click "Save Changes" to apply permanently.', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function syncNamePreview(val) {
+            document.getElementById('headerName').innerText = val.trim() || 'Player';
+        }
+
+        async function loadUserProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.success && data.user) {
+                    const u = data.user;
+                    document.getElementById('inputFullName').value = u.username || '';
+                    document.getElementById('inputEmail').value = u.email || '';
+                    document.getElementById('inputPhone').value = u.phone || '';
+
+                    document.getElementById('headerName').innerText = u.username || 'Player';
+                    document.getElementById('headerUsername').innerText = (u.username || 'user').toLowerCase().replace(/\s+/g, '_');
+                    document.getElementById('headerEmail').innerText = u.email || '';
+                    document.getElementById('headerPhone').innerText = u.phone || '+1 (555) 000-0000';
+
+                    const balanceFormatted = `$${parseFloat(u.balance || 1000).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('navBalance').innerText = balanceFormatted;
+
+                    if (u.avatar) {
+                        currentCompressedAvatar = u.avatar;
+                        document.getElementById('headerAvatar').src = u.avatar;
+                    }
+                }
+            } catch (err) {
+                console.error('Profile loading error:', err);
+            }
+        }
+
+        async function saveProfileChanges(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            if (!token) return window.location.href = 'login.html';
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+            const payload = {
+                username: document.getElementById('inputFullName').value.trim(),
+                email: document.getElementById('inputEmail').value.trim(),
+                phone: document.getElementById('inputPhone').value.trim(),
+                avatar: currentCompressedAvatar
+            };
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('Profile updated successfully!', 'success');
+                    if (data.user) {
+                        document.getElementById('headerName').innerText = data.user.username;
+                        document.getElementById('headerEmail').innerText = data.user.email;
+                    }
+                } else {
+                    showAlert(data.message || 'Error saving changes.', 'error');
+                }
+            } catch (err) {
+                showAlert('Server error saving profile.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+            }
+        }
+
+        function showAlert(msg, type) {
+            const el = document.getElementById('alertBox');
+            el.className = `alert-box alert-${type === 'success' ? 'success' : 'error'}`;
+            el.innerText = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

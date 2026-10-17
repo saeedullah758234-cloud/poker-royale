@@ -1,0 +1,1886 @@
+# 🚀 Part 6 of 10: `tournaments.html` — COMPLETE
+
+Here is your **complete, production-ready, fully responsive** Tournaments page with dynamic filtering, live countdowns, grid & table views, and an interactive registration modal.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournaments — PokerRoyale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ═══════════════════════════════════════════
+           CSS VARIABLES & RESET
+        ═══════════════════════════════════════════ */
+        :root {
+            --primary: #1A1A2E;
+            --secondary: #16213E;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --gold-dark: #B8960C;
+            --green: #00C853;
+            --blue: #0F3460;
+            --cyan: #00D4FF;
+            --purple: #7B2FF7;
+            --bg-dark: #0A0A1A;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --text: #FFFFFF;
+            --text-muted: #8892B0;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --radius: 16px;
+            --radius-sm: 8px;
+            --glow-gold: 0 0 30px rgba(255, 215, 0, 0.35);
+            --glow-red: 0 0 30px rgba(233, 69, 96, 0.4);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        img { max-width: 100%; display: block; }
+        .container { max-width: 1380px; margin: 0 auto; padding: 0 20px; }
+
+        /* Background glow effect */
+        .page-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 10% 15%, rgba(233,69,96,0.08), transparent 45%),
+                radial-gradient(circle at 85% 30%, rgba(123,47,247,0.08), transparent 50%),
+                radial-gradient(circle at 50% 85%, rgba(255,215,0,0.04), transparent 55%);
+        }
+
+        /* ═══════════════════════════════════════════
+           NAVBAR
+        ═══════════════════════════════════════════ */
+        .navbar {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(10, 10, 26, 0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 0;
+        }
+
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--gold);
+        }
+
+        .logo i {
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .logo span {
+            color: var(--text);
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 26px;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: var(--transition);
+            position: relative;
+            padding: 6px 0;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--gold);
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 100%; height: 2px;
+            background: var(--gold);
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .wallet-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 16px;
+            background: rgba(0, 200, 83, 0.12);
+            border: 1px solid rgba(0, 200, 83, 0.3);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .wallet-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,200,83,0.25);
+        }
+
+        .wallet-pill i { color: var(--green); }
+        .wallet-pill .bal {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px 5px 6px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        .user-chip img {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+        }
+
+        .user-chip span {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            width: 24px; height: 2.5px;
+            background: var(--text);
+            border-radius: 2px;
+        }
+
+        /* ═══════════════════════════════════════
+           FEATURED HERO BANNER
+        ═══════════════════════════════════════ */
+        .featured-hero {
+            position: relative;
+            z-index: 2;
+            padding: 30px 0 20px;
+        }
+
+        .hero-banner-card {
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            background: linear-gradient(135deg, rgba(26,26,46,0.9), rgba(15,52,96,0.7));
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), var(--glow-gold);
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            min-height: 340px;
+        }
+
+        .banner-bg-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            object-fit: cover;
+            filter: brightness(0.2) saturate(1.4);
+        }
+
+        .banner-content {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .banner-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(233, 69, 96, 0.2);
+            border: 1px solid var(--accent);
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            width: fit-content;
+            margin-bottom: 16px;
+        }
+
+        .banner-tag .pulse-dot {
+            width: 8px; height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.5; }
+        }
+
+        .banner-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2.3rem;
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 12px;
+        }
+
+        .banner-title .gold-text {
+            background: linear-gradient(135deg, var(--gold), #FFA500);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .banner-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+            max-width: 520px;
+        }
+
+        .banner-cta-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold), #FFA500);
+            color: #000;
+            box-shadow: 0 4px 20px rgba(255,215,0,0.3);
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-gold);
+        }
+
+        .btn-glass {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-glass:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Banner Right Panel with Live Timer */
+        .banner-timer-panel {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 26, 0.6);
+            backdrop-filter: blur(15px);
+            border-left: 1px solid var(--glass-border);
+            text-align: center;
+        }
+
+        .gtd-prize-box {
+            margin-bottom: 24px;
+        }
+
+        .gtd-prize-box .lbl {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .gtd-prize-box .val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 0 25px rgba(255,215,0,0.4);
+        }
+
+        .countdown-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .countdown-segment {
+            background: rgba(233, 69, 96, 0.12);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 12px;
+            padding: 10px 14px;
+            min-width: 64px;
+        }
+
+        .countdown-segment .num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+
+        .countdown-segment .txt {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .meta-pills {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .meta-pills span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .meta-pills i { color: var(--gold); }
+
+        /* ═══════════════════════════════════════
+           STAT TICKER BAR
+        ═══════════════════════════════════════ */
+        .tourney-stats-bar {
+            position: relative;
+            z-index: 2;
+            margin: 20px 0 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .stat-card-mini {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+
+        .stat-card-mini:hover {
+            transform: translateY(-3px);
+            border-color: var(--gold);
+        }
+
+        .stat-icon {
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .si-1 { background: linear-gradient(135deg, var(--gold), #FFA500); color: #000; }
+        .si-2 { background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; }
+        .si-3 { background: linear-gradient(135deg, var(--green), #00E676); color: #000; }
+        .si-4 { background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #fff; }
+
+        .stat-data .label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-data .val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 2px;
+        }
+
+        /* ═══════════════════════════════════════
+           TAB NAVIGATION & CONTROLS
+        ═══════════════════════════════════════ */
+        .controls-row {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .tabs-pill-list {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 4px;
+            overflow-x: auto;
+        }
+
+        .tab-item {
+            padding: 9px 20px;
+            border-radius: 50px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-item:hover { color: var(--text); }
+        .tab-item.active {
+            background: linear-gradient(135deg, var(--accent), #FF6B6B);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(233,69,96,0.3);
+        }
+
+        .view-switch {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .view-btn {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .view-btn.active {
+            background: var(--gold);
+            color: #000;
+        }
+
+        /* ═══════════════════════════════════════
+           FILTERS BAR
+        ═══════════════════════════════════════ */
+        .filter-panel {
+            position: relative;
+            z-index: 2;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            border-color: var(--gold);
+            background: rgba(255,215,0,0.03);
+        }
+
+        .filter-select {
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238892B0'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 36px;
+        }
+
+        .filter-select:focus { border-color: var(--gold); }
+        .filter-select option { background: var(--primary); color: var(--text); }
+
+        .btn-reset {
+            padding: 11px 18px;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-reset:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ═══════════════════════════════════════
+           GRID VIEW (CARDS)
+        ═══════════════════════════════════════ */
+        .tournaments-grid {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .tourney-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .tourney-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--gold);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.15);
+        }
+
+        .tc-banner {
+            position: relative;
+            height: 160px;
+            overflow: hidden;
+        }
+
+        .tc-banner img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .tourney-card:hover .tc-banner img {
+            transform: scale(1.08);
+        }
+
+        .tc-badge {
+            position: absolute;
+            top: 12px; left: 12px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-registering { background: rgba(0, 200, 83, 0.9); color: #000; }
+        .badge-running { background: rgba(233, 69, 96, 0.9); color: #fff; animation: pulse 1.5s infinite; }
+        .badge-upcoming { background: rgba(255, 215, 0, 0.9); color: #000; }
+        .badge-completed { background: rgba(136, 146, 176, 0.8); color: #fff; }
+
+        .tc-prize-tag {
+            position: absolute;
+            bottom: 12px; right: 12px;
+            padding: 6px 14px;
+            background: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .tc-body {
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .tc-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .tc-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tc-timer-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+            background: rgba(233, 69, 96, 0.08);
+            border: 1px solid rgba(233, 69, 96, 0.2);
+            border-radius: 10px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+
+        .tc-timer-bar .num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .tc-timer-bar .lbl {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .tc-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .tc-detail-item .lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .tc-detail-item .val {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 1px;
+        }
+
+        .tc-progress-section {
+            margin-bottom: 20px;
+        }
+
+        .tc-progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .tc-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .tc-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--gold));
+            border-radius: 6px;
+        }
+
+        .tc-footer {
+            margin-top: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tc-footer .btn {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, var(--accent), #FF6B6B);
+            color: #fff;
+        }
+
+        .btn-register:hover {
+            box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+        }
+
+        /* ═══════════════════════════════════════
+           TABLE VIEW
+        ═══════════════════════════════════════ */
+        .tournaments-table-wrapper {
+            position: relative;
+            z-index: 2;
+            display: none;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            overflow-x: auto;
+            margin-bottom: 60px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tournaments-table-wrapper.active {
+            display: block;
+        }
+
+        .tourney-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+
+        .tourney-table th {
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .tourney-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+        }
+
+        .tourney-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .table-tourney-name {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-tourney-name .t-icon {
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            background: rgba(233, 69, 96, 0.15);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .table-prize {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        /* ═══════════════════════════════════════
+           MODAL (TOURNAMENT DETAILS / REGISTER)
+        ═══════════════════════════════════════ */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(16px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-container {
+            background: #111424;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            max-width: 640px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6), var(--glow-gold);
+            transform: scale(0.95);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.open .modal-container {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .modal-header h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+
+        .modal-close {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .ms-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .ms-card .lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .ms-card .val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-top: 4px;
+        }
+
+        .structure-list {
+            margin-bottom: 24px;
+        }
+
+        .structure-list h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--cyan);
+        }
+
+        .structure-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .structure-table th {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--glass-border);
+            text-align: left;
+        }
+
+        .structure-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        /* ═══════════════════════════════════════
+           TOAST NOTIFICATION
+        ═══════════════════════════════════════ */
+        .toast {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 3000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: rgba(0, 200, 83, 0.2);
+            border: 1px solid rgba(0, 200, 83, 0.4);
+            color: var(--green);
+        }
+
+        .toast.error {
+            background: rgba(233, 69, 96, 0.2);
+            border: 1px solid rgba(233, 69, 96, 0.4);
+            color: var(--accent);
+        }
+
+        /* ═══════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════ */
+        .footer {
+            position: relative;
+            z-index: 2;
+            background: rgba(10, 10, 26, 0.98);
+            border-top: 1px solid var(--glass-border);
+            padding: 50px 0 24px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 36px;
+            margin-bottom: 36px;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-top: 12px;
+            max-width: 320px;
+        }
+
+        .footer-col h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 16px;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 8px;
+        }
+
+        .footer-col ul li a {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .footer-col ul li a:hover {
+            color: #fff;
+            padding-left: 4px;
+        }
+
+        .footer-bottom {
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-badges {
+            display: flex;
+            gap: 12px;
+        }
+
+        .footer-badges span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: var(--glass);
+            border-radius: 50px;
+        }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE BREAKPOINTS
+        ═══════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .hero-banner-card { grid-template-columns: 1fr; }
+            .banner-timer-panel { border-left: none; border-top: 1px solid var(--glass-border); }
+            .tourney-stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .filter-panel { grid-template-columns: 1fr 1fr; }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hamburger { display: flex; }
+            .tournaments-grid { grid-template-columns: 1fr; }
+            .filter-panel { grid-template-columns: 1fr; }
+            .tourney-stats-bar { grid-template-columns: 1fr; }
+            .banner-title { font-size: 1.8rem; }
+            .modal-summary-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-bg"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-crown"></i> Poker<span>Royale</span>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="lobby.html">Game Lobby</a></li>
+                <li><a href="tournaments.html" class="active">Tournaments</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="promotions.html">Promotions</a></li>
+                <li><a href="cashier.html">Cashier</a></li>
+            </ul>
+
+            <div class="nav-right">
+                <a href="cashier.html" class="wallet-pill">
+                    <i class="fas fa-wallet"></i>
+                    <span class="bal">PKR 25,000</span>
+                </a>
+
+                <a href="profile.html" class="user-chip">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="Avatar">
+                    <span>Ali K.</span>
+                </a>
+
+                <div class="hamburger">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- FEATURED HERO BANNER -->
+        <section class="featured-hero">
+            <div class="hero-banner-card">
+                <img src="https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=1600&q=80" class="banner-bg-img" alt="Featured Tournament">
+                
+                <div class="banner-content">
+                    <div class="banner-tag">
+                        <span class="pulse-dot"></span> Flagship Event
+                    </div>
+                    <h1 class="banner-title">
+                        Sunday Million <br><span class="gold-text">Grand Championship</span>
+                    </h1>
+                    <p class="banner-desc">
+                        Compete against the best poker players in the country. Guaranteed 1st Place payout of PKR 3,500,000 + Championship Gold Trophy!
+                    </p>
+                    <div class="banner-cta-group">
+                        <button class="btn btn-gold" onclick="openTourneyModal(1)">
+                            <i class="fas fa-ticket-alt"></i> Register Now (PKR 5,000)
+                        </button>
+                        <button class="btn btn-glass" onclick="openTourneyModal(1)">
+                            <i class="fas fa-info-circle"></i> Structure & Payouts
+                        </button>
+                    </div>
+                </div>
+
+                <div class="banner-timer-panel">
+                    <div class="gtd-prize-box">
+                        <div class="lbl">Guaranteed Prize Pool</div>
+                        <div class="val">PKR 10,000,000</div>
+                    </div>
+
+                    <div class="countdown-wrapper" id="heroCountdown">
+                        <div class="countdown-segment">
+                            <div class="num" id="cd-days">02</div>
+                            <div class="txt">Days</div>
+                        </div>
+                        <div class="countdown-segment">
+                            <div class="num" id="cd-hours">14</div>
+                            <div class="txt">Hours</div>
+                        </div>
+                        <div class="countdown-segment">
+                            <div class="num" id="cd-mins">36</div>
+                            <div class="txt">Mins</div>
+                        </div>
+                        <div class="countdown-segment">
+                            <div class="num" id="cd-secs">45</div>
+                            <div class="txt">Secs</div>
+                        </div>
+                    </div>
+
+                    <div class="meta-pills">
+                        <span><i class="fas fa-users"></i> 642/1000 Entries</span>
+                        <span><i class="fas fa-layer-group"></i> 20,000 Starting Stack</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATS BAR -->
+        <div class="tourney-stats-bar">
+            <div class="stat-card-mini">
+                <div class="stat-icon si-1"><i class="fas fa-trophy"></i></div>
+                <div class="stat-data">
+                    <div class="label">Total Weekly Guaranteed</div>
+                    <div class="val">PKR 25M+</div>
+                </div>
+            </div>
+            <div class="stat-card-mini">
+                <div class="stat-icon si-2"><i class="fas fa-fire"></i></div>
+                <div class="stat-data">
+                    <div class="label">Live Tournaments Today</div>
+                    <div class="val">48 Events</div>
+                </div>
+            </div>
+            <div class="stat-card-mini">
+                <div class="stat-icon si-3"><i class="fas fa-gift"></i></div>
+                <div class="stat-data">
+                    <div class="label">Daily FreeRolls</div>
+                    <div class="val">PKR 500,000</div>
+                </div>
+            </div>
+            <div class="stat-card-mini">
+                <div class="stat-icon si-4"><i class="fas fa-award"></i></div>
+                <div class="stat-data">
+                    <div class="label">Biggest Payout Yesterday</div>
+                    <div class="val">PKR 1.25M</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLS ROW (TABS & VIEW SWITCH) -->
+        <div class="controls-row">
+            <div class="tabs-pill-list">
+                <button class="tab-item active" data-category="all">All Events (24)</button>
+                <button class="tab-item" data-category="featured">Featured Majors</button>
+                <button class="tab-item" data-category="freeroll">FreeRolls (PKR 0)</button>
+                <button class="tab-item" data-category="highroller">High Rollers</button>
+                <button class="tab-item" data-category="turbo">Turbo & Hyper</button>
+                <button class="tab-item" data-category="satellite">Satellites</button>
+            </div>
+
+            <div class="view-switch">
+                <button class="view-btn active" id="btnGridView" onclick="setView('grid')" title="Grid View">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="view-btn" id="btnTableView" onclick="setView('table')" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- FILTER PANEL -->
+        <div class="filter-panel">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="tourneySearch" placeholder="Search tournament by title or game...">
+            </div>
+
+            <select class="filter-select" id="filterGameVariant">
+                <option value="">All Game Types</option>
+                <option value="holdem">Texas Hold'em</option>
+                <option value="omaha">PL Omaha</option>
+                <option value="shortdeck">Short Deck 6+</option>
+            </select>
+
+            <select class="filter-select" id="filterBuyin">
+                <option value="">All Buy-in Ranges</option>
+                <option value="free">FreeRoll (PKR 0)</option>
+                <option value="low">Micro/Low (Up to PKR 500)</option>
+                <option value="mid">Mid (PKR 500 - 2,500)</option>
+                <option value="high">High (PKR 2,500+)</option>
+            </select>
+
+            <select class="filter-select" id="filterStatus">
+                <option value="">All Statuses</option>
+                <option value="registering">Registering</option>
+                <option value="running">Running</option>
+                <option value="upcoming">Upcoming</option>
+            </select>
+
+            <button class="btn-reset" onclick="resetFilters()">
+                <i class="fas fa-rotate-left"></i> Reset
+            </button>
+        </div>
+
+        <!-- GRID VIEW CARDS CONTAINER -->
+        <div class="tournaments-grid" id="tournamentsGrid">
+            <!-- Dynamic Tournaments injected by JavaScript -->
+        </div>
+
+        <!-- TABLE VIEW CONTAINER -->
+        <div class="tournaments-table-wrapper" id="tournamentsTableWrapper">
+            <table class="tourney-table">
+                <thead>
+                    <tr>
+                        <th>Tournament</th>
+                        <th>Variant</th>
+                        <th>Buy-In</th>
+                        <th>Prize Pool</th>
+                        <th>Registered</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tournamentsTableBody">
+                    <!-- Dynamic Table Rows injected by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- MODAL: TOURNAMENT DETAILS & REGISTRATION -->
+    <div class="modal-overlay" id="tourneyModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div>
+                    <h3 id="modalTitle">Sunday Million Championship</h3>
+                    <span style="font-size: 0.8rem; color: var(--gold);" id="modalGameType">NL Hold'em • Deepstack</span>
+                </div>
+                <button class="modal-close" onclick="closeTourneyModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-summary-grid">
+                    <div class="ms-card">
+                        <div class="lbl">Guaranteed Pool</div>
+                        <div class="val" id="modalPrize">PKR 10,000,000</div>
+                    </div>
+                    <div class="ms-card">
+                        <div class="lbl">Total Buy-In</div>
+                        <div class="val" id="modalBuyin">PKR 5,000</div>
+                    </div>
+                    <div class="ms-card">
+                        <div class="lbl">Starting Chips</div>
+                        <div class="val" id="modalChips">20,000</div>
+                    </div>
+                </div>
+
+                <div class="structure-list">
+                    <h4>Blind Structure & Durations</h4>
+                    <table class="structure-table">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Blinds</th>
+                                <th>Ante</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Level 1</td>
+                                <td>50 / 100</td>
+                                <td>-</td>
+                                <td>15 Mins</td>
+                            </tr>
+                            <tr>
+                                <td>Level 2</td>
+                                <td>75 / 150</td>
+                                <td>15</td>
+                                <td>15 Mins</td>
+                            </tr>
+                            <tr>
+                                <td>Level 3</td>
+                                <td>100 / 200</td>
+                                <td>25</td>
+                                <td>15 Mins</td>
+                            </tr>
+                            <tr>
+                                <td>Level 4</td>
+                                <td>150 / 300</td>
+                                <td>50</td>
+                                <td>15 Mins</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 14px; border-radius: 12px;">
+                    <div style="display:flex; justify-content:space-between; font-size: 0.85rem; margin-bottom: 6px;">
+                        <span style="color:var(--text-muted)">Your Available Balance:</span>
+                        <b style="color:var(--green)">PKR 25,000</b>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 0.85rem;">
+                        <span style="color:var(--text-muted)">Balance After Buy-In:</span>
+                        <b style="color:var(--gold)" id="modalBalAfter">PKR 20,000</b>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-glass" onclick="closeTourneyModal()">Cancel</button>
+                <button class="btn btn-gold" id="btnConfirmReg" onclick="confirmRegistration()">
+                    <i class="fas fa-check-circle"></i> Confirm & Deduct Buy-in
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toastBox">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Registered successfully!</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <i class="fas fa-crown"></i> Poker<span>Royale</span>
+                    </a>
+                    <p>Pakistan's most prestigious real-money poker community. Safe deposits via EasyPaisa, JazzCash, & Wire Transfer.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="lobby.html">Game Lobby</a></li>
+                        <li><a href="tournaments.html">All Tournaments</a></li>
+                        <li><a href="leaderboard.html">Leaderboards</a></li>
+                        <li><a href="promotions.html">Bonuses & VIP</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Player Support</h4>
+                    <ul>
+                        <li><a href="#">Tournament Rules</a></li>
+                        <li><a href="#">Deposit via JazzCash</a></li>
+                        <li><a href="#">Deposit via EasyPaisa</a></li>
+                        <li><a href="#">24/7 Live Support</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Legalities</h4>
+                    <ul>
+                        <li><a href="#">Terms & Conditions</a></li>
+                        <li><a href="#">Fair Play & RNG Audit</a></li>
+                        <li><a href="#">Responsible Gaming</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 PokerRoyale Platform. All Rights Reserved. Strictly 18+ Only.</p>
+                <div class="footer-badges">
+                    <span><i class="fas fa-shield-halved" style="color:var(--green)"></i> SSL Encrypted</span>
+                    <span><i class="fas fa-certificate" style="color:var(--gold)"></i> Certified RNG</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // ─── TOURNAMENTS DATASET ───
+        const tournaments = [
+            {
+                id: 1,
+                title: "Sunday Million Championship",
+                category: "featured",
+                game: "holdem",
+                gameText: "No Limit Hold'em",
+                buyin: 5000,
+                prize: 10000000,
+                entries: 642,
+                maxEntries: 1000,
+                startingStack: "20,000",
+                status: "registering",
+                banner: "https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=600&q=80",
+                hoursLeft: 62
+            },
+            {
+                id: 2,
+                title: "Daily FreeRoll Bonanza",
+                category: "freeroll",
+                game: "holdem",
+                gameText: "No Limit Hold'em",
+                buyin: 0,
+                prize: 100000,
+                entries: 1420,
+                maxEntries: 2000,
+                startingStack: "5,000",
+                status: "registering",
+                banner: "https://images.unsplash.com/photo-1541278107931-e006523892df?w=600&q=80",
+                hoursLeft: 2
+            },
+            {
+                id: 3,
+                title: "High Roller Super High Stakes",
+                category: "highroller",
+                game: "holdem",
+                gameText: "NL Hold'em Deepstack",
+                buyin: 25000,
+                prize: 5000000,
+                entries: 88,
+                maxEntries: 150,
+                startingStack: "50,000",
+                status: "running",
+                banner: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=600&q=80",
+                hoursLeft: 0
+            },
+            {
+                id: 4,
+                title: "Omaha Knockout Bounty Blast",
+                category: "turbo",
+                game: "omaha",
+                gameText: "Pot Limit Omaha PKO",
+                buyin: 1500,
+                prize: 750000,
+                entries: 310,
+                maxEntries: 500,
+                startingStack: "10,000",
+                status: "registering",
+                banner: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&q=80",
+                hoursLeft: 5
+            },
+            {
+                id: 5,
+                title: "Mega Satellite to Sunday Million",
+                category: "satellite",
+                game: "holdem",
+                gameText: "Turbo Satellite",
+                buyin: 300,
+                prize: 500000,
+                entries: 230,
+                maxEntries: 300,
+                startingStack: "7,500",
+                status: "registering",
+                banner: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&q=80",
+                hoursLeft: 1
+            },
+            {
+                id: 6,
+                title: "Midnight Hyper Turbo Splash",
+                category: "turbo",
+                game: "shortdeck",
+                gameText: "Short Deck 6+ Hold'em",
+                buyin: 800,
+                prize: 300000,
+                entries: 165,
+                maxEntries: 250,
+                startingStack: "10,000",
+                status: "upcoming",
+                banner: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80",
+                hoursLeft: 12
+            }
+        ];
+
+        let selectedTourney = null;
+
+        // ─── RENDER GRID & TABLE ───
+        function renderTournaments(data) {
+            const grid = document.getElementById('tournamentsGrid');
+            const tbody = document.getElementById('tournamentsTableBody');
+
+            // Render Grid
+            grid.innerHTML = data.map(t => {
+                const fillPercent = Math.min(100, Math.floor((t.entries / t.maxEntries) * 100));
+                const badgeClass = t.status === 'running' ? 'badge-running' : t.status === 'registering' ? 'badge-registering' : 'badge-upcoming';
+                const statusLabel = t.status === 'running' ? '● LIVE NOW' : t.status === 'registering' ? 'REGISTERING' : 'UPCOMING';
+                
+                return `
+                <div class="tourney-card">
+                    <div class="tc-banner">
+                        <img src="${t.banner}" alt="${t.title}">
+                        <div class="tc-badge ${badgeClass}">${statusLabel}</div>
+                        <div class="tc-prize-tag">PKR ${t.prize.toLocaleString()}</div>
+                    </div>
+                    <div class="tc-body">
+                        <h3 class="tc-title">${t.title}</h3>
+                        <div class="tc-subtitle">
+                            <i class="fas fa-cards" style="color:var(--accent)"></i> ${t.gameText}
+                        </div>
+
+                        <div class="tc-timer-bar">
+                            <div>
+                                <div class="num">${String(Math.floor(t.hoursLeft / 24)).padStart(2, '0')}</div>
+                                <div class="lbl">Days</div>
+                            </div>
+                            <div>
+                                <div class="num">${String(t.hoursLeft % 24).padStart(2, '0')}</div>
+                                <div class="lbl">Hours</div>
+                            </div>
+                            <div>
+                                <div class="num">35</div>
+                                <div class="lbl">Mins</div>
+                            </div>
+                        </div>
+
+                        <div class="tc-details-grid">
+                            <div class="tc-detail-item">
+                                <div class="lbl">Buy-in</div>
+                                <div class="val" style="color:var(--gold)">${t.buyin === 0 ? 'FREE' : 'PKR ' + t.buyin.toLocaleString()}</div>
+                            </div>
+                            <div class="tc-detail-item">
+                                <div class="lbl">Start Stack</div>
+                                <div class="val">${t.startingStack}</div>
+                            </div>
+                        </div>
+
+                        <div class="tc-progress-section">
+                            <div class="tc-progress-header">
+                                <span>Players: <b>${t.entries}</b> / ${t.maxEntries}</span>
+                                <span>${fillPercent}%</span>
+                            </div>
+                            <div class="tc-progress-bar">
+                                <div class="tc-progress-fill" style="width: ${fillPercent}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="tc-footer">
+                            <button class="btn btn-glass" onclick="openTourneyModal(${t.id})">Details</button>
+                            <button class="btn btn-register" onclick="openTourneyModal(${t.id})">
+                                ${t.buyin === 0 ? 'Join Free' : 'Register'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Render Table
+            tbody.innerHTML = data.map(t => {
+                const statusBadge = t.status === 'running' ? '<span style="color:var(--accent); font-weight:700">● LIVE</span>' : '<span style="color:var(--green); font-weight:700">Open</span>';
+                return `
+                <tr>
+                    <td>
+                        <div class="table-tourney-name">
+                            <div class="t-icon"><i class="fas fa-trophy"></i></div>
+                            <div>
+                                <div>${t.title}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted)">Stack: ${t.startingStack}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${t.gameText}</td>
+                    <td><b style="color:var(--gold)">${t.buyin === 0 ? 'FREE' : 'PKR ' + t.buyin.toLocaleString()}</b></td>
+                    <td class="table-prize">PKR ${t.prize.toLocaleString()}</td>
+                    <td>${t.entries} / ${t.maxEntries}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-gold" style="padding:6px 14px; font-size:0.78rem" onclick="openTourneyModal(${t.id})">
+                            Join
+                        </button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // ─── FILTER LOGIC ───
+        function applyFilters() {
+            const query = document.getElementById('tourneySearch').value.toLowerCase();
+            const game = document.getElementById('filterGameVariant').value;
+            const buyin = document.getElementById('filterBuyin').value;
+            const status = document.getElementById('filterStatus').value;
+            const activeTab = document.querySelector('.tab-item.active').dataset.category;
+
+            const filtered = tournaments.filter(t => {
+                if (query && !t.title.toLowerCase().includes(query) && !t.gameText.toLowerCase().includes(query)) return false;
+                if (game && t.game !== game) return false;
+                if (status && t.status !== status) return false;
+                if (activeTab !== 'all' && t.category !== activeTab) return false;
+
+                if (buyin === 'free' && t.buyin !== 0) return false;
+                if (buyin === 'low' && (t.buyin === 0 || t.buyin > 500)) return false;
+                if (buyin === 'mid' && (t.buyin <= 500 || t.buyin > 2500)) return false;
+                if (buyin === 'high' && t.buyin <= 2500) return false;
+
+                return true;
+            });
+
+            renderTournaments(filtered);
+        }
+
+        // Event Listeners for Filters
+        document.getElementById('tourneySearch').addEventListener('input', applyFilters);
+        document.getElementById('filterGameVariant').addEventListener('change', applyFilters);
+        document.getElementById('filterBuyin').addEventListener('change', applyFilters);
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+
+        // Category Tab switching
+        document.querySelectorAll('.tab-item').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                applyFilters();
+            });
+        });
+
+        function resetFilters() {
+            document.getElementById('tourneySearch').value = '';
+            document.getElementById('filterGameVariant').value = '';
+            document.getElementById('filterBuyin').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+            document.querySelector('.tab-item[data-category="all"]').classList.add('active');
+            renderTournaments(tournaments);
+        }
+
+        // ─── VIEW SWITCHING (GRID vs TABLE) ───
+        function setView(viewMode) {
+            const grid = document.getElementById('tournamentsGrid');
+            const tableWrap = document.getElementById('tournamentsTableWrapper');
+            const btnGrid = document.getElementById('btnGridView');
+            const btnTable = document.getElementById('btnTableView');
+
+            if (viewMode === 'grid') {
+                grid.style.display = 'grid';
+                tableWrap.classList.remove('active');
+                btnGrid.classList.add('active');
+                btnTable.classList.remove('active');
+            } else {
+                grid.style.display = 'none';
+                tableWrap.classList.add('active');
+                btnGrid.classList.remove('active');
+                btnTable.classList.add('active');
+            }
+        }
+
+        // ─── MODAL CONTROLS ───
+        function openTourneyModal(id) {
+            selectedTourney = tournaments.find(t => t.id === id) || tournaments[0];
+            document.getElementById('modalTitle').textContent = selectedTourney.title;
+            document.getElementById('modalGameType').textContent = selectedTourney.gameText;
+            document.getElementById('modalPrize').textContent = 'PKR ' + selectedTourney.prize.toLocaleString();
+            document.getElementById('modalBuyin').textContent = selectedTourney.buyin === 0 ? 'FREE' : 'PKR ' + selectedTourney.buyin.toLocaleString();
+            document.getElementById('modalChips').textContent = selectedTourney.startingStack;
+
+            const userBalance = 25000;
+            const balAfter = userBalance - selectedTourney.buyin;
+            document.getElementById('modalBalAfter').textContent = 'PKR ' + Math.max(0, balAfter).toLocaleString();
+
+            document.getElementById('tourneyModal').classList.add('open');
+        }
+
+        function closeTourneyModal() {
+            document.getElementById('tourneyModal').classList.remove('open');
+        }
+
+        function confirmRegistration() {
+            closeTourneyModal();
+            showToast(`Registered for ${selectedTourney.title}! Entry deducted.`, 'success');
+        }
+
+        function showToast(msg, type='success') {
+            const toast = document.getElementById('toastBox');
+            const msgEl = document.getElementById('toastMessage');
+            msgEl.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.classList.remove('show'); }, 4000);
+        }
+
+        // ─── HERO COUNTDOWN TICKER ───
+        let sec = 45, min = 36, hr = 14, days = 2;
+        setInterval(() => {
+            sec--;
+            if (sec < 0) { sec = 59; min--; }
+            if (min < 0) { min = 59; hr--; }
+            if (hr < 0) { hr = 23; days--; }
+
+            document.getElementById('cd-secs').textContent = String(sec).padStart(2, '0');
+            document.getElementById('cd-mins').textContent = String(min).padStart(2, '0');
+            document.getElementById('cd-hours').textContent = String(hr).padStart(2, '0');
+            document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
+        }, 1000);
+
+        // Initial Load
+        renderTournaments(tournaments);
+    </script>
+</body>
+</html>
+```
+
+---
+
+## 📋 Build Progress
+
+```
+Part  1/10: ✅ index.html
+Part  2/10: ✅ login.html
+Part  3/10: ✅ register.html
+Part  4/10: ✅ lobby.html
+Part  5/10: ✅ table.html
+Part  6/10: ✅ tournaments.html     ← DONE
+Part  7/10: ⬜ cashier.html
+Part  8/10: ⬜ profile.html + leaderboard.html
+Part  9/10: ⬜ promotions.html
+Part 10/10: ⬜ admin/ + database + server
+```
+
+> **Send "next" or "part 7" to build `cashier.html` (EasyPaisa, JazzCash & Bank Deposit/Withdrawal Wallet Hub)!** 🚀💰

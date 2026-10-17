@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security & Anti-Fraud — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Critical banner */
+        .crit-banner {
+            background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(239,68,68,.05));
+            border:1px solid rgba(239,68,68,.35);
+            border-radius:var(--radius);
+            padding:14px 18px; margin-bottom:20px;
+            display:flex; align-items:center; gap:12px;
+        }
+        .crit-banner i { color:var(--danger); font-size:1.2rem; animation:pulse 1.5s infinite; }
+        .crit-banner span { font-size:.88rem; flex:1; }
+        .crit-banner b { color:var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+        }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-icon.warning { background:rgba(245,158,11,.15); color:var(--warning); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .ms-icon.purple { background:rgba(123,47,247,.15); color:var(--purple); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.25rem; font-weight:900; margin-top:2px; }
+
+        /* Tabs */
+        .sec-tabs {
+            display:flex; gap:6px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:50px; padding:4px; margin-bottom:20px; width:fit-content; flex-wrap:wrap;
+        }
+        .stab {
+            padding:9px 18px; border-radius:50px; background:transparent; border:none;
+            color:var(--text-muted); font-family:'Inter',sans-serif; font-size:.85rem; font-weight:600;
+            cursor:pointer; transition:var(--transition); display:flex; align-items:center; gap:6px;
+        }
+        .stab:hover { color:var(--text); }
+        .stab.active { background:var(--primary); color:#fff; box-shadow:0 4px 15px rgba(59,130,246,.3); }
+
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; animation:fadeIn .3s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+        /* Filters */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:16px;
+            display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto; gap:12px; align-items:center;
+        }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:100%; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        .filter-select {
+            padding:10px 32px 10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            appearance:none;
+            -webkit-appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-warning { background:var(--warning); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+
+        /* Alert cards */
+        .alerts-list { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
+        .alert-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px 20px; transition:var(--transition); position:relative; overflow:hidden;
+        }
+        .alert-card:hover { border-color:var(--primary); }
+        .alert-card::before {
+            content:''; position:absolute; top:0; left:0; width:4px; height:100%;
+        }
+        .alert-card.critical::before { background:var(--danger); }
+        .alert-card.high::before { background:var(--accent); }
+        .alert-card.medium::before { background:var(--warning); }
+        .alert-card.low::before { background:var(--cyan); }
+        .alert-card.resolved { opacity:.55; }
+
+        .ac-top {
+            display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap;
+        }
+        .ac-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .sev-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.68rem; font-weight:800; text-transform:uppercase;
+        }
+        .sev-critical { background:rgba(239,68,68,.2); color:#ff6b6b; border:1px solid rgba(239,68,68,.4); }
+        .sev-high { background:rgba(233,69,96,.15); color:var(--accent); }
+        .sev-medium { background:rgba(245,158,11,.15); color:var(--warning); }
+        .sev-low { background:rgba(6,182,212,.15); color:var(--cyan); }
+
+        .type-pill {
+            display:inline-flex; padding:2px 8px; border-radius:50px;
+            font-size:.65rem; font-weight:700; text-transform:uppercase;
+            background:rgba(123,47,247,.15); color:var(--purple);
+        }
+        .status-pill {
+            display:inline-flex; padding:2px 8px; border-radius:50px;
+            font-size:.65rem; font-weight:700; text-transform:uppercase;
+        }
+        .st-new { background:rgba(233,69,96,.15); color:var(--accent); }
+        .st-investigating { background:rgba(245,158,11,.15); color:var(--warning); }
+        .st-confirmed { background:rgba(239,68,68,.15); color:var(--danger); }
+        .st-false_positive { background:rgba(16,185,129,.15); color:var(--green); }
+        .st-resolved { background:rgba(156,163,175,.15); color:var(--text-muted); }
+
+        .ac-time { font-size:.75rem; color:var(--text-muted); }
+        .ac-body { font-size:.9rem; margin-bottom:8px; }
+        .ac-body strong { color:var(--gold); }
+        .ac-desc { font-size:.82rem; color:var(--text-muted); margin-bottom:12px; line-height:1.5; }
+        .ac-evidence {
+            background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:8px;
+            padding:10px 12px; font-size:.78rem; color:var(--text-muted); margin-bottom:12px;
+            font-family:monospace; line-height:1.6;
+        }
+        .ac-actions { display:flex; gap:6px; flex-wrap:wrap; }
+
+        /* Table */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:24px;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 14px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap;
+        }
+        .admin-table td {
+            padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition); margin-right:3px;
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.ban:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+        .action-btn.ok:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+
+        /* IP / Sessions cards */
+        .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+        .panel-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); padding:20px;
+        }
+        .panel-card h3 {
+            font-size:.95rem; font-weight:700; margin-bottom:14px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .panel-card h3 i { color:var(--gold); }
+
+        .ip-item, .session-item {
+            display:flex; align-items:center; justify-content:space-between; gap:12px;
+            padding:10px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:.85rem;
+        }
+        .ip-item:last-child, .session-item:last-child { border-bottom:none; }
+        .ip-addr { font-family:monospace; font-weight:600; color:var(--cyan); }
+        .ip-meta { font-size:.75rem; color:var(--text-muted); }
+
+        .form-row { display:flex; gap:8px; margin-top:12px; }
+        .form-input {
+            flex:1; padding:10px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .form-input:focus { border-color:var(--primary); }
+
+        /* Settings toggles */
+        .toggle-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 0; border-bottom:1px solid rgba(255,255,255,.04);
+        }
+        .toggle-row:last-child { border-bottom:none; }
+        .toggle-info h4 { font-size:.88rem; font-weight:600; }
+        .toggle-info p { font-size:.75rem; color:var(--text-muted); }
+        .toggle-switch {
+            width:46px; height:24px; border-radius:50px;
+            background:var(--border); cursor:pointer; position:relative; transition:var(--transition); flex-shrink:0;
+        }
+        .toggle-switch.on { background:var(--green); }
+        .toggle-switch::after {
+            content:''; position:absolute; top:3px; left:3px;
+            width:18px; height:18px; border-radius:50%; background:#fff; transition:var(--transition);
+        }
+        .toggle-switch.on::after { left:25px; }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:560px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+        }
+        .form-group { margin-bottom:14px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-select, .form-textarea {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-select option { background:var(--card-bg); }
+        .form-textarea { min-height:90px; resize:vertical; }
+
+        .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+        .detail-item { padding:10px; background:var(--glass); border:1px solid var(--border); border-radius:8px; }
+        .detail-item .lbl { font-size:.68rem; color:var(--text-muted); text-transform:uppercase; }
+        .detail-item .val { font-size:.88rem; font-weight:600; margin-top:2px; word-break:break-all; }
+
+        .empty-state { text-align:center; padding:40px 20px; display:none; color:var(--text-muted); }
+        .empty-state.show { display:block; }
+        .empty-state .icon { font-size:2.5rem; opacity:.3; margin-bottom:8px; }
+
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-warning { background:var(--warning); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+            .two-col { grid-template-columns:1fr; }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .filters-bar { grid-template-columns:1fr 1fr; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .filters-bar { grid-template-columns:1fr; }
+            .sec-tabs { width:100%; }
+            .detail-grid { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link active"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span><span class="nav-badge" id="navAlertBadge">4</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Security & Anti-Fraud</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Security</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="refreshAll()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <div class="crit-banner" id="critBanner">
+                <i class="fas fa-radiation"></i>
+                <span><b id="critCount">0</b> critical fraud alerts require immediate investigation.</span>
+                <button class="btn btn-sm btn-danger" onclick="filterSeverity('critical')">View Critical</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat active-filter" data-sev="all" onclick="filterSeverity('all', this)">
+                    <div class="ms-icon purple"><i class="fas fa-shield-halved"></i></div>
+                    <div><div class="ms-label">Open Alerts</div><div class="ms-value" id="statOpen">0</div></div>
+                </div>
+                <div class="mini-stat" data-sev="critical" onclick="filterSeverity('critical', this)">
+                    <div class="ms-icon red"><i class="fas fa-radiation"></i></div>
+                    <div><div class="ms-label">Critical</div><div class="ms-value" id="statCrit" style="color:var(--danger)">0</div></div>
+                </div>
+                <div class="mini-stat" data-sev="high" onclick="filterSeverity('high', this)">
+                    <div class="ms-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div><div class="ms-label">High</div><div class="ms-value" id="statHigh" style="color:var(--warning)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon cyan"><i class="fas fa-user-slash"></i></div>
+                    <div><div class="ms-label">Banned Today</div><div class="ms-value" id="statBanned" style="color:var(--cyan)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon green"><i class="fas fa-check-double"></i></div>
+                    <div><div class="ms-label">Resolved (7d)</div><div class="ms-value" id="statResolved" style="color:var(--green)">0</div></div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="sec-tabs">
+                <button class="stab active" onclick="switchTab('alerts', this)"><i class="fas fa-bell"></i> Fraud Alerts</button>
+                <button class="stab" onclick="switchTab('logins', this)"><i class="fas fa-sign-in-alt"></i> Failed Logins</button>
+                <button class="stab" onclick="switchTab('sessions', this)"><i class="fas fa-laptop"></i> Active Sessions</button>
+                <button class="stab" onclick="switchTab('ip', this)"><i class="fas fa-network-wired"></i> IP Control</button>
+                <button class="stab" onclick="switchTab('settings', this)"><i class="fas fa-cog"></i> Security Settings</button>
+            </div>
+
+            <!-- ═══ ALERTS TAB ═══ -->
+            <div class="tab-panel active" id="tab-alerts">
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchAlerts" placeholder="Search user, type, description..." oninput="renderAlerts()">
+                    </div>
+                    <select class="filter-select" id="filterType" onchange="renderAlerts()">
+                        <option value="">All Alert Types</option>
+                        <option value="multi_account">Multi-Account</option>
+                        <option value="collusion">Collusion</option>
+                        <option value="chip_dumping">Chip Dumping</option>
+                        <option value="bot_detected">Bot Detected</option>
+                        <option value="bonus_abuse">Bonus Abuse</option>
+                        <option value="money_laundering">Money Laundering</option>
+                        <option value="ip_match">IP Match</option>
+                        <option value="device_match">Device Match</option>
+                    </select>
+                    <select class="filter-select" id="filterStatus" onchange="renderAlerts()">
+                        <option value="">Open + Investigating</option>
+                        <option value="new">New</option>
+                        <option value="investigating">Investigating</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="false_positive">False Positive</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="all">All Statuses</option>
+                    </select>
+                    <select class="filter-select" id="filterSev" onchange="renderAlerts()">
+                        <option value="">All Severities</option>
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="resetAlertFilters()"><i class="fas fa-rotate-left"></i></button>
+                </div>
+
+                <div class="alerts-list" id="alertsList"></div>
+                <div class="empty-state" id="alertsEmpty">
+                    <div class="icon">🛡️</div>
+                    <h3>No alerts found</h3>
+                    <p>Queue is clear for this filter</p>
+                </div>
+            </div>
+
+            <!-- ═══ FAILED LOGINS TAB ═══ -->
+            <div class="tab-panel" id="tab-logins">
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3><i class="fas fa-user-lock"></i> Recent Failed Login Attempts</h3>
+                        <button class="btn btn-sm btn-outline" onclick="exportLogins()"><i class="fas fa-download"></i> CSV</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Account</th>
+                                    <th>IP Address</th>
+                                    <th>Location</th>
+                                    <th>Device / Browser</th>
+                                    <th>Reason</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loginsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ SESSIONS TAB ═══ -->
+            <div class="tab-panel" id="tab-sessions">
+                <div class="two-col">
+                    <div class="panel-card">
+                        <h3><i class="fas fa-laptop"></i> Active Admin Sessions</h3>
+                        <div id="adminSessions"></div>
+                        <button class="btn btn-sm btn-danger" style="margin-top:12px;" onclick="killAllAdminSessions()">
+                            <i class="fas fa-sign-out-alt"></i> Force Logout All Admins
+                        </button>
+                    </div>
+                    <div class="panel-card">
+                        <h3><i class="fas fa-users"></i> Suspicious Player Sessions</h3>
+                        <div id="playerSessions"></div>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3><i class="fas fa-globe"></i> Live Session Monitor</h3>
+                        <span style="font-size:.8rem;color:var(--text-muted);">Auto-refresh 20s</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>IP</th>
+                                    <th>Location</th>
+                                    <th>Device</th>
+                                    <th>Started</th>
+                                    <th>Last Active</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ IP CONTROL TAB ═══ -->
+            <div class="tab-panel" id="tab-ip">
+                <div class="two-col">
+                    <div class="panel-card">
+                        <h3><i class="fas fa-ban"></i> IP Blacklist</h3>
+                        <div id="blacklist"></div>
+                        <div class="form-row">
+                            <input class="form-input" id="newBlackIp" placeholder="e.g. 203.0.113.45">
+                            <button class="btn btn-danger btn-sm" onclick="addBlacklist()"><i class="fas fa-plus"></i> Block</button>
+                        </div>
+                    </div>
+                    <div class="panel-card">
+                        <h3><i class="fas fa-check-circle"></i> Admin IP Whitelist</h3>
+                        <div id="whitelist"></div>
+                        <div class="form-row">
+                            <input class="form-input" id="newWhiteIp" placeholder="e.g. 198.51.100.10">
+                            <button class="btn btn-green btn-sm" onclick="addWhitelist()"><i class="fas fa-plus"></i> Allow</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-card">
+                    <h3><i class="fas fa-earth-americas"></i> Geo / VPN Rules</h3>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <h4>Block VPN / Proxy Logins</h4>
+                            <p>Reject player logins detected as VPN, Tor, or datacenter proxy</p>
+                        </div>
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togVpn"></div>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <h4>Restrict Admin to Whitelist IPs Only</h4>
+                            <p>Admin panel accessible only from whitelisted IPs</p>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('on')" id="togAdminIp"></div>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <h4>Country Registration Blocklist</h4>
+                            <p>Block new signups from selected high-risk regions</p>
+                        </div>
+                                                    <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togGeoBlock"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ SECURITY SETTINGS TAB ═══ -->
+                <div class="tab-panel" id="tab-settings">
+                    <div class="panel-card">
+                        <h3><i class="fas fa-lock"></i> Platform Security Controls</h3>
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Multi-Account Detection Engine</h4>
+                                <p>Automatically flag accounts sharing hardware fingerprints, browser cookies, or IP subnets</p>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togMultiAcc"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Collusion & Chip Dumping Radar</h4>
+                                <p>Monitor real-time hand history for non-optimal folds and suspicious chip transfers</p>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togCollusion"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Bot Pattern Detector</h4>
+                                <p>Flag accounts displaying mechanical reaction times or 24/7 continuous session activity</p>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togBotDetect"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <h4>Strict Rate Limiting</h4>
+                                <p>Throttle API requests per IP to prevent brute-force attacks and DDoS</p>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')" id="togRateLimit"></div>
+                        </div>
+                        <div style="margin-top:20px;">
+                            <button class="btn btn-gold" onclick="saveSecSettings()"><i class="fas fa-save"></i> Save Security Rules</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- INVESTIGATE / ALERT DETAIL MODAL -->
+<div class="modal-overlay" id="alertModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Investigate Alert</h3>
+            <button class="modal-close" onclick="closeModal('alertModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid" id="alertDetails"></div>
+            <div class="form-group">
+                <label>Investigation Notes / Action Log</label>
+                <textarea class="form-textarea" id="alertNotes" placeholder="Add investigation notes here..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer" id="modalFooter"></div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  SECURITY & FRAUD DATA
+// ═══════════════════════════════════════
+const ALERTS = [
+    { id: 'ALT-1001', user: 'User #2187 (bluff_queen)', email: 'sara@gmail.com', type: 'chip_dumping', severity: 'critical', status: 'new', time: '12 mins ago', desc: 'Suspicious all-in loss with 7-high vs weak hand on $25/$50 table.', evidence: 'Table: #4 High Roller VIP | Pot: $12,500 | Hand #8921 | Recipient: User #4521', riskScore: 98 },
+    { id: 'ALT-1002', user: 'User #4521 (poker_ace)', email: 'ace@gmail.com', type: 'multi_account', severity: 'high', status: 'investigating', time: '25 mins ago', desc: 'Identical hardware fingerprint and device GUID as User #3892.', evidence: 'IP: 198.51.100.45 | Fingerprint: fp_a89f7c21 | Matches: user_id=3892', riskScore: 84 },
+    { id: 'ALT-1003', user: 'User #1298 (bot_master)', email: 'bot@domain.com', type: 'bot_detected', severity: 'high', status: 'new', time: '1 hour ago', desc: 'Consistent 0.450s action response time across 500 consecutive hands.', evidence: 'Std Dev: 0.002s | Session Duration: 18h 40m | Action Count: 1,420', riskScore: 91 },
+    { id: 'ALT-1004', user: 'User #5634 (bonus_guy)', email: 'bonus@mail.com', type: 'bonus_abuse', severity: 'medium', status: 'investigating', time: '2 hours ago', desc: 'Claimed WELCOME200 across 3 linked accounts using same withdrawal wallet.', evidence: 'Destination PayPal: bonus_wallet@paypal.com | Linked Accounts: 3', riskScore: 65 },
+    { id: 'ALT-1005', user: 'User #8812 (fast_cash)', email: 'fast@cash.com', type: 'money_laundering', severity: 'critical', status: 'new', time: '3 hours ago', desc: 'Deposited $10,000 via Crypto and immediately requested $10,000 withdrawal without playing.', evidence: 'Deposit: $10,000 USDT | Played: 0 hands | Rake Generated: $0.00', riskScore: 95 },
+    { id: 'ALT-1006', user: 'User #3341 (vpn_user)', email: 'vpn@proxy.com', type: 'ip_match', severity: 'low', status: 'resolved', time: '1 day ago', desc: 'Logged in from commercial datacenter proxy node.', evidence: 'IP: 185.220.101.5 | ASN: Tor Exit Node | Country: DE', riskScore: 35 },
+    { id: 'ALT-1007', user: 'User #9921 (collude_a)', email: 'team_a@poker.com', type: 'collusion', severity: 'high', status: 'confirmed', time: '2 days ago', desc: 'Coordinated folding on 3-way pots on Table #2 Diamond Players.', evidence: 'Co-play frequency: 89% | Win rate on shared tables: +340%', riskScore: 88 }
+];
+
+const FAILED_LOGINS = [
+    { time: '2025-01-20 14:45:12', account: 'admin@pokerroyale.com', ip: '198.51.100.99', location: '🇺🇸 Dallas, US', device: 'Chrome / Windows', reason: 'Invalid Password' },
+    { time: '2025-01-20 14:44:50', account: 'admin@pokerroyale.com', ip: '198.51.100.99', location: '🇺🇸 Dallas, US', device: 'Chrome / Windows', reason: 'Invalid Password' },
+    { time: '2025-01-20 14:44:22', account: 'admin@pokerroyale.com', ip: '198.51.100.99', location: '🇺🇸 Dallas, US', device: 'Chrome / Windows', reason: 'Invalid Password' },
+    { time: '2025-01-20 12:10:05', account: 'poker_king', ip: '203.0.113.14', location: '🇵🇰 Lahore, PK', device: 'Firefox / Mac', reason: 'Invalid Password' },
+    { time: '2025-01-20 09:15:33', account: 'hacker_test', ip: '45.154.255.88', location: '🇷🇺 Moscow, RU', device: 'Python-requests', reason: 'Account Not Found' },
+    { time: '2025-01-19 23:02:11', account: 'superadmin', ip: '185.220.101.5', location: '🇩🇪 Frankfurt, DE', device: 'Tor Browser', reason: '2FA Failed' }
+];
+
+const SESSIONS = [
+    { user: 'Super Admin', role: 'SUPER ADMIN', ip: '198.51.100.10', location: '🇺🇸 New York, US', device: 'Chrome 121 (Desktop)', started: '2 hours ago', active: 'Just now', type: 'admin' },
+    { user: 'Finance Admin', role: 'FINANCE ADMIN', ip: '198.51.100.22', location: '🇬🇧 London, UK', device: 'Safari (Mac)', started: '4 hours ago', active: '3 mins ago', type: 'admin' },
+    { user: 'User #2187 (bluff_queen)', role: 'PLAYER', ip: '203.0.113.88', location: '🇵🇰 Karachi, PK', device: 'Edge / Windows', started: '18 hours ago', active: 'Just now', type: 'player' },
+    { user: 'User #1298 (bot_master)', role: 'PLAYER', ip: '45.154.255.12', location: '🇷🇺 Moscow, RU', device: 'Unknown Agent', started: '22 hours ago', active: 'Just now', type: 'player' }
+];
+
+let BLACKLIST = ['45.154.255.88 (Botnet)', '185.220.101.5 (Tor Exit)', '192.0.2.1 (Scraper)'];
+let WHITELIST = ['198.51.100.10 (Office HQ)', '198.51.100.22 (Finance IP)'];
+
+let currentSev = 'all';
+let currentTab = 'alerts';
+let activeAlert = null;
+
+// ─── RENDER ALERTS ───
+function renderAlerts() {
+    updateStats();
+    
+    const q = document.getElementById('searchAlerts').value.toLowerCase();
+    const type = document.getElementById('filterType').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+    const sevFilter = document.getElementById('filterSev').value;
+
+    const list = ALERTS.filter(a => {
+        if (currentSev !== 'all' && a.severity !== currentSev) return false;
+        if (sevFilter && a.severity !== sevFilter) return false;
+        if (type && a.type !== type) return false;
+        if (statusFilter === 'all') {
+            // show all
+        } else if (statusFilter) {
+            if (a.status !== statusFilter) return false;
+        } else {
+            // default: show open + investigating
+            if (a.status === 'resolved' || a.status === 'false_positive') return false;
+        }
+        if (q && !(`${a.id} ${a.user} ${a.email} ${a.desc} ${a.type}`).toLowerCase().includes(q)) return false;
+        return true;
+    });
+
+    const container = document.getElementById('alertsList');
+    const empty = document.getElementById('alertsEmpty');
+
+    if (list.length === 0) {
+        container.innerHTML = '';
+        empty.classList.add('show');
+        return;
+    }
+    empty.classList.remove('show');
+
+    container.innerHTML = list.map(a => `
+        <div class="alert-card ${a.severity} ${a.status === 'resolved' || a.status === 'false_positive' ? 'resolved' : ''}">
+            <div class="ac-top">
+                <div class="ac-left">
+                    <span class="sev-badge sev-${a.severity}"><i class="fas fa-exclamation-circle"></i> ${a.severity}</span>
+                    <span class="type-pill">${a.type.replace('_',' ')}</span>
+                    <span class="status-pill st-${a.status}">${a.status.replace('_',' ')}</span>
+                    <span style="font-family:'Orbitron';font-size:.75rem;color:var(--text-muted);">${a.id}</span>
+                </div>
+                <div class="ac-time"><i class="fas fa-clock"></i> ${a.time}</div>
+            </div>
+            <div class="ac-body">Target: <strong>${a.user}</strong> (${a.email})</div>
+            <div class="ac-desc">${a.desc}</div>
+            <div class="ac-evidence"><strong>Evidence:</strong> ${a.evidence}</div>
+            <div class="ac-actions">
+                <button class="btn btn-sm btn-primary" onclick="openAlertModal('${a.id}')"><i class="fas fa-magnifying-glass"></i> Investigate</button>
+                ${a.status !== 'resolved' && a.status !== 'false_positive' ? `
+                    <button class="btn btn-sm btn-danger" onclick="quickBanUser('${a.user}')"><i class="fas fa-ban"></i> Ban Player</button>
+                    <button class="btn btn-sm btn-outline" onclick="resolveAlert('${a.id}', 'false_positive')"><i class="fas fa-check"></i> False Positive</button>
+                    <button class="btn btn-sm btn-green" onclick="resolveAlert('${a.id}', 'resolved')"><i class="fas fa-shield-check"></i> Resolve</button>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateStats() {
+    const open = ALERTS.filter(a => a.status === 'new' || a.status === 'investigating').length;
+    const crit = ALERTS.filter(a => a.severity === 'critical' && (a.status === 'new' || a.status === 'investigating')).length;
+    const high = ALERTS.filter(a => a.severity === 'high' && (a.status === 'new' || a.status === 'investigating')).length;
+    const resolved = ALERTS.filter(a => a.status === 'resolved' || a.status === 'false_positive').length;
+
+    document.getElementById('statOpen').textContent = open;
+    document.getElementById('navAlertBadge').textContent = open;
+    document.getElementById('statCrit').textContent = crit;
+    document.getElementById('statHigh').textContent = high;
+    document.getElementById('statBanned').textContent = 3; // demo counter
+    document.getElementById('statResolved').textContent = resolved;
+
+    document.getElementById('critCount').textContent = crit;
+    document.getElementById('critBanner').style.display = crit > 0 ? 'flex' : 'none';
+}
+
+function filterSeverity(sev, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if (el) el.classList.add('active-filter');
+    currentSev = sev;
+    renderAlerts();
+}
+
+function resetAlertFilters() {
+    document.getElementById('searchAlerts').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterSev').value = '';
+    currentSev = 'all';
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    document.querySelector('.mini-stat[data-sev="all"]')?.classList.add('active-filter');
+    renderAlerts();
+}
+
+// ─── FAILED LOGINS ───
+function renderLogins() {
+    const tbody = document.getElementById('loginsBody');
+    tbody.innerHTML = FAILED_LOGINS.map(l => `
+        <tr>
+            <td style="font-size:.78rem;white-space:nowrap;">${l.time}</td>
+            <td><strong>${l.account}</strong></td>
+            <td style="font-family:monospace;color:var(--cyan);">${l.ip}</td>
+            <td>${l.location}</td>
+            <td style="font-size:.78rem;color:var(--text-muted);">${l.device}</td>
+            <td><span class="status-pill st-new">${l.reason}</span></td>
+            <td>
+                <button class="action-btn ban" title="Block IP" onclick="blockIpDirect('${l.ip}')"><i class="fas fa-ban"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function exportLogins() {
+    const headers = ['Time','Account','IP','Location','Device','Reason'];
+    const rows = FAILED_LOGINS.map(l => [l.time, l.account, l.ip, l.location, l.device, l.reason]);
+    const csv = headers.join(',') + '\n' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `failed_logins_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('Failed logins exported to CSV', 'success');
+}
+
+// ─── SESSIONS ───
+function renderSessions() {
+    const adminContainer = document.getElementById('adminSessions');
+    const playerContainer = document.getElementById('playerSessions');
+    const tbody = document.getElementById('sessionsBody');
+
+    const admins = SESSIONS.filter(s => s.type === 'admin');
+    const players = SESSIONS.filter(s => s.type === 'player');
+
+    adminContainer.innerHTML = admins.map(s => `
+        <div class="session-item">
+            <div>
+                <strong>${s.user}</strong> <span class="type-pill">${s.role}</span>
+                <div class="ip-meta">${s.ip} · ${s.location} · ${s.device}</div>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="killSession('${s.user}')">Logout</button>
+        </div>
+    `).join('');
+
+    playerContainer.innerHTML = players.map(s => `
+        <div class="session-item">
+            <div>
+                <strong style="color:var(--gold);">${s.user}</strong>
+                <div class="ip-meta">${s.ip} · ${s.location} · ${s.device}</div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="killSession('${s.user}')">Kill</button>
+        </div>
+    `).join('');
+
+    tbody.innerHTML = SESSIONS.map(s => `
+        <tr>
+            <td><strong>${s.user}</strong></td>
+            <td><span class="type-pill">${s.role}</span></td>
+            <td style="font-family:monospace;color:var(--cyan);">${s.ip}</td>
+            <td>${s.location}</td>
+            <td style="font-size:.78rem;color:var(--text-muted);">${s.device}</td>
+            <td>${s.started}</td>
+            <td style="color:var(--green);font-weight:600;">${s.active}</td>
+            <td><button class="action-btn ban" title="Terminate" onclick="killSession('${s.user}')"><i class="fas fa-power-off"></i></button></td>
+        </tr>
+    `).join('');
+}
+
+function killSession(user) {
+    if (!confirm(`Terminate active session for ${user}?`)) return;
+    const idx = SESSIONS.findIndex(s => s.user === user);
+    if (idx >= 0) SESSIONS.splice(idx, 1);
+    renderSessions();
+    showToast(`Session terminated for ${user}`, 'warning');
+}
+
+function killAllAdminSessions() {
+    if (!confirm('Force logout ALL active admin sessions except yours?')) return;
+    showToast('All other admin sessions terminated', 'success');
+}
+
+// ─── IP CONTROL ───
+function renderIps() {
+    const blackContainer = document.getElementById('blacklist');
+    const whiteContainer = document.getElementById('whitelist');
+
+    blackContainer.innerHTML = BLACKLIST.map((ip, i) => `
+        <div class="ip-item">
+            <span class="ip-addr">${ip}</span>
+            <button class="action-btn ban" title="Remove" onclick="removeBlacklist(${i})"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+
+    whiteContainer.innerHTML = WHITELIST.map((ip, i) => `
+        <div class="ip-item">
+            <span class="ip-addr" style="color:var(--green);">${ip}</span>
+            <button class="action-btn view" title="Remove" onclick="removeWhitelist(${i})"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+function addBlacklist() {
+    const val = document.getElementById('newBlackIp').value.trim();
+    if (!val) return showToast('Enter an IP address', 'error');
+    BLACKLIST.push(val);
+    document.getElementById('newBlackIp').value = '';
+    renderIps();
+    showToast(`IP ${val} added to blacklist`, 'error');
+}
+
+function removeBlacklist(i) {
+    BLACKLIST.splice(i, 1);
+    renderIps();
+    showToast('IP removed from blacklist', 'info');
+}
+
+function blockIpDirect(ip) {
+    if (confirm(`Block IP ${ip}?`)) {
+        BLACKLIST.push(ip + ' (Failed Logins)');
+        renderIps();
+        showToast(`IP ${ip} blocked!`, 'error');
+    }
+}
+
+function addWhitelist() {
+    const val = document.getElementById('newWhiteIp').value.trim();
+    if (!val) return showToast('Enter an IP address', 'error');
+    WHITELIST.push(val);
+    document.getElementById('newWhiteIp').value = '';
+    renderIps();
+    showToast(`IP ${val} added to whitelist`, 'success');
+}
+
+function removeWhitelist(i) {
+    WHITELIST.splice(i, 1);
+    renderIps();
+    showToast('IP removed from whitelist', 'info');
+}
+
+// ─── MODAL & INVESTIGATION ───
+function openAlertModal(id) {
+    const a = ALERTS.find(x => x.id === id);
+    if (!a) return;
+    activeAlert = a;
+
+    document.getElementById('modalTitle').textContent = `Investigate ${a.id}`;
+    document.getElementById('alertDetails').innerHTML = `
+        <div class="detail-item"><div class="lbl">Alert ID</div><div class="val">${a.id}</div></div>
+        <div class="detail-item"><div class="lbl">Severity</div><div class="val"><span class="sev-badge sev-${a.severity}">${a.severity}</span></div></div>
+        <div class="detail-item"><div class="lbl">Type</div><div class="val">${a.type.replace('_',' ')}</div></div>
+        <div class="detail-item"><div class="lbl">Target User</div><div class="val"><strong>${a.user}</strong></div></div>
+        <div class="detail-item"><div class="lbl">Email</div><div class="val">${a.email}</div></div>
+        <div class="detail-item"><div class="lbl">Risk Score</div><div class="val" style="color:var(--danger);font-family:'Orbitron';font-weight:900;">${a.riskScore}/100</div></div>
+        <div class="detail-item" style="grid-column:1/-1;"><div class="lbl">Description</div><div class="val">${a.desc}</div></div>
+        <div class="detail-item" style="grid-column:1/-1;"><div class="lbl">Evidence Payload</div><div class="val" style="font-family:monospace;font-size:.78rem;">${a.evidence}</div></div>
+    `;
+
+    document.getElementById('alertNotes').value = a.notes || '';
+
+    let footer = `<button class="btn btn-outline" onclick="closeModal('alertModal')">Close</button>`;
+    if (a.status !== 'resolved' && a.status !== 'false_positive') {
+        footer += `
+            <button class="btn btn-danger" onclick="confirmModalAction('ban')"><i class="fas fa-ban"></i> Ban User</button>
+            <button class="btn btn-outline" onclick="confirmModalAction('false_positive')"><i class="fas fa-check"></i> False Positive</button>
+            <button class="btn btn-green" onclick="confirmModalAction('resolved')"><i class="fas fa-shield-check"></i> Resolve Alert</button>
+        `;
+    }
+    document.getElementById('modalFooter').innerHTML = footer;
+
+    openModal('alertModal');
+}
+
+function confirmModalAction(action) {
+    if (!activeAlert) return;
+    const notes = document.getElementById('alertNotes').value.trim();
+    activeAlert.notes = notes;
+
+    if (action === 'ban') {
+        quickBanUser(activeAlert.user);
+        activeAlert.status = 'confirmed';
+    } else if (action === 'false_positive') {
+        activeAlert.status = 'false_positive';
+        showToast(`Alert ${activeAlert.id} marked as False Positive`, 'info');
+    } else if (action === 'resolved') {
+        activeAlert.status = 'resolved';
+        showToast(`Alert ${activeAlert.id} resolved successfully`, 'success');
+    }
+
+    closeModal('alertModal');
+    renderAlerts();
+}
+
+function resolveAlert(id, status) {
+    const a = ALERTS.find(x => x.id === id);
+    if (!a) return;
+    a.status = status;
+    renderAlerts();
+    showToast(`Alert ${id} updated to ${status.replace('_',' ')}`, status === 'resolved' ? 'success' : 'info');
+}
+
+function quickBanUser(user) {
+    if (confirm(`PERMANENTLY BAN ${user}? All sessions will be terminated.`)) {
+        showToast(`User ${user} banned and IP logged!`, 'error');
+    }
+}
+
+function saveSecSettings() {
+    showToast('Security rules & detection toggles saved!', 'success');
+}
+
+// ─── TABS & NAVIGATION ───
+function switchTab(tab, el) {
+    document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('tab-' + tab)?.classList.add('active');
+
+    if (tab === 'logins') renderLogins();
+    if (tab === 'sessions') renderSessions();
+    if (tab === 'ip') renderIps();
+}
+
+// ─── HELPERS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+function showToast(msg, type = 'success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+function refreshAll() {
+    renderAlerts();
+    renderLogins();
+    renderSessions();
+    renderIps();
+    showToast('Security monitors updated', 'info');
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Init
+renderAlerts();
+console.log('🛡️ PokerRoyale Admin — Security Loaded');
+</script>
+<script src="../currency-override.js"></script>
+</body>
+</html>

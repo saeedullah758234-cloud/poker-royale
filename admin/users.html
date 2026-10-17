@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .notif-count {
+            position:absolute; top:-4px; right:-4px; width:18px; height:18px; background:var(--accent); border-radius:50%;
+            font-size:.65rem; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:center; border:2px solid var(--main-bg);
+        }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        /* CONTENT */
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition);
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+        }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.red { background:rgba(233,69,96,.15); color:var(--accent); }
+        .ms-icon.purple { background:rgba(123,47,247,.15); color:var(--purple); }
+        .ms-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:900; }
+
+        /* Filters Bar */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:20px;
+            display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr auto; gap:12px; align-items:center;
+        }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:100%; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        .filter-select {
+            padding:10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            -webkit-appearance:none;
+            appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center; padding-right:32px;
+        }
+        .filter-select:focus { border-color:var(--primary); }
+        .filter-select option { background:var(--card-bg); }
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--accent); color:#fff; }
+        .btn-danger:hover { box-shadow:0 4px 15px rgba(233,69,96,.4); }
+        .btn-sm { padding:6px 12px; font-size:.78rem; }
+
+        /* Bulk Actions */
+        .bulk-bar {
+            background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2); border-radius:10px;
+            padding:12px 16px; margin-bottom:16px; display:none; align-items:center; gap:12px;
+        }
+        .bulk-bar.show { display:flex; }
+        .bulk-bar span { font-size:.85rem; font-weight:600; color:var(--primary); }
+        .bulk-bar .btn { margin-left:auto; }
+
+        /* Table Card */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+        .table-header-actions { display:flex; gap:8px; align-items:center; }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 16px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none;
+        }
+        .admin-table th:hover { color:var(--gold); }
+        .admin-table th .sort-icon { margin-left:4px; font-size:.6rem; opacity:.4; }
+        .admin-table th.sort-asc .sort-icon, .admin-table th.sort-desc .sort-icon { opacity:1; color:var(--gold); }
+        .admin-table td {
+            padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tr { transition:var(--transition); }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+        .admin-table tbody tr.selected { background:rgba(59,130,246,.06); }
+
+        .user-cell { display:flex; align-items:center; gap:12px; }
+        .user-avatar {
+            width:38px; height:38px; border-radius:50%; overflow:hidden; flex-shrink:0;
+            border:2px solid var(--border); background:var(--glass);
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; color:var(--gold); font-size:.85rem;
+        }
+        .user-avatar img { width:100%; height:100%; object-fit:cover; }
+        .user-info .name { font-weight:600; font-size:.88rem; }
+        .user-info .username { font-size:.72rem; color:var(--text-muted); }
+
+        .status-badge {
+            display:inline-flex; padding:3px 10px; border-radius:50px;
+            font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.active { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.suspended { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.banned { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-badge.pending { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.verified { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.rejected { background:rgba(239,68,68,.12); color:var(--danger); }
+
+        .vip-pill {
+            display:inline-flex; padding:2px 8px; border-radius:50px;
+            font-size:.65rem; font-weight:900; text-transform:uppercase;
+        }
+        .vip-diamond { background:rgba(6,182,212,.15); color:var(--cyan); border:1px solid rgba(6,182,212,.3); }
+        .vip-platinum { background:rgba(123,47,247,.15); color:var(--purple); border:1px solid rgba(123,47,247,.3); }
+        .vip-gold { background:rgba(255,215,0,.15); color:var(--gold); border:1px solid rgba(255,215,0,.3); }
+        .vip-silver { background:rgba(192,192,192,.15); color:#C0C0C0; border:1px solid rgba(192,192,192,.3); }
+        .vip-bronze { background:rgba(205,127,50,.15); color:#CD7F32; border:1px solid rgba(205,127,50,.3); }
+
+        .balance-cell { font-family:'Orbitron',sans-serif; font-weight:700; color:var(--green); }
+        .action-btns { display:flex; gap:4px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+        .action-btn.edit:hover { background:rgba(255,215,0,.15); color:var(--gold); border-color:var(--gold); }
+        .action-btn.ban:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.money:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+
+        /* Pagination */
+        .pagination-bar {
+            padding:16px 20px; border-top:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .page-info { font-size:.82rem; color:var(--text-muted); }
+        .page-btns { display:flex; gap:4px; }
+        .page-btn {
+            min-width:36px; height:36px; padding:0 10px; border-radius:8px;
+            background:var(--glass); border:1px solid var(--border); color:var(--text-muted);
+            font-size:.82rem; font-weight:600; cursor:pointer; transition:var(--transition);
+            display:flex; align-items:center; justify-content:center;
+        }
+        .page-btn:hover { border-color:var(--primary); color:var(--text); }
+        .page-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .page-btn.disabled { opacity:.4; pointer-events:none; }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:640px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+        }
+
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-input {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus { border-color:var(--primary); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+        /* User Detail Modal */
+        .ud-header {
+            display:flex; align-items:center; gap:16px; margin-bottom:20px;
+        }
+        .ud-avatar {
+            width:72px; height:72px; border-radius:50%; border:3px solid var(--gold); overflow:hidden;
+        }
+        .ud-avatar img { width:100%; height:100%; object-fit:cover; }
+        .ud-info h3 { font-size:1.2rem; font-weight:700; margin-bottom:2px; }
+        .ud-info .meta { font-size:.82rem; color:var(--text-muted); }
+        .ud-stats {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px;
+        }
+        .ud-stat {
+            background:var(--glass); border:1px solid var(--border); border-radius:10px;
+            padding:12px; text-align:center;
+        }
+        .ud-stat .val { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; }
+        .ud-stat .lbl { font-size:.68rem; color:var(--text-muted); text-transform:uppercase; margin-top:2px; }
+
+        .ud-tabs { display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:0; }
+        .ud-tab {
+            padding:10px 16px; font-size:.82rem; font-weight:600; color:var(--text-muted);
+            cursor:pointer; border-bottom:2px solid transparent; transition:var(--transition);
+            background:none; border-top:none; border-left:none; border-right:none;
+        }
+        .ud-tab:hover { color:var(--text); }
+        .ud-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+        .ud-panel { display:none; }
+        .ud-panel.active { display:block; }
+
+        .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .detail-item { padding:10px; background:var(--glass); border-radius:8px; }
+        .detail-item .lbl { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; }
+        .detail-item .val { font-size:.9rem; font-weight:600; margin-top:2px; }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        /* Checkbox */
+        .cb-wrap { display:flex; align-items:center; }
+        .cb-wrap input { width:16px; height:16px; accent-color:var(--primary); cursor:pointer; }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+            .filters-bar { grid-template-columns:1fr 1fr; }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .filters-bar { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .admin-table { font-size:.78rem; }
+            .admin-table th, .admin-table td { padding:10px 10px; }
+            .ud-stats { grid-template-columns:1fr 1fr; }
+            .detail-grid { grid-template-columns:1fr; }
+            .form-row { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link active"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">User Management</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Users</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Notifications"><i class="fas fa-bell"></i><span class="notif-count">7</span></button>
+                <button class="topbar-btn" title="Refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <div class="ms-icon blue"><i class="fas fa-users"></i></div>
+                    <div><div class="ms-label">Total Users</div><div class="ms-value" id="statTotal">52,847</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon green"><i class="fas fa-circle"></i></div>
+                    <div><div class="ms-label">Active</div><div class="ms-value" id="statActive">48,230</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-id-card"></i></div>
+                    <div><div class="ms-label">KYC Verified</div><div class="ms-value" id="statKyc">31,450</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon red"><i class="fas fa-ban"></i></div>
+                    <div><div class="ms-label">Banned/Suspended</div><div class="ms-value" id="statBanned">1,247</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon purple"><i class="fas fa-user-plus"></i></div>
+                    <div><div class="ms-label">New Today</div><div class="ms-value" id="statNew">342</div></div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name, email, username, ID...">
+                </div>
+                <select class="filter-select" id="filterStatus">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="banned">Banned</option>
+                    <option value="pending">Pending</option>
+                </select>
+                <select class="filter-select" id="filterKyc">
+                    <option value="">All KYC</option>
+                    <option value="verified">Verified</option>
+                    <option value="pending">Pending</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <select class="filter-select" id="filterVip">
+                    <option value="">All VIP</option>
+                    <option value="diamond">Diamond</option>
+                    <option value="platinum">Platinum</option>
+                    <option value="gold">Gold</option>
+                    <option value="silver">Silver</option>
+                    <option value="bronze">Bronze</option>
+                </select>
+                <select class="filter-select" id="filterCountry">
+                    <option value="">All Countries</option>
+                    <option value="US">🇺🇸 USA</option>
+                    <option value="UK">🇬🇧 UK</option>
+                    <option value="CA">🇨🇦 Canada</option>
+                    <option value="AE">🇦🇪 UAE</option>
+                    <option value="AU">🇦🇺 Australia</option>
+                    <option value="PK">🇵🇰 Pakistan</option>
+                    <option value="IN">🇮🇳 India</option>
+                </select>
+                <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-bar" id="bulkBar">
+                <span id="bulkCount">0 selected</span>
+                <button class="btn btn-sm btn-primary" onclick="bulkAction('email')"><i class="fas fa-envelope"></i> Email</button>
+                <button class="btn btn-sm btn-gold" onclick="bulkAction('bonus')"><i class="fas fa-gift"></i> Bonus</button>
+                <button class="btn btn-sm btn-outline" onclick="bulkAction('suspend')"><i class="fas fa-pause"></i> Suspend</button>
+                <button class="btn btn-sm btn-danger" onclick="bulkAction('ban')"><i class="fas fa-ban"></i> Ban</button>
+                <button class="btn btn-sm btn-outline" onclick="clearSelection()" style="margin-left:0;"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-users"></i> All Users <span style="color:var(--text-muted);font-weight:400;font-size:.82rem;" id="resultCount">(showing 20)</span></h3>
+                    <div class="table-header-actions">
+                        <button class="btn btn-sm btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i> Export CSV</button>
+                        <button class="btn btn-sm btn-gold" onclick="openAddUser()"><i class="fas fa-user-plus"></i> Add User</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="admin-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"><div class="cb-wrap"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></div></th>
+                                <th data-sort="id">ID <i class="fas fa-sort sort-icon"></i></th>
+                                <th data-sort="name">User <i class="fas fa-sort sort-icon"></i></th>
+                                <th data-sort="email">Email</th>
+                                <th data-sort="country">Country</th>
+                                <th data-sort="status">Status</th>
+                                <th data-sort="kyc">KYC</th>
+                                <th data-sort="vip">VIP</th>
+                                <th data-sort="balance">Balance</th>
+                                <th data-sort="deposits">Deposits</th>
+                                <th data-sort="joined">Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-bar">
+                    <div class="page-info" id="pageInfo">Showing 1–20 of 52,847</div>
+                    <div class="page-btns" id="pageBtns"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ USER DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal-box" style="max-width:720px;">
+        <div class="modal-header">
+            <h3 id="modalTitle">User Details</h3>
+            <button class="modal-close" onclick="closeModal('userModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="ud-header">
+                <div class="ud-avatar" id="udAvatar"><img src="" alt=""></div>
+                <div class="ud-info">
+                    <h3 id="udName">—</h3>
+                    <div class="meta" id="udMeta">—</div>
+                </div>
+            </div>
+            <div class="ud-stats">
+                <div class="ud-stat"><div class="val" style="color:var(--green)" id="udBalance">$0</div><div class="lbl">Balance</div></div>
+                <div class="ud-stat"><div class="val" style="color:var(--cyan)" id="udDeposits">$0</div><div class="lbl">Deposited</div></div>
+                <div class="ud-stat"><div class="val" style="color:var(--accent)" id="udWithdrawals">$0</div><div class="lbl">Withdrawn</div></div>
+                <div class="ud-stat"><div class="val" style="color:var(--gold)" id="udGames">0</div><div class="lbl">Games</div></div>
+            </div>
+            <div class="ud-tabs">
+                <button class="ud-tab active" onclick="switchUdTab('info',this)">Info</button>
+                <button class="ud-tab" onclick="switchUdTab('wallet',this)">Wallet</button>
+                <button class="ud-tab" onclick="switchUdTab('actions',this)">Actions</button>
+            </div>
+            <div class="ud-panel active" id="ud-info">
+                <div class="detail-grid" id="udDetails"></div>
+            </div>
+            <div class="ud-panel" id="ud-wallet">
+                <div class="form-group">
+                    <label>Adjust Balance</label>
+                    <div class="form-row">
+                        <select class="form-input" id="adjType">
+                            <option value="add">Add Funds</option>
+                            <option value="deduct">Deduct Funds</option>
+                            <option value="bonus">Credit Bonus</option>
+                        </select>
+                        <input class="form-input" type="number" id="adjAmount" placeholder="Amount (USD)" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reason</label>
+                    <input class="form-input" id="adjReason" placeholder="Reason for adjustment...">
+                </div>
+                <button class="btn btn-gold" onclick="adjustBalance()"><i class="fas fa-check"></i> Apply Adjustment</button>
+            </div>
+            <div class="ud-panel" id="ud-actions">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <button class="btn btn-primary" onclick="userAction('verify')"><i class="fas fa-check-circle"></i> Verify KYC</button>
+                    <button class="btn btn-gold" onclick="userAction('resetpass')"><i class="fas fa-key"></i> Reset Password</button>
+                    <button class="btn btn-outline" onclick="userAction('suspend')"><i class="fas fa-pause"></i> Suspend Account</button>
+                    <button class="btn btn-danger" onclick="userAction('ban')"><i class="fas fa-ban"></i> Ban Account</button>
+                    <button class="btn btn-outline" onclick="userAction('logout')"><i class="fas fa-sign-out-alt"></i> Force Logout</button>
+                    <button class="btn btn-danger" onclick="userAction('delete')"><i class="fas fa-trash"></i> Delete Account</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('userModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ADD USER MODAL ═══ -->
+<div class="modal-overlay" id="addUserModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Add New User</h3>
+            <button class="modal-close" onclick="closeModal('addUserModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label>Full Name</label><input class="form-input" id="newName" placeholder="John Doe"></div>
+                <div class="form-group"><label>Username</label><input class="form-input" id="newUsername" placeholder="johndoe"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Email</label><input class="form-input" id="newEmail" type="email" placeholder="john@email.com"></div>
+                <div class="form-group"><label>Phone</label><input class="form-input" id="newPhone" placeholder="+1 234 567 8900"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Password</label><input class="form-input" id="newPass" type="password" placeholder="Min 8 characters"></div>
+                <div class="form-group"><label>Country</label>
+                    <select class="form-input" id="newCountry">
+                        <option value="US">United States</option>
+                        <option value="UK">United Kingdom</option>
+                        <option value="CA">Canada</option>
+                        <option value="AE">UAE</option>
+                        <option value="AU">Australia</option>
+                        <option value="PK">Pakistan</option>
+                        <option value="IN">India</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label>Initial Balance (USD)</label><input class="form-input" id="newBalance" type="number" value="0" min="0"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('addUserModal')">Cancel</button>
+            <button class="btn btn-gold" onclick="addUser()"><i class="fas fa-user-plus"></i> Create User</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  USERS DATA
+// ═══════════════════════════════════════
+const USERS = [
+    { id:1, name:'Ali Khan', username:'poker_king', email:'ali@gmail.com', country:'US', countryFlag:'🇺🇸', status:'active', kyc:'verified', vip:'gold', balance:1250, deposits:5000, withdrawals:3500, games:342, joined:'2024-01-15', phone:'+1 311-111-1111', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' },
+    { id:2, name:'Sara Malik', username:'bluff_queen', email:'sara@gmail.com', country:'UK', countryFlag:'🇬🇧', status:'active', kyc:'verified', vip:'platinum', balance:3200, deposits:8000, withdrawals:4500, games:287, joined:'2024-02-20', phone:'+44 722-222-2222', avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80' },
+    { id:3, name:'Ahmed Raza', username:'ace_master', email:'ahmed@gmail.com', country:'AE', countryFlag:'🇦🇪', status:'active', kyc:'pending', vip:'silver', balance:750, deposits:2000, withdrawals:1200, games:198, joined:'2024-03-10', phone:'+971 50-333-3333', avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80' },
+    { id:4, name:'John Smith', username:'johnny_poker', email:'john@gmail.com', country:'US', countryFlag:'🇺🇸', status:'suspended', kyc:'verified', vip:'bronze', balance:0, deposits:1500, withdrawals:1500, games:89, joined:'2024-01-05', phone:'+1 555-123-4567', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80' },
+    { id:5, name:'Fatima Noor', username:'fatima_n', email:'fatima@gmail.com', country:'PK', countryFlag:'🇵🇰', status:'active', kyc:'verified', vip:'gold', balance:5600, deposits:12000, withdrawals:6000, games:456, joined:'2024-04-12', phone:'+92 300-1234567', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80' },
+    { id:6, name:'Mike Wilson', username:'mike_bluff', email:'mike@email.com', country:'CA', countryFlag:'🇨🇦', status:'active', kyc:'verified', vip:'diamond', balance:8900, deposits:25000, withdrawals:15000, games:612, joined:'2024-01-20', phone:'+1 416-555-0100', avatar:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80' },
+    { id:7, name:'Lisa Chen', username:'lisa_ace', email:'lisa@email.com', country:'AU', countryFlag:'🇦🇺', status:'active', kyc:'pending', vip:'silver', balance:420, deposits:1000, withdrawals:500, games:67, joined:'2024-05-01', phone:'+61 400-123-456', avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80' },
+    { id:8, name:'Ravi Kumar', username:'ravi_k', email:'ravi@email.com', country:'IN', countryFlag:'🇮🇳', status:'active', kyc:'verified', vip:'gold', balance:2100, deposits:6000, withdrawals:3500, games:234, joined:'2024-02-28', phone:'+91 98765-43210', avatar:'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&q=80' },
+    { id:9, name:'Emma Brown', username:'emma_fold', email:'emma@email.com', country:'UK', countryFlag:'🇬🇧', status:'banned', kyc:'rejected', vip:'bronze', balance:0, deposits:800, withdrawals:0, games:23, joined:'2024-03-15', phone:'+44 7700-900123', avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80' },
+    { id:10, name:'Omar Farooq', username:'omar_f', email:'omar@email.com', country:'AE', countryFlag:'🇦🇪', status:'active', kyc:'verified', vip:'platinum', balance:12500, deposits:30000, withdrawals:16000, games:789, joined:'2024-01-08', phone:'+971 55-123-4567', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' },
+    { id:11, name:'Zainab Ahmed', username:'queen_z', email:'zainab@email.com', country:'US', countryFlag:'🇺🇸', status:'active', kyc:'verified', vip:'diamond', balance:15600, deposits:40000, withdrawals:22000, games:890, joined:'2023-12-01', phone:'+1 212-555-0199', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80' },
+    { id:12, name:'Hassan Yousuf', username:'fold_king', email:'hassan@email.com', country:'PK', countryFlag:'🇵🇰', status:'active', kyc:'pending', vip:'silver', balance:890, deposits:2500, withdrawals:1400, games:145, joined:'2024-04-20', phone:'+92 321-9876543', avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80' },
+    { id:13, name:'Sophie Martin', username:'sophie_m', email:'sophie@email.com', country:'UK', countryFlag:'🇬🇧', status:'active', kyc:'verified', vip:'gold', balance:3400, deposits:9000, withdrawals:5000, games:312, joined:'2024-02-14', phone:'+44 7911-123456', avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80' },
+    { id:14, name:'David Chen', username:'usa_phil', email:'david@email.com', country:'US', countryFlag:'🇺🇸', status:'suspended', kyc:'verified', vip:'silver', balance:150, deposits:3000, withdrawals:2800, games:178, joined:'2024-03-22', phone:'+1 310-555-0142', avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80' },
+    { id:15, name:'Nadia Hassan', username:'nadia_h', email:'nadia@email.com', country:'CA', countryFlag:'🇨🇦', status:'active', kyc:'verified', vip:'platinum', balance:7800, deposits:18000, withdrawals:9000, games:523, joined:'2024-01-30', phone:'+1 604-555-0188', avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80' },
+    { id:16, name:'Bilal Tariq', username:'allin_bilal', email:'bilal@email.com', country:'PK', countryFlag:'🇵🇰', status:'active', kyc:'pending', vip:'bronze', balance:320, deposits:800, withdrawals:400, games:56, joined:'2024-05-10', phone:'+92 333-1112233', avatar:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80' },
+    { id:17, name:'Ayesha Noor', username:'ayesha_n', email:'ayesha@email.com', country:'AE', countryFlag:'🇦🇪', status:'active', kyc:'verified', vip:'gold', balance:4500, deposits:11000, withdrawals:6000, games:401, joined:'2024-02-05', phone:'+971 52-987-6543', avatar:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80' },
+    { id:18, name:'Robert Smith', username:'bobby_stack', email:'robert@email.com', country:'US', countryFlag:'🇺🇸', status:'active', kyc:'verified', vip:'silver', balance:1100, deposits:4000, withdrawals:2700, games:198, joined:'2024-03-18', phone:'+1 702-555-0133', avatar:'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&q=80' },
+    { id:19, name:'Mariam Shaikh', username:'mariam_s', email:'mariam@email.com', country:'UK', countryFlag:'🇬🇧', status:'active', kyc:'rejected', vip:'bronze', balance:50, deposits:200, withdrawals:100, games:12, joined:'2024-05-15', phone:'+44 7700-900999', avatar:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80' },
+    { id:20, name:'Imran Shah', username:'imran_s', email:'imran@email.com', country:'AU', countryFlag:'🇦🇺', status:'banned', kyc:'verified', vip:'bronze', balance:0, deposits:5000, withdrawals:5000, games:230, joined:'2024-01-12', phone:'+61 412-345-678', avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' },
+];
+
+let filtered = [...USERS];
+let currentPage = 1;
+const perPage = 10;
+let selectedIds = new Set();
+let currentUser = null;
+
+// ═══════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════
+function renderTable() {
+    const tbody = document.getElementById('usersBody');
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+
+    tbody.innerHTML = page.map(u => `
+        <tr class="${selectedIds.has(u.id) ? 'selected' : ''}" data-id="${u.id}">
+            <td><div class="cb-wrap"><input type="checkbox" ${selectedIds.has(u.id)?'checked':''} onchange="toggleSelect(${u.id}, this)"></div></td>
+            <td><strong>#${u.id}</strong></td>
+            <td>
+                <div class="user-cell">
+                    <div class="user-avatar">${u.avatar ? `<img src="${u.avatar}" alt="">` : u.name[0]}</div>
+                    <div class="user-info">
+                        <div class="name">${u.name}</div>
+                        <div class="username">@${u.username}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${u.email}</td>
+            <td>${u.countryFlag} ${u.country}</td>
+            <td><span class="status-badge ${u.status}">${u.status}</span></td>
+            <td><span class="status-badge ${u.kyc}">${u.kyc}</span></td>
+            <td><span class="vip-pill vip-${u.vip}">${u.vip}</span></td>
+            <td class="balance-cell">$${u.balance.toLocaleString()}</td>
+            <td style="color:var(--cyan)">$${u.deposits.toLocaleString()}</td>
+            <td>${u.joined}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn view" title="View" onclick="viewUser(${u.id})"><i class="fas fa-eye"></i></button>
+                    <button class="action-btn money" title="Adjust Balance" onclick="viewUser(${u.id},'wallet')"><i class="fas fa-dollar-sign"></i></button>
+                    <button class="action-btn edit" title="Edit" onclick="viewUser(${u.id})"><i class="fas fa-pen"></i></button>
+                    <button class="action-btn ban" title="Ban" onclick="quickBan(${u.id})"><i class="fas fa-ban"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    document.getElementById('resultCount').textContent = `(showing ${page.length} of ${filtered.length})`;
+    renderPagination();
+    updateBulkBar();
+}
+
+function renderPagination() {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    const info = document.getElementById('pageInfo');
+    const start = (currentPage - 1) * perPage + 1;
+    const end = Math.min(currentPage * perPage, filtered.length);
+    info.textContent = `Showing ${start}–${end} of ${filtered.length}`;
+
+    let html = `<button class="page-btn ${currentPage===1?'disabled':''}" onclick="goPage(${currentPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= total; i++) {
+        if (i===1 || i===total || Math.abs(i-currentPage)<=2) {
+            html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+        } else if (Math.abs(i-currentPage)===3) {
+            html += `<span style="color:var(--text-muted);padding:0 4px;">…</span>`;
+        }
+    }
+    html += `<button class="page-btn ${currentPage===total?'disabled':''}" onclick="goPage(${currentPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+    document.getElementById('pageBtns').innerHTML = html;
+}
+
+function goPage(p) {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    if (p < 1 || p > total) return;
+    currentPage = p;
+    renderTable();
+}
+
+// ═══════════════════════════════════════
+//  FILTERS
+// ═══════════════════════════════════════
+function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('filterStatus').value;
+    const kyc = document.getElementById('filterKyc').value;
+    const vip = document.getElementById('filterVip').value;
+    const country = document.getElementById('filterCountry').value;
+
+    filtered = USERS.filter(u => {
+        if (q && !(`${u.name} ${u.username} ${u.email} ${u.id}`).toLowerCase().includes(q)) return false;
+        if (status && u.status !== status) return false;
+        if (kyc && u.kyc !== kyc) return false;
+        if (vip && u.vip !== vip) return false;
+        if (country && u.country !== country) return false;
+        return true;
+    });
+    currentPage = 1;
+    renderTable();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterKyc').value = '';
+    document.getElementById('filterVip').value = '';
+    document.getElementById('filterCountry').value = '';
+    filtered = [...USERS];
+    currentPage = 1;
+    renderTable();
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 250));
+document.getElementById('filterStatus').addEventListener('change', applyFilters);
+document.getElementById('filterKyc').addEventListener('change', applyFilters);
+document.getElementById('filterVip').addEventListener('change', applyFilters);
+document.getElementById('filterCountry').addEventListener('change', applyFilters);
+
+// ═══════════════════════════════════════
+//  SELECTION / BULK
+// ═══════════════════════════════════════
+function toggleSelect(id, el) {
+    if (el.checked) selectedIds.add(id); else selectedIds.delete(id);
+    updateBulkBar();
+    el.closest('tr').classList.toggle('selected', el.checked);
+}
+function toggleSelectAll(el) {
+    const start = (currentPage-1)*perPage;
+    const page = filtered.slice(start, start+perPage);
+    page.forEach(u => { if (el.checked) selectedIds.add(u.id); else selectedIds.delete(u.id); });
+    renderTable();
+}
+function clearSelection() { selectedIds.clear(); renderTable(); }
+function updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    bar.classList.toggle('show', selectedIds.size > 0);
+    document.getElementById('bulkCount').textContent = `${selectedIds.size} selected`;
+}
+function bulkAction(action) {
+    const count = selectedIds.size;
+    if (!count) return;
+    if (action === 'ban' && !confirm(`Ban ${count} users?`)) return;
+    if (action === 'suspend' && !confirm(`Suspend ${count} users?`)) return;
+    showToast(`${action} applied to ${count} users`, 'success');
+    clearSelection();
+}
+
+// ═══════════════════════════════════════
+//  USER DETAIL
+// ═══════════════════════════════════════
+function viewUser(id, tab) {
+    currentUser = USERS.find(u => u.id === id);
+    if (!currentUser) return;
+    const u = currentUser;
+
+    document.getElementById('modalTitle').textContent = `User #${u.id}`;
+    document.getElementById('udAvatar').innerHTML = `<img src="${u.avatar}" alt="">`;
+    document.getElementById('udName').textContent = u.name;
+    document.getElementById('udMeta').innerHTML = `@${u.username} · ${u.email} · ${u.countryFlag} ${u.country}`;
+    document.getElementById('udBalance').textContent = '$' + u.balance.toLocaleString();
+    document.getElementById('udDeposits').textContent = '$' + u.deposits.toLocaleString();
+    document.getElementById('udWithdrawals').textContent = '$' + u.withdrawals.toLocaleString();
+    document.getElementById('udGames').textContent = u.games;
+
+    document.getElementById('udDetails').innerHTML = `
+        <div class="detail-item"><div class="lbl">Full Name</div><div class="val">${u.name}</div></div>
+        <div class="detail-item"><div class="lbl">Username</div><div class="val">@${u.username}</div></div>
+        <div class="detail-item"><div class="lbl">Email</div><div class="val">${u.email}</div></div>
+        <div class="detail-item"><div class="lbl">Phone</div><div class="val">${u.phone}</div></div>
+        <div class="detail-item"><div class="lbl">Country</div><div class="val">${u.countryFlag} ${u.country}</div></div>
+        <div class="detail-item"><div class="lbl">Status</div><div class="val"><span class="status-badge ${u.status}">${u.status}</span></div></div>
+        <div class="detail-item"><div class="lbl">KYC</div><div class="val"><span class="status-badge ${u.kyc}">${u.kyc}</span></div></div>
+        <div class="detail-item"><div class="lbl">VIP Tier</div><div class="val"><span class="vip-pill vip-${u.vip}">${u.vip}</span></div></div>
+        <div class="detail-item"><div class="lbl">Joined</div><div class="val">${u.joined}</div></div>
+        <div class="detail-item"><div class="lbl">Games Played</div><div class="val">${u.games}</div></div>
+    `;
+
+    openModal('userModal');
+    if (tab) {
+        document.querySelectorAll('.ud-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.ud-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('ud-' + tab).classList.add('active');
+        const btn = [...document.querySelectorAll('.ud-tab')].find(b => b.textContent.toLowerCase().includes(tab==='wallet'?'wallet':tab==='actions'?'actions':'info'));
+        if (btn) btn.classList.add('active');
+    } else {
+        switchUdTab('info', document.querySelector('.ud-tab'));
+    }
+}
+
+function switchUdTab(tab, el) {
+    document.querySelectorAll('.ud-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ud-panel').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('ud-' + tab).classList.add('active');
+}
+
+function adjustBalance() {
+    if (!currentUser) return;
+    const type = document.getElementById('adjType').value;
+    const amount = parseFloat(document.getElementById('adjAmount').value);
+    const reason = document.getElementById('adjReason').value;
+    if (!amount || amount <= 0) return showToast('Enter a valid amount', 'error');
+    if (!reason) return showToast('Reason is required', 'warning');
+
+    if (type === 'add' || type === 'bonus') currentUser.balance += amount;
+    else currentUser.balance = Math.max(0, currentUser.balance - amount);
+
+    document.getElementById('udBalance').textContent = '$' + currentUser.balance.toLocaleString();
+    renderTable();
+    showToast(`Balance ${type === 'deduct' ? 'deducted' : 'credited'}: $${amount}`, 'success');
+    document.getElementById('adjAmount').value = '';
+    document.getElementById('adjReason').value = '';
+}
+
+function userAction(action) {
+    if (!currentUser) return;
+    const u = currentUser;
+    switch (action) {
+        case 'verify':
+            u.kyc = 'verified';
+            showToast(`KYC verified for ${u.name}`, 'success');
+            break;
+        case 'resetpass':
+            showToast(`Password reset email sent to ${u.email}`, 'info');
+            break;
+        case 'suspend':
+            if (!confirm(`Suspend ${u.name}?`)) return;
+            u.status = 'suspended';
+            showToast(`${u.name} suspended`, 'warning');
+            break;
+        case 'ban':
+            if (!confirm(`Ban ${u.name} permanently?`)) return;
+            u.status = 'banned';
+            showToast(`${u.name} banned`, 'error');
+            break;
+        case 'logout':
+            showToast(`Force logout sent for ${u.name}`, 'info');
+            break;
+        case 'delete':
+            if (!confirm(`DELETE ${u.name}? This cannot be undone!`)) return;
+            const idx = USERS.findIndex(x => x.id === u.id);
+            if (idx >= 0) USERS.splice(idx, 1);
+            applyFilters();
+            closeModal('userModal');
+            showToast(`${u.name} deleted`, 'error');
+            return;
+    }
+    renderTable();
+    viewUser(u.id, 'actions');
+}
+
+function quickBan(id) {
+    const u = USERS.find(x => x.id === id);
+    if (!u) return;
+    if (!confirm(`Ban ${u.name}?`)) return;
+    u.status = 'banned';
+    renderTable();
+    showToast(`${u.name} has been banned`, 'error');
+}
+
+// ═══════════════════════════════════════
+//  ADD USER
+// ═══════════════════════════════════════
+function openAddUser() { openModal('addUserModal'); }
+function addUser() {
+    const name = document.getElementById('newName').value.trim();
+    const username = document.getElementById('newUsername').value.trim();
+    const email = document.getElementById('newEmail').value.trim();
+    const phone = document.getElementById('newPhone').value.trim();
+    const pass = document.getElementById('newPass').value;
+    const country = document.getElementById('newCountry').value;
+    const balance = parseFloat(document.getElementById('newBalance').value) || 0;
+
+    if (!name || !username || !email || !pass) return showToast('Fill all required fields', 'error');
+    if (pass.length < 8) return showToast('Password min 8 characters', 'error');
+
+    const flags = { US:'🇺🇸', UK:'🇬🇧', CA:'🇨🇦', AE:'🇦🇪', AU:'🇦🇺', PK:'🇵🇰', IN:'🇮🇳' };
+    const newId = Math.max(...USERS.map(u => u.id)) + 1;
+    USERS.unshift({
+        id: newId, name, username, email, country, countryFlag: flags[country]||'🌍',
+        status: 'active', kyc: 'pending', vip: 'bronze', balance, deposits: balance,
+        withdrawals: 0, games: 0, joined: new Date().toISOString().slice(0,10),
+        phone: phone || '—', avatar: ''
+    });
+    applyFilters();
+    closeModal('addUserModal');
+    showToast(`User ${name} created successfully!`, 'success');
+    // clear form
+    ['newName','newUsername','newEmail','newPhone','newPass'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('newBalance').value = '0';
+}
+
+// ═══════════════════════════════════════
+//  EXPORT CSV
+// ═══════════════════════════════════════
+function exportCSV() {
+    const headers = ['ID','Name','Username','Email','Country','Status','KYC','VIP','Balance','Deposits','Withdrawals','Games','Joined'];
+    const rows = filtered.map(u => [u.id, u.name, u.username, u.email, u.country, u.status, u.kyc, u.vip, u.balance, u.deposits, u.withdrawals, u.games, u.joined]);
+    let csv = headers.join(',') + '\n' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `users_export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV exported successfully!', 'success');
+}
+
+// ═══════════════════════════════════════
+//  TABLE SORT
+// ═══════════════════════════════════════
+document.querySelectorAll('#usersTable th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        const isAsc = th.classList.contains('sort-asc');
+        document.querySelectorAll('#usersTable th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
+
+        filtered.sort((a, b) => {
+            let av = a[key], bv = b[key];
+            if (typeof av === 'string') av = av.toLowerCase();
+            if (typeof bv === 'string') bv = bv.toLowerCase();
+            if (av < bv) return isAsc ? 1 : -1;
+            if (av > bv) return isAsc ? -1 : 1;
+            return 0;
+        });
+        renderTable();
+    });
+});
+
+// ═══════════════════════════════════════
+//  SIDEBAR / UI
+// ═══════════════════════════════════════
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+});
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+function showToast(msg, type='success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+function debounce(fn, wait) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
+}
+
+// Init
+renderTable();
+console.log('👥 PokerRoyale Admin — Users Page Loaded');
+</script>
+</body>
+</html>

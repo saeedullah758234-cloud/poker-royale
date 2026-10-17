@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerRoyale - Super Admin Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --panel-bg: #0f141c;
+            --panel-border: #1e293b;
+            --accent-gold: #f59e0b;
+            --accent-green: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 260px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--panel-border);
+            padding: 2rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 2.5rem;
+        }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; list-style: none; }
+        .nav-item button {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item button:hover, .nav-item button.active {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-gold);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: #fff; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .stat-info h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; }
+        .stat-info p { font-size: 1.5rem; font-weight: 700; color: #fff; margin-top: 4px; }
+
+        /* Section Layouts */
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: var(--accent-gold);
+            margin-bottom: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Controls */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .form-control {
+            background: #07090e;
+            border: 1px solid var(--panel-border);
+            padding: 10px 14px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--accent-gold); }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-gold { background: var(--accent-gold); color: #000; }
+        .btn-gold:hover { background: #d97706; }
+        .btn-red { background: var(--accent-red); color: #fff; }
+        .btn-red:hover { background: #dc2626; }
+
+        /* Toggle Switches */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #07090e;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155; transition: .4s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--panel-border); font-size: 0.9rem; }
+        th { background: #07090e; color: var(--text-muted); font-weight: 600; }
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <i class="fa-solid fa-crown"></i> SUPER ADMIN
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <button class="active" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('settings')"><i class="fa-solid fa-sliders"></i> Site & Game Settings</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('tables')"><i class="fa-solid fa-gamepad"></i> Poker Tables</button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="switchTab('users')"><i class="fa-solid fa-users"></i> Manage Players</button>
+                </li>
+            </ul>
+        </div>
+        <div>
+            <button class="btn btn-red" style="width:100%" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="header">
+            <h1>Platform Control Room</h1>
+            <span id="admin-name" style="color: var(--accent-gold); font-weight: 600;">Super Admin Mode</span>
+        </div>
+
+        <!-- System Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-info">
+                    <h3>Total Players</h3>
+                    <p id="stat-users">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="stat-info">
+                    <h3>Total Bankroll Balance</h3>
+                    <p id="stat-balance">$0.00</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-table-cells"></i></div>
+                <div class="stat-info">
+                    <h3>Active Live Tables</h3>
+                    <p id="stat-tables">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <section id="tab-dashboard" class="tab-section active">
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-shield-halved"></i> Control Center Status</div>
+                <p style="color: var(--text-muted);">Welcome to the master control panel. You can dynamically modify website behavior, enable/disable games, adjust dynamic global currencies, manage user balances, and inject real-time game tables.</p>
+            </div>
+        </section>
+
+        <!-- TAB 2: SITE & GAME SETTINGS -->
+        <section id="tab-settings" class="tab-section">
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-globe"></i> Global Website & Currency Settings</div>
+                <form id="settings-form" onsubmit="saveSettings(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Default Currency Symbol</label>
+                            <input type="text" id="setting-symbol" class="form-control" value="$" placeholder="e.g. $, €, £">
+                        </div>
+                        <div class="form-group">
+                            <label>Currency ISO Code</label>
+                            <input type="text" id="setting-code" class="form-control" value="USD" placeholder="e.g. USD, EUR, GBP">
+                        </div>
+                    </div>
+
+                    <div class="card-header" style="margin-top: 1.5rem;"><i class="fa-solid fa-gamepad"></i> Enable / Disable Game Modes</div>
+                    
+                    <div class="toggle-group">
+                        <span>Texas Hold'em (Standard)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-holdem" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-group">
+                        <span>Omaha Poker (4-Card / 5-Card)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-omaha" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-group">
+                        <span>Short Deck Poker (6+ Hold'em)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-shortdeck" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="card-header" style="margin-top: 1.5rem;"><i class="fa-solid fa-bullhorn"></i> Announcement Banner</div>
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <input type="text" id="setting-announcement" class="form-control" placeholder="Global marquee text for all online players">
+                    </div>
+
+                    <button type="submit" class="btn btn-gold"><i class="fa-solid fa-floppy-disk"></i> Save All Live Changes</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 3: POKER TABLES -->
+        <section id="tab-tables" class="tab-section">
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-plus-circle"></i> Create New Live Poker Table</div>
+                <form onsubmit="createTable(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Table Name</label>
+                            <input type="text" id="tbl-name" class="form-control" required placeholder="e.g. Vegas VIP High Rollers">
+                        </div>
+                        <div class="form-group">
+                            <label>Game Type</label>
+                            <select id="tbl-type" class="form-control">
+                                <option value="texas">Texas Hold'em</option>
+                                <option value="omaha">Omaha (4-Card)</option>
+                                <option value="shortdeck">Short Deck (6+)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Small Blind ($)</label>
+                            <input type="number" id="tbl-sb" class="form-control" value="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Big Blind ($)</label>
+                            <input type="number" id="tbl-bb" class="form-control" value="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Min Buy-in ($)</label>
+                            <input type="number" id="tbl-min" class="form-control" value="200" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Buy-in ($)</label>
+                            <input type="number" id="tbl-max" class="form-control" value="1000" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-gold"><i class="fa-solid fa-table"></i> Launch Live Table</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-list"></i> Existing Poker Tables</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Game Mode</th>
+                            <th>Stakes</th>
+                            <th>Buy-In Range</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tables-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 4: PLAYERS -->
+        <section id="tab-users" class="tab-section">
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-user-gear"></i> Player Management</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Balance ($)</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-list"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item button').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadAdminData() {
+            try {
+                // Fetch Stats
+                const statsRes = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (statsRes.status === 401 || statsRes.status === 403) {
+                    alert("Super Admin access required!");
+                    window.location.href = 'login.html';
+                    return;
+                }
+                const stats = await statsRes.json();
+                document.getElementById('stat-users').innerText = stats.totalUsers;
+                document.getElementById('stat-balance').innerText = `$${stats.totalBalance}`;
+                document.getElementById('stat-tables').innerText = stats.activeTables;
+
+                // Fetch Settings
+                const settingsRes = await fetch('/api/admin/settings');
+                const settings = await settingsRes.json();
+                if(settings.default_currency) document.getElementById('setting-symbol').value = settings.default_currency;
+                if(settings.currency_code) document.getElementById('setting-code').value = settings.currency_code;
+                if(settings.enable_holdem) document.getElementById('toggle-holdem').checked = settings.enable_holdem === '1';
+                if(settings.enable_omaha) document.getElementById('toggle-omaha').checked = settings.enable_omaha === '1';
+                if(settings.enable_shortdeck) document.getElementById('toggle-shortdeck').checked = settings.enable_shortdeck === '1';
+                if(settings.site_announcement) document.getElementById('setting-announcement').value = settings.site_announcement;
+
+                // Load Tables & Users
+                loadTables();
+                loadUsers();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const body = {
+                default_currency: document.getElementById('setting-symbol').value,
+                currency_code: document.getElementById('setting-code').value,
+                enable_holdem: document.getElementById('toggle-holdem').checked,
+                enable_omaha: document.getElementById('toggle-omaha').checked,
+                enable_shortdeck: document.getElementById('toggle-shortdeck').checked,
+                site_announcement: document.getElementById('setting-announcement').value
+            };
+
+            const res = await fetch('/api/admin/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+        }
+
+        async function loadTables() {
+            const res = await fetch('/api/admin/tables', { headers: { 'Authorization': `Bearer ${token}` } });
+            const tables = await res.json();
+            const tbody = document.getElementById('tables-list');
+            tbody.innerHTML = tables.map(t => `
+                <tr>
+                    <td>${t.id}</td>
+                    <td><strong>${t.name}</strong></td>
+                    <td><span style="text-transform:uppercase; font-weight:bold; color:var(--accent-cyan);">${t.game_type}</span></td>
+                    <td>$${t.small_blind}/$${t.big_blind}</td>
+                    <td>$${t.min_buy_in} - $${t.max_buy_in}</td>
+                    <td><button class="btn btn-red" onclick="deleteTable(${t.id})"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function createTable(e) {
+            e.preventDefault();
+            const body = {
+                name: document.getElementById('tbl-name').value,
+                game_type: document.getElementById('tbl-type').value,
+                small_blind: parseFloat(document.getElementById('tbl-sb').value),
+                big_blind: parseFloat(document.getElementById('tbl-bb').value),
+                min_buy_in: parseFloat(document.getElementById('tbl-min').value),
+                max_buy_in: parseFloat(document.getElementById('tbl-max').value)
+            };
+
+            const res = await fetch('/api/admin/tables', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+            loadTables();
+        }
+
+        async function deleteTable(id) {
+            if(!confirm("Are you sure you want to remove this table?")) return;
+            await fetch(`/api/admin/tables/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            loadTables();
+        }
+
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            const users = await res.json();
+            const tbody = document.getElementById('users-list');
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td><strong>${u.username}</strong></td>
+                    <td>${u.email}</td>
+                    <td><input type="number" id="bal-${u.id}" value="${u.balance}" class="form-control" style="width:110px; display:inline-block;"></td>
+                    <td>${u.is_admin ? '<b style="color:var(--accent-gold);">Super Admin</b>' : 'Player'}</td>
+                    <td>
+                        <button class="btn btn-gold" onclick="updateUser(${u.id}, ${u.is_admin})"><i class="fa-solid fa-save"></i> Save</button>
+                        ${!u.is_admin ? `<button class="btn btn-red" onclick="deleteUser(${u.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateUser(id, isAdmin) {
+            const balance = parseFloat(document.getElementById(`bal-${id}`).value);
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ balance, is_admin: isAdmin })
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+            loadAdminData();
+        }
+
+        async function deleteUser(id) {
+            if(!confirm("Delete this player permanently?")) return;
+            await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            loadUsers();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        window.onload = loadAdminData;
+    </script>
+</body>
+</html>

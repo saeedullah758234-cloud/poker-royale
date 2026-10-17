@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerRoyale - Game Lobby</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b0e14;
+            --bg-card: #121620;
+            --bg-card-alt: #181d2a;
+            --gold: #ffb703;
+            --gold-bright: #ffd700;
+            --gold-gradient: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --border-color: rgba(255, 183, 3, 0.2);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            background: rgba(18, 22, 32, 0.95);
+            border-bottom: 1px solid var(--border-card);
+            padding: 0.9rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active { color: var(--gold-bright); }
+
+        .balance-badge {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Lobby Header */
+        .lobby-header {
+            background: linear-gradient(135deg, #131722 0%, #0d1017 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .lobby-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            color: var(--gold-bright);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .lobby-header p {
+            color: var(--text-sub);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            color: var(--text-sub);
+            padding: 0.7rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: rgba(255, 183, 3, 0.1);
+            color: var(--gold-bright);
+            border-color: var(--gold);
+        }
+
+        .search-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            width: 100%;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        /* Table List */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .table-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            border-color: var(--border-color);
+        }
+
+        .table-info {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex: 1;
+        }
+
+        .table-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: var(--gold-bright);
+            font-weight: 700;
+            width: 200px;
+        }
+
+        .table-meta {
+            display: flex;
+            gap: 2.5rem;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        .meta-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+        }
+
+        .meta-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .usd-text {
+            color: #4ade80;
+            font-weight: 700;
+        }
+
+        .players-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .btn-join {
+            background: var(--gold-gradient);
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-join:hover {
+            opacity: 0.9;
+        }
+
+        .btn-full {
+            background: #334155;
+            color: #94a3b8;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <a href="dashboard.html" class="brand"><i class="fa-solid fa-crown"></i> POKER ROYALE</a>
+        <div class="nav-links">
+            <a href="lobby.html" class="nav-link active"><i class="fa-solid fa-gamepad"></i> Lobby</a>
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-user"></i> Dashboard</a>
+            
+            <div class="balance-badge">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="navBalance">$0.00</span>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:var(--text-sub); cursor:pointer;" title="Logout">
+                <i class="fa-solid fa-right-from-bracket fa-lg"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="lobby-header">
+        <h1>Welcome to the Royale Tables</h1>
+        <p>Select a table, take your seat, and play for real USD ($) cash.</p>
+    </div>
+
+    <div class="container">
+        <!-- Filter Bar -->
+        <div class="filters">
+            <div class="filter-tabs">
+                <button class="filter-btn active">All Games</button>
+                <button class="filter-btn">Texas Hold'em</button>
+                <button class="filter-btn">Omaha (PLO)</button>
+                <button class="filter-btn">Tournaments</button>
+            </div>
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-sub);"></i>
+                <input type="text" placeholder="Search tables or stakes...">
+            </div>
+        </div>
+
+        <!-- Table List -->
+        
+        <!-- Table 1 (Micro Stakes) -->
+        <div class="table-card">
+            <div class="table-info">
+                <div class="table-name"><i class="fa-solid fa-spade" style="color:#94a3b8;"></i> Micro Grinders</div>
+                <div class="table-meta">
+                    <div class="meta-group">
+                        <span class="meta-label">Game</span>
+                        <span class="meta-value">No-Limit Hold'em</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Blinds (USD)</span>
+                        <span class="meta-value usd-text">$0.10 / $0.25</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Min Buy-in</span>
+                        <span class="meta-value">$10.00</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="players-count"><i class="fa-solid fa-users"></i> 6/9</div>
+                <a href="table.html?room=micro" class="btn-join">Join Table</a>
+            </div>
+        </div>
+
+        <!-- Table 2 (Low Stakes) -->
+        <div class="table-card">
+            <div class="table-info">
+                <div class="table-name"><i class="fa-solid fa-heart" style="color:#ef4444;"></i> Vegas Standard</div>
+                <div class="table-meta">
+                    <div class="meta-group">
+                        <span class="meta-label">Game</span>
+                        <span class="meta-value">No-Limit Hold'em</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Blinds (USD)</span>
+                        <span class="meta-value usd-text">$1.00 / $2.00</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Min Buy-in</span>
+                        <span class="meta-value">$100.00</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="players-count"><i class="fa-solid fa-users"></i> 8/9</div>
+                <a href="table.html?room=standard" class="btn-join">Join Table</a>
+            </div>
+        </div>
+
+        <!-- Table 3 (Omaha) -->
+        <div class="table-card">
+            <div class="table-info">
+                <div class="table-name"><i class="fa-solid fa-diamond" style="color:#ef4444;"></i> Omaha Knights</div>
+                <div class="table-meta">
+                    <div class="meta-group">
+                        <span class="meta-label">Game</span>
+                        <span class="meta-value">Pot-Limit Omaha</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Blinds (USD)</span>
+                        <span class="meta-value usd-text">$5.00 / $10.00</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Min Buy-in</span>
+                        <span class="meta-value">$500.00</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="players-count"><i class="fa-solid fa-users"></i> 3/9</div>
+                <a href="table.html?room=omaha" class="btn-join">Join Table</a>
+            </div>
+        </div>
+
+        <!-- Table 4 (High Roller - Full) -->
+        <div class="table-card" style="opacity: 0.7;">
+            <div class="table-info">
+                <div class="table-name"><i class="fa-solid fa-club" style="color:#94a3b8;"></i> High Roller VIP</div>
+                <div class="table-meta">
+                    <div class="meta-group">
+                        <span class="meta-label">Game</span>
+                        <span class="meta-value">No-Limit Hold'em</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Blinds (USD)</span>
+                        <span class="meta-value usd-text">$50.00 / $100.00</span>
+                    </div>
+                    <div class="meta-group">
+                        <span class="meta-label">Min Buy-in</span>
+                        <span class="meta-value">$5,000.00</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="players-count" style="color: var(--danger);"><i class="fa-solid fa-users"></i> 9/9</div>
+                <button class="btn-full" disabled>Table Full</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script to Handle User Authentication and Balance ($ USD) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserBalance();
+        });
+
+        async function loadUserBalance() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // If user is not logged in, redirect to login page
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.success && data.user) {
+                    // Update Balance in USD ($)
+                    const bal = parseFloat(data.user.balance || 0);
+                    document.getElementById('navBalance').innerText = `$${bal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                }
+            } catch (err) {
+                console.error('Error fetching balance:', err);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

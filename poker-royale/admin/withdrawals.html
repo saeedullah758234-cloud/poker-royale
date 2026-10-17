@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawals — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Alert */
+        .alert-banner {
+            background:linear-gradient(135deg,rgba(233,69,96,.12),rgba(233,69,96,.04));
+            border:1px solid rgba(233,69,96,.25); border-radius:var(--radius);
+            padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;
+        }
+        .alert-banner i { color:var(--accent); font-size:1.1rem; }
+        .alert-banner span { font-size:.88rem; flex:1; }
+        .alert-banner b { color:var(--accent); }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:20px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon {
+            width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;
+        }
+        .ms-icon.warning { background:rgba(245,158,11,.15); color:var(--warning); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .ms-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.35rem; font-weight:900; margin-top:2px; }
+
+        /* Filters */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:16px;
+            display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto auto; gap:12px; align-items:center;
+        }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:100%; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        .filter-select {
+            padding:10px 32px 10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            -webkit-appearance:none;
+            appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-warning { background:var(--warning); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+        .btn:disabled { opacity:.55; cursor:not-allowed; }
+
+        /* Bulk bar */
+        .bulk-bar {
+            background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.25); border-radius:10px;
+            padding:12px 16px; margin-bottom:16px; display:none; align-items:center; gap:12px; flex-wrap:wrap;
+        }
+        .bulk-bar.show { display:flex; }
+        .bulk-bar .count { font-size:.88rem; font-weight:700; color:var(--primary); }
+
+        /* Table */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 14px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none;
+        }
+        .admin-table th:hover { color:var(--gold); }
+        .admin-table td {
+            padding:14px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+        .admin-table tbody tr.selected { background:rgba(59,130,246,.06); }
+        .admin-table tbody tr.risk-high { background:rgba(239,68,68,.04); }
+        .admin-table tbody tr.risk-critical { background:rgba(239,68,68,.08); }
+
+        .user-cell { display:flex; align-items:center; gap:10px; }
+        .user-avatar {
+            width:36px; height:36px; border-radius:50%; background:var(--glass); border:2px solid var(--border);
+            display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--gold); font-size:.8rem; flex-shrink:0;
+        }
+        .user-info .name { font-weight:600; font-size:.88rem; }
+        .user-info .email { font-size:.72rem; color:var(--text-muted); }
+
+        .amount-cell { font-family:'Orbitron',sans-serif; font-weight:700; color:var(--accent); font-size:.95rem; }
+        .method-cell { font-size:.82rem; }
+        .account-cell { font-size:.78rem; color:var(--text-muted); font-family:monospace; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+        .status-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.pending { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.processing { background:rgba(6,182,212,.12); color:var(--cyan); }
+        .status-badge.completed { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.cancelled, .status-badge.rejected { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-badge.hold { background:rgba(123,47,247,.12); color:var(--purple); }
+
+        .risk-badge {
+            display:inline-flex; padding:2px 8px; border-radius:50px; font-size:.65rem; font-weight:700; text-transform:uppercase;
+        }
+        .risk-low { background:rgba(16,185,129,.12); color:var(--green); }
+        .risk-medium { background:rgba(245,158,11,.12); color:var(--warning); }
+        .risk-high { background:rgba(239,68,68,.12); color:var(--danger); }
+        .risk-critical { background:rgba(239,68,68,.2); color:#ff6b6b; border:1px solid rgba(239,68,68,.4); }
+
+        .kyc-dot {
+            display:inline-flex; align-items:center; gap:4px; font-size:.72rem;
+        }
+        .kyc-dot.verified { color:var(--green); }
+        .kyc-dot.pending { color:var(--warning); }
+        .kyc-dot.unverified { color:var(--danger); }
+
+        .action-btns { display:flex; gap:4px; flex-wrap:nowrap; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.approve:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+        .action-btn.reject:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.hold:hover { background:rgba(123,47,247,.15); color:var(--purple); border-color:var(--purple); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+
+        .cb-wrap { display:flex; align-items:center; }
+        .cb-wrap input { width:16px; height:16px; accent-color:var(--primary); cursor:pointer; }
+
+        .pagination-bar {
+            padding:14px 20px; border-top:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .page-info { font-size:.82rem; color:var(--text-muted); }
+        .page-btns { display:flex; gap:4px; }
+        .page-btn {
+            min-width:36px; height:36px; padding:0 10px; border-radius:8px;
+            background:var(--glass); border:1px solid var(--border); color:var(--text-muted);
+            font-size:.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .page-btn:hover { border-color:var(--primary); color:var(--text); }
+        .page-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+        .page-btn.disabled { opacity:.4; pointer-events:none; }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:560px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+        }
+
+        .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+        .detail-item { padding:12px; background:var(--glass); border:1px solid var(--border); border-radius:10px; }
+        .detail-item .lbl { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; }
+        .detail-item .val { font-size:.9rem; font-weight:600; margin-top:3px; word-break:break-all; }
+        .detail-item .val.big { font-family:'Orbitron',sans-serif; font-size:1.2rem; color:var(--accent); }
+
+        .form-group { margin-bottom:14px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-input, .form-select, .form-textarea {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--primary); }
+        .form-textarea { min-height:90px; resize:vertical; }
+        .form-select option { background:var(--card-bg); }
+
+        .risk-box {
+            padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:.85rem;
+            display:flex; align-items:flex-start; gap:10px;
+        }
+        .risk-box.low { background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.2); color:var(--green); }
+        .risk-box.medium { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); color:var(--warning); }
+        .risk-box.high, .risk-box.critical { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); color:var(--danger); }
+
+        .empty-state { text-align:center; padding:50px 20px; display:none; }
+        .empty-state.show { display:block; }
+        .empty-state .icon { font-size:2.5rem; opacity:.3; margin-bottom:10px; }
+        .empty-state h3 { font-size:1.1rem; margin-bottom:4px; }
+        .empty-state p { color:var(--text-muted); font-size:.88rem; }
+
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .filters-bar { grid-template-columns:1fr 1fr; }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .filters-bar { grid-template-columns:1fr; }
+            .detail-grid { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .admin-table { font-size:.78rem; }
+            .admin-table th, .admin-table td { padding:10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link active"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge" id="navPendingBadge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Withdrawal Queue</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="finance.html">Finance</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Withdrawals</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="loadWithdrawals()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <div class="alert-banner" id="pendingAlert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>You have <b id="alertPendingCount">0</b> pending withdrawal requests totaling <b id="alertPendingAmount">$0</b>. Review carefully before approving.</span>
+            </div>
+
+            <!-- Stats (clickable filters) -->
+            <div class="stats-row">
+                <div class="mini-stat active-filter" data-status="pending" onclick="filterByStat('pending', this)">
+                    <div class="ms-icon warning"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <div class="ms-label">Pending</div>
+                        <div class="ms-value" id="statPending" style="color:var(--warning)">0</div>
+                    </div>
+                </div>
+                <div class="mini-stat" data-status="processing" onclick="filterByStat('processing', this)">
+                    <div class="ms-icon cyan"><i class="fas fa-spinner"></i></div>
+                    <div>
+                        <div class="ms-label">Processing</div>
+                        <div class="ms-value" id="statProcessing" style="color:var(--cyan)">0</div>
+                    </div>
+                </div>
+                <div class="mini-stat" data-status="completed" onclick="filterByStat('completed', this)">
+                    <div class="ms-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div>
+                        <div class="ms-label">Completed</div>
+                        <div class="ms-value" id="statCompleted" style="color:var(--green)">0</div>
+                    </div>
+                </div>
+                <div class="mini-stat" data-status="cancelled" onclick="filterByStat('cancelled', this)">
+                    <div class="ms-icon red"><i class="fas fa-times-circle"></i></div>
+                    <div>
+                        <div class="ms-label">Rejected / Cancelled</div>
+                        <div class="ms-value" id="statRejected" style="color:var(--danger)">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search Txn ID, user, email, account...">
+                </div>
+                <select class="filter-select" id="filterMethod">
+                    <option value="">All Methods</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Skrill">Skrill</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Visa">Visa / Card</option>
+                    <option value="Crypto">Crypto (BTC/USDT)</option>
+                </select>
+                <select class="filter-select" id="filterRisk">
+                    <option value="">All Risk Levels</option>
+                    <option value="low">Low Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="high">High Risk</option>
+                    <option value="critical">Critical</option>
+                </select>
+                <select class="filter-select" id="filterKyc">
+                    <option value="">All KYC</option>
+                    <option value="verified">KYC Verified</option>
+                    <option value="pending">KYC Pending</option>
+                    <option value="unverified">Unverified</option>
+                </select>
+                <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
+                <button class="btn btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i> Export</button>
+            </div>
+
+            <!-- Bulk -->
+            <div class="bulk-bar" id="bulkBar">
+                <span class="count" id="bulkCount">0 selected</span>
+                <button class="btn btn-sm btn-green" onclick="batchApprove()"><i class="fas fa-check-double"></i> Approve Selected</button>
+                <button class="btn btn-sm btn-warning" onclick="batchHold()"><i class="fas fa-pause"></i> Hold Selected</button>
+                <button class="btn btn-sm btn-danger" onclick="batchReject()"><i class="fas fa-times"></i> Reject Selected</button>
+                <button class="btn btn-sm btn-outline" onclick="clearSelection()"><i class="fas fa-times"></i> Clear</button>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-arrow-up"></i> Withdrawal Requests <span style="color:var(--text-muted);font-weight:400;font-size:.82rem;" id="resultCount"></span></h3>
+                    <button class="btn btn-sm btn-green" id="btnApproveAllPending" onclick="approveAllPending()">
+                        <i class="fas fa-check-double"></i> Approve All Pending
+                    </button>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="admin-table" id="withdrawalsTable">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"><div class="cb-wrap"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></div></th>
+                                <th data-sort="id">Txn ID</th>
+                                <th data-sort="user">User</th>
+                                <th data-sort="amount">Amount</th>
+                                <th data-sort="method">Method</th>
+                                <th>Account</th>
+                                <th data-sort="kyc">KYC</th>
+                                <th data-sort="risk">Risk</th>
+                                <th data-sort="date">Requested</th>
+                                <th data-sort="status">Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawalsBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">💸</div>
+                    <h3>No withdrawals found</h3>
+                    <p>Try changing filters or status tabs</p>
+                </div>
+
+                <div class="pagination-bar">
+                    <div class="page-info" id="pageInfo">Showing 0 of 0</div>
+                    <div class="page-btns" id="pageBtns"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DETAIL / ACTION MODAL -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Withdrawal Details</h3>
+            <button class="modal-close" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="risk-box" id="modalRiskBox">
+                <i class="fas fa-shield-halved"></i>
+                <div id="modalRiskText">Risk assessment</div>
+            </div>
+            <div class="detail-grid" id="modalDetails"></div>
+            <div class="form-group" id="rejectReasonGroup" style="display:none;">
+                <label>Rejection Reason *</label>
+                <select class="form-select" id="rejectReasonSelect" onchange="onRejectReasonChange()">
+                    <option value="">Select reason...</option>
+                    <option value="Incomplete KYC">Incomplete KYC verification</option>
+                    <option value="Suspicious activity">Suspicious activity / fraud risk</option>
+                    <option value="Invalid account details">Invalid account details</option>
+                    <option value="Name mismatch">Account name mismatch</option>
+                    <option value="Daily limit exceeded">Daily/weekly limit exceeded</option>
+                    <option value="Bonus wagering incomplete">Bonus wagering incomplete</option>
+                    <option value="Other">Other (custom)</option>
+                </select>
+            </div>
+            <div class="form-group" id="rejectCustomGroup" style="display:none;">
+                <label>Custom Reason</label>
+                <textarea class="form-textarea" id="rejectCustom" placeholder="Enter rejection details..."></textarea>
+            </div>
+            <div class="form-group" id="holdNoteGroup" style="display:none;">
+                <label>Hold Note</label>
+                <textarea class="form-textarea" id="holdNote" placeholder="Why is this on hold?"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer" id="modalFooter"></div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  WITHDRAWALS DATA
+// ═══════════════════════════════════════
+const WITHDRAWALS = [
+    { id:'TXN-W94821', user:'Ali Khan', email:'ali@gmail.com', username:'poker_king', amount:1250, method:'PayPal', account:'ali@paypal.com', kyc:'verified', risk:'low', date:'2025-01-20 14:32', status:'pending', deposits:5000, withdrawals:3500, note:'' },
+    { id:'TXN-W94820', user:'Sara Malik', email:'sara@gmail.com', username:'bluff_queen', amount:3200, method:'Bank Transfer', account:'US64SVBKUS6S3300958879', kyc:'verified', risk:'low', date:'2025-01-20 12:15', status:'pending', deposits:8000, withdrawals:4500, note:'' },
+    { id:'TXN-W94819', user:'Ahmed Raza', email:'ahmed@gmail.com', username:'ace_master', amount:750, method:'Skrill', account:'ahmed@skrill.com', kyc:'pending', risk:'medium', date:'2025-01-20 10:45', status:'pending', deposits:2000, withdrawals:1200, note:'' },
+    { id:'TXN-W94818', user:'Fatima Noor', email:'fatima@gmail.com', username:'fatima_n', amount:5600, method:'Crypto', account:'TXyz1234abcd5678efgh', kyc:'verified', risk:'low', date:'2025-01-19 22:10', status:'processing', deposits:12000, withdrawals:6000, note:'' },
+    { id:'TXN-W94817', user:'John Smith', email:'john@gmail.com', username:'johnny_poker', amount:800, method:'Visa', account:'****4532', kyc:'verified', risk:'low', date:'2025-01-19 18:30', status:'completed', deposits:1500, withdrawals:1500, note:'' },
+    { id:'TXN-W94816', user:'Mike Wilson', email:'mike@email.com', username:'mike_bluff', amount:4500, method:'PayPal', account:'mike@paypal.com', kyc:'verified', risk:'low', date:'2025-01-19 16:00', status:'pending', deposits:25000, withdrawals:15000, note:'' },
+    { id:'TXN-W94815', user:'Lisa Chen', email:'lisa@email.com', username:'lisa_ace', amount:200, method:'Skrill', account:'lisa@skrill.com', kyc:'unverified', risk:'high', date:'2025-01-19 14:20', status:'pending', deposits:1000, withdrawals:500, note:'' },
+    { id:'TXN-W94814', user:'Omar Farooq', email:'omar@email.com', username:'omar_f', amount:9800, method:'Bank Transfer', account:'AE070331234567890123456', kyc:'verified', risk:'medium', date:'2025-01-19 11:05', status:'pending', deposits:30000, withdrawals:16000, note:'' },
+    { id:'TXN-W94813', user:'Emma Brown', email:'emma@email.com', username:'emma_fold', amount:150, method:'PayPal', account:'emma@paypal.com', kyc:'unverified', risk:'critical', date:'2025-01-18 21:40', status:'hold', deposits:800, withdrawals:0, note:'Flagged multi-account' },
+    { id:'TXN-W94812', user:'Ravi Kumar', email:'ravi@email.com', username:'ravi_k', amount:1100, method:'Crypto', account:'0xAbC9876Def5432', kyc:'verified', risk:'low', date:'2025-01-18 19:15', status:'completed', deposits:6000, withdrawals:3500, note:'' },
+    { id:'TXN-W94811', user:'Zainab Ahmed', email:'zainab@email.com', username:'queen_z', amount:2200, method:'PayPal', account:'zainab@paypal.com', kyc:'verified', risk:'low', date:'2025-01-18 15:50', status:'cancelled', deposits:40000, withdrawals:22000, note:'Invalid account details' },
+    { id:'TXN-W94810', user:'Hassan Yousuf', email:'hassan@email.com', username:'fold_king', amount:350, method:'Bank Transfer', account:'PK36HABB000012345678', kyc:'pending', risk:'medium', date:'2025-01-18 09:30', status:'pending', deposits:2500, withdrawals:1400, note:'' },
+    { id:'TXN-W94809', user:'Sophie Martin', email:'sophie@email.com', username:'sophie_m', amount:1750, method:'Skrill', account:'sophie@skrill.com', kyc:'verified', risk:'low', date:'2025-01-17 20:00', status:'completed', deposits:9000, withdrawals:5000, note:'' },
+    { id:'TXN-W94808', user:'David Chen', email:'david@email.com', username:'usa_phil', amount:5000, method:'Crypto', account:'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', kyc:'verified', risk:'high', date:'2025-01-17 12:10', status:'pending', deposits:3000, withdrawals:2800, note:'' },
+    { id:'TXN-W94807', user:'Nadia Hassan', email:'nadia@email.com', username:'nadia_h', amount:900, method:'Visa', account:'****8899', kyc:'verified', risk:'low', date:'2025-01-16 18:45', status:'processing', deposits:18000, withdrawals:9000, note:'' },
+];
+
+let filtered = [];
+let currentStatus = 'pending';
+let currentPage = 1;
+const perPage = 10;
+let selected = new Set();
+let currentItem = null;
+let modalMode = 'view'; // view | reject | hold
+
+// ─── RENDER ───
+function render() {
+    applyFilters(false);
+    updateStats();
+
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+    const tbody = document.getElementById('withdrawalsBody');
+    const empty = document.getElementById('emptyState');
+
+    if (page.length === 0) {
+        tbody.innerHTML = '';
+        empty.classList.add('show');
+        document.getElementById('resultCount').textContent = '';
+        renderPagination();
+        updateBulk();
+        return;
+    }
+    empty.classList.remove('show');
+
+    tbody.innerHTML = page.map(w => {
+        const riskClass = w.risk === 'high' || w.risk === 'critical' ? `risk-${w.risk}` : '';
+        return `
+        <tr class="${selected.has(w.id) ? 'selected' : ''} ${riskClass}" data-id="${w.id}">
+            <td><div class="cb-wrap"><input type="checkbox" ${selected.has(w.id)?'checked':''} onchange="toggleSelect('${w.id}', this)" ${w.status!=='pending'&&w.status!=='hold'?'disabled':''}></div></td>
+            <td style="font-family:'Orbitron';font-size:.75rem;font-weight:700;">${w.id}</td>
+            <td>
+                <div class="user-cell">
+                    <div class="user-avatar">${w.user[0]}</div>
+                    <div class="user-info">
+                        <div class="name">${w.user}</div>
+                        <div class="email">@${w.username}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="amount-cell">$${w.amount.toLocaleString()}</td>
+            <td class="method-cell">${w.method}</td>
+            <td class="account-cell" title="${w.account}">${w.account}</td>
+            <td><span class="kyc-dot ${w.kyc}"><i class="fas fa-${w.kyc==='verified'?'check-circle':w.kyc==='pending'?'clock':'times-circle'}"></i> ${w.kyc}</span></td>
+            <td><span class="risk-badge risk-${w.risk}">${w.risk}</span></td>
+            <td style="font-size:.8rem;white-space:nowrap;">${w.date}</td>
+            <td><span class="status-badge ${w.status}">${w.status}</span></td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn view" title="View" onclick="openDetail('${w.id}','view')"><i class="fas fa-eye"></i></button>
+                    ${w.status === 'pending' || w.status === 'hold' ? `
+                        <button class="action-btn approve" title="Approve" onclick="quickApprove('${w.id}')"><i class="fas fa-check"></i></button>
+                        <button class="action-btn hold" title="Hold" onclick="openDetail('${w.id}','hold')"><i class="fas fa-pause"></i></button>
+                        <button class="action-btn reject" title="Reject" onclick="openDetail('${w.id}','reject')"><i class="fas fa-times"></i></button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('resultCount').textContent = `(${filtered.length} results)`;
+    renderPagination();
+    updateBulk();
+}
+
+function updateStats() {
+    const pending = WITHDRAWALS.filter(w => w.status === 'pending');
+    const processing = WITHDRAWALS.filter(w => w.status === 'processing');
+    const completed = WITHDRAWALS.filter(w => w.status === 'completed');
+    const cancelled = WITHDRAWALS.filter(w => w.status === 'cancelled' || w.status === 'rejected');
+    const hold = WITHDRAWALS.filter(w => w.status === 'hold');
+
+    const pendingAmt = pending.reduce((s, w) => s + w.amount, 0);
+
+    document.getElementById('statPending').textContent = pending.length + (hold.length ? ` (+${hold.length} hold)` : '');
+    document.getElementById('statProcessing').textContent = processing.length;
+    document.getElementById('statCompleted').textContent = completed.length;
+    document.getElementById('statRejected').textContent = cancelled.length;
+
+    document.getElementById('alertPendingCount').textContent = pending.length;
+    document.getElementById('alertPendingAmount').textContent = '$' + pendingAmt.toLocaleString();
+    document.getElementById('navPendingBadge').textContent = pending.length;
+    document.getElementById('pendingAlert').style.display = pending.length ? 'flex' : 'none';
+}
+
+function renderPagination() {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    const start = filtered.length ? (currentPage - 1) * perPage + 1 : 0;
+    const end = Math.min(currentPage * perPage, filtered.length);
+    document.getElementById('pageInfo').textContent = `Showing ${start}–${end} of ${filtered.length}`;
+
+    let html = `<button class="page-btn ${currentPage===1?'disabled':''}" onclick="goPage(${currentPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= total; i++) {
+        if (i===1 || i===total || Math.abs(i-currentPage)<=2) {
+            html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+        } else if (Math.abs(i-currentPage)===3) {
+            html += `<span style="color:var(--text-muted);padding:0 4px;">…</span>`;
+        }
+    }
+    html += `<button class="page-btn ${currentPage===total?'disabled':''}" onclick="goPage(${currentPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+    document.getElementById('pageBtns').innerHTML = html;
+}
+
+function goPage(p) {
+    const total = Math.ceil(filtered.length / perPage) || 1;
+    if (p < 1 || p > total) return;
+    currentPage = p;
+    render();
+}
+
+// ─── FILTERS ───
+function applyFilters(resetPage = true) {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const method = document.getElementById('filterMethod').value;
+    const risk = document.getElementById('filterRisk').value;
+    const kyc = document.getElementById('filterKyc').value;
+
+    filtered = WITHDRAWALS.filter(w => {
+        if (currentStatus === 'pending') {
+            if (w.status !== 'pending' && w.status !== 'hold') return false;
+        } else if (currentStatus && w.status !== currentStatus) {
+            // map cancelled tab
+            if (currentStatus === 'cancelled' && (w.status === 'cancelled' || w.status === 'rejected')) {
+                // ok
+            } else if (w.status !== currentStatus) return false;
+        }
+        if (q && !(`${w.id} ${w.user} ${w.email} ${w.username} ${w.account} ${w.method}`).toLowerCase().includes(q)) return false;
+        if (method && w.method !== method) return false;
+        if (risk && w.risk !== risk) return false;
+        if (kyc && w.kyc !== kyc) return false;
+        return true;
+    });
+
+    if (resetPage) currentPage = 1;
+}
+
+function filterByStat(status, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if (el) el.classList.add('active-filter');
+    currentStatus = status;
+    applyFilters(true);
+    render();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterMethod').value = '';
+    document.getElementById('filterRisk').value = '';
+    document.getElementById('filterKyc').value = '';
+    currentStatus = 'pending';
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    document.querySelector('.mini-stat[data-status="pending"]')?.classList.add('active-filter');
+    applyFilters(true);
+    render();
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(() => { applyFilters(true); render(); }, 250));
+document.getElementById('filterMethod').addEventListener('change', () => { applyFilters(true); render(); });
+document.getElementById('filterRisk').addEventListener('change', () => { applyFilters(true); render(); });
+document.getElementById('filterKyc').addEventListener('change', () => { applyFilters(true); render(); });
+
+// ─── SELECTION ───
+function toggleSelect(id, el) {
+    if (el.checked) selected.add(id); else selected.delete(id);
+    updateBulk();
+    el.closest('tr')?.classList.toggle('selected', el.checked);
+}
+function toggleSelectAll(el) {
+    const start = (currentPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+    page.forEach(w => {
+        if (w.status === 'pending' || w.status === 'hold') {
+            if (el.checked) selected.add(w.id); else selected.delete(w.id);
+        }
+    });
+    render();
+}
+function clearSelection() { selected.clear(); render(); }
+function updateBulk() {
+    const bar = document.getElementById('bulkBar');
+    bar.classList.toggle('show', selected.size > 0);
+    document.getElementById('bulkCount').textContent = `${selected.size} selected`;
+}
+
+// ─── ACTIONS ───
+function getItem(id) { return WITHDRAWALS.find(w => w.id === id); }
+
+function quickApprove(id) {
+    const w = getItem(id);
+    if (!w) return;
+    if (w.kyc !== 'verified' && !confirm(`${w.user} is not KYC verified. Approve anyway?`)) return;
+    if (w.risk === 'high' || w.risk === 'critical') {
+        if (!confirm(`⚠️ ${w.risk.toUpperCase()} risk withdrawal of $${w.amount}. Approve anyway?`)) return;
+    }
+    if (!confirm(`Approve ${id} for $${w.amount.toLocaleString()} to ${w.method}?`)) return;
+    approveItem(w);
+}
+
+function approveItem(w) {
+    w.status = 'completed';
+    w.note = w.note || 'Approved by admin';
+    callApi('approve', w.id);
+    selected.delete(w.id);
+    render();
+    showToast(`${w.id} approved — $${w.amount.toLocaleString()}`, 'success');
+}
+
+function approveAllPending() {
+    const list = WITHDRAWALS.filter(w => w.status === 'pending');
+    if (!list.length) return showToast('No pending withdrawals', 'info');
+    if (!confirm(`Approve ALL ${list.length} pending withdrawals?`)) return;
+    list.forEach(w => { w.status = 'completed'; selected.delete(w.id); });
+    render();
+    showToast(`${list.length} withdrawals approved`, 'success');
+}
+
+function batchApprove() {
+    if (!selected.size) return;
+    if (!confirm(`Approve ${selected.size} selected withdrawals?`)) return;
+    let n = 0;
+    selected.forEach(id => {
+        const w = getItem(id);
+        if (w && (w.status === 'pending' || w.status === 'hold')) {
+            w.status = 'completed';
+            n++;
+        }
+    });
+    selected.clear();
+    render();
+    showToast(`${n} withdrawals approved`, 'success');
+}
+
+function batchHold() {
+    if (!selected.size) return;
+    const note = prompt('Hold note (optional):') || 'Held for review';
+    let n = 0;
+    selected.forEach(id => {
+        const w = getItem(id);
+        if (w && w.status === 'pending') {
+            w.status = 'hold';
+            w.note = note;
+            n++;
+        }
+    });
+    selected.clear();
+    render();
+    showToast(`${n} withdrawals put on hold`, 'warning');
+}
+
+function batchReject() {
+    if (!selected.size) return;
+    const reason = prompt('Rejection reason for all selected:');
+    if (!reason) return;
+    let n = 0;
+    selected.forEach(id => {
+        const w = getItem(id);
+        if (w && (w.status === 'pending' || w.status === 'hold')) {
+            w.status = 'cancelled';
+            w.note = reason;
+            n++;
+        }
+    });
+    selected.clear();
+    render();
+    showToast(`${n} withdrawals rejected & refunded`, 'error');
+}
+
+// ─── DETAIL MODAL ───
+function openDetail(id, mode) {
+    const w = getItem(id);
+    if (!w) return;
+    currentItem = w;
+    modalMode = mode || 'view';
+
+    document.getElementById('modalTitle').textContent = mode === 'reject' ? 'Reject Withdrawal' : mode === 'hold' ? 'Hold Withdrawal' : 'Withdrawal Details';
+
+    const riskBox = document.getElementById('modalRiskBox');
+    riskBox.className = 'risk-box ' + w.risk;
+    const riskMsgs = {
+        low: 'Low risk — normal activity, KYC looks fine.',
+        medium: 'Medium risk — review account history and KYC before approving.',
+        high: 'High risk — unusual pattern or incomplete verification. Investigate first.',
+        critical: 'Critical risk — possible fraud / multi-account. Do not approve without investigation.'
+    };
+    document.getElementById('modalRiskText').innerHTML = `<strong>${w.risk.toUpperCase()} RISK</strong><br>${riskMsgs[w.risk] || ''}${w.note ? '<br>Note: ' + w.note : ''}`;
+
+    document.getElementById('modalDetails').innerHTML = `
+        <div class="detail-item"><div class="lbl">Transaction ID</div><div class="val">${w.id}</div></div>
+        <div class="detail-item"><div class="lbl">Status</div><div class="val"><span class="status-badge ${w.status}">${w.status}</span></div></div>
+        <div class="detail-item"><div class="lbl">Player</div><div class="val">${w.user} (@${w.username})</div></div>
+        <div class="detail-item"><div class="lbl">Email</div><div class="val">${w.email}</div></div>
+        <div class="detail-item"><div class="lbl">Amount</div><div class="val big">$${w.amount.toLocaleString()}</div></div>
+        <div class="detail-item"><div class="lbl">Method</div><div class="val">${w.method}</div></div>
+        <div class="detail-item" style="grid-column:1/-1;"><div class="lbl">Destination Account</div><div class="val">${w.account}</div></div>
+        <div class="detail-item"><div class="lbl">KYC Status</div><div class="val"><span class="kyc-dot ${w.kyc}"><i class="fas fa-${w.kyc==='verified'?'check-circle':w.kyc==='pending'?'clock':'times-circle'}"></i> ${w.kyc}</span></div></div>
+        <div class="detail-item"><div class="lbl">Requested</div><div class="val">${w.date}</div></div>
+        <div class="detail-item"><div class="lbl">Total Deposited</div><div class="val" style="color:var(--green)">$${w.deposits.toLocaleString()}</div></div>
+        <div class="detail-item"><div class="lbl">Total Withdrawn</div><div class="val" style="color:var(--accent)">$${w.withdrawals.toLocaleString()}</div></div>
+    `;
+
+    document.getElementById('rejectReasonGroup').style.display = mode === 'reject' ? 'block' : 'none';
+    document.getElementById('rejectCustomGroup').style.display = 'none';
+    document.getElementById('holdNoteGroup').style.display = mode === 'hold' ? 'block' : 'none';
+    document.getElementById('rejectReasonSelect').value = '';
+    document.getElementById('rejectCustom').value = '';
+    document.getElementById('holdNote').value = w.note || '';
+
+    let footer = `<button class="btn btn-outline" onclick="closeModal('detailModal')">Close</button>`;
+    if (mode === 'view' && (w.status === 'pending' || w.status === 'hold')) {
+        footer += `
+            <button class="btn btn-warning btn-sm" onclick="openDetail('${w.id}','hold')"><i class="fas fa-pause"></i> Hold</button>
+            <button class="btn btn-danger btn-sm" onclick="openDetail('${w.id}','reject')"><i class="fas fa-times"></i> Reject</button>
+            <button class="btn btn-green btn-sm" onclick="confirmApprove()"><i class="fas fa-check"></i> Approve</button>`;
+    } else if (mode === 'reject') {
+        footer += `<button class="btn btn-danger" onclick="confirmReject()"><i class="fas fa-times"></i> Confirm Reject</button>`;
+    } else if (mode === 'hold') {
+        footer += `<button class="btn btn-warning" onclick="confirmHold()"><i class="fas fa-pause"></i> Confirm Hold</button>`;
+    }
+    document.getElementById('modalFooter').innerHTML = footer;
+
+    openModal('detailModal');
+}
+
+function onRejectReasonChange() {
+    const v = document.getElementById('rejectReasonSelect').value;
+    document.getElementById('rejectCustomGroup').style.display = v === 'Other' ? 'block' : 'none';
+}
+
+function confirmApprove() {
+    if (!currentItem) return;
+    closeModal('detailModal');
+    quickApprove(currentItem.id);
+}
+
+function confirmReject() {
+    if (!currentItem) return;
+    let reason = document.getElementById('rejectReasonSelect').value;
+    if (!reason) return showToast('Select a rejection reason', 'error');
+    if (reason === 'Other') {
+        reason = document.getElementById('rejectCustom').value.trim();
+        if (!reason) return showToast('Enter custom rejection reason', 'error');
+    }
+    currentItem.status = 'cancelled';
+    currentItem.note = reason;
+    callApi('reject', currentItem.id, reason);
+    selected.delete(currentItem.id);
+    closeModal('detailModal');
+    render();
+    showToast(`${currentItem.id} rejected & balance refunded`, 'error');
+}
+
+function confirmHold() {
+    if (!currentItem) return;
+    const note = document.getElementById('holdNote').value.trim() || 'Held for review';
+    currentItem.status = 'hold';
+    currentItem.note = note;
+    selected.delete(currentItem.id);
+    closeModal('detailModal');
+    render();
+    showToast(`${currentItem.id} placed on hold`, 'warning');
+}
+
+function callApi(action, txnId, reason) {
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        const url = action === 'approve'
+            ? `http://localhost:3000/api/admin/withdrawals/${txnId}/approve`
+            : `http://localhost:3000/api/admin/withdrawals/${txnId}/reject`;
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ reason: reason || '' })
+        }).catch(() => {});
+    } catch (e) {}
+}
+
+// ─── EXPORT ───
+function exportCSV() {
+    const headers = ['Txn ID','User','Email','Amount','Method','Account','KYC','Risk','Date','Status','Note'];
+    const rows = filtered.map(w => [w.id,w.user,w.email,w.amount,w.method,w.account,w.kyc,w.risk,w.date,w.status,w.note||'']);
+    const csv = headers.join(',') + '\n' + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `withdrawals_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV exported', 'success');
+}
+
+function loadWithdrawals() {
+    try {
+        const token = localStorage.getItem('pr_admin_token');
+        fetch('http://localhost:3000/api/admin/withdrawals?status=pending', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }).then(r => r.json()).then(data => {
+            if (data.success && data.data && data.data.withdrawals && data.data.withdrawals.length) {
+                // Could merge API data
+            }
+        }).catch(() => {});
+    } catch (e) {}
+    render();
+    showToast('Withdrawal queue refreshed', 'info');
+}
+
+// ─── UI HELPERS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+function showToast(msg, type = 'success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]||icons.success}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+function debounce(fn, wait) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Table sort
+document.querySelectorAll('#withdrawalsTable th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        const map = { id:'id', user:'user', amount:'amount', method:'method', kyc:'kyc', risk:'risk', date:'date', status:'status' };
+        const field = map[key];
+        if (!field) return;
+        const asc = th.classList.contains('sort-asc');
+        document.querySelectorAll('#withdrawalsTable th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(asc ? 'sort-desc' : 'sort-asc');
+        filtered.sort((a, b) => {
+            let av = a[field], bv = b[field];
+            if (typeof av === 'string') av = av.toLowerCase();
+            if (typeof bv === 'string') bv = bv.toLowerCase();
+            if (av < bv) return asc ? 1 : -1;
+            if (av > bv) return asc ? -1 : 1;
+            return 0;
+        });
+        render();
+    });
+});
+
+// Init
+applyFilters(true);
+render();
+console.log('💸 PokerRoyale Admin — Withdrawals Queue Loaded');
+</script>
+
+<!-- Optional global USD override if you added it in root -->
+<script src="../currency-override.js"></script>
+</body>
+</html>

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics & Reports — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Toolbar */
+        .toolbar {
+            display:flex; align-items:center; justify-content:space-between; gap:16px;
+            margin-bottom:24px; flex-wrap:wrap;
+        }
+        .date-filter {
+            display:flex; align-items:center; gap:8px;
+            background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; padding:6px;
+        }
+        .df-btn {
+            padding:8px 16px; background:transparent; border:none; border-radius:8px;
+            color:var(--text-muted); font-family:'Inter',sans-serif; font-size:.85rem; font-weight:600;
+            cursor:pointer; transition:var(--transition);
+        }
+        .df-btn:hover { color:var(--text); }
+        .df-btn.active { background:var(--primary); color:#fff; }
+        .custom-date {
+            display:flex; align-items:center; gap:8px; padding:0 8px;
+        }
+        .custom-date input {
+            padding:7px 10px; background:rgba(0,0,0,.3); border:1px solid var(--border);
+            border-radius:6px; color:var(--text); font-family:'Inter',sans-serif; font-size:.8rem; outline:none;
+        }
+        .custom-date input::-webkit-calendar-picker-indicator { filter:invert(1); cursor:pointer; }
+        
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none;
+        }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--primary); color:var(--text); }
+
+        /* Key Metrics */
+        .metrics-grid {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;
+        }
+        .metric-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:20px; transition:var(--transition);
+        }
+        .metric-card:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .metric-header {
+            display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
+        }
+        .metric-icon {
+            width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;
+        }
+        .mi-blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .mi-green { background:rgba(16,185,129,.15); color:var(--green); }
+        .mi-gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .mi-red { background:rgba(239,68,68,.15); color:var(--danger); }
+        
+        .metric-trend {
+            font-size:.75rem; font-weight:700; display:flex; align-items:center; gap:4px;
+        }
+        .metric-trend.up { color:var(--green); }
+        .metric-trend.down { color:var(--danger); }
+        
+        .metric-lbl { font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+        .metric-val { font-family:'Orbitron',sans-serif; font-size:1.6rem; font-weight:900; }
+        .metric-sub { font-size:.7rem; color:var(--text-muted); margin-top:4px; }
+
+        /* Charts Grid */
+        .charts-grid {
+            display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:28px;
+        }
+        .chart-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:24px; display:flex; flex-direction:column;
+        }
+        .chart-header {
+            display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;
+        }
+        .chart-header h3 { font-size:1rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .chart-header h3 i { color:var(--gold); }
+        .chart-header select {
+            padding:6px 10px; background:rgba(0,0,0,.2); border:1px solid var(--border);
+            border-radius:6px; color:var(--text); font-size:.75rem; outline:none;
+        }
+        .chart-container { position:relative; flex:1; min-height:280px; }
+
+        /* Secondary Charts */
+        .secondary-charts {
+            display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:28px;
+        }
+
+        /* Top Games Table */
+        .data-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .dc-header {
+            padding:18px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .dc-header h3 { font-size:.95rem; font-weight:700; }
+        
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 18px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02); border-bottom:1px solid var(--border);
+        }
+        .admin-table td { padding:14px 18px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle; }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .progress-bar {
+            width:100%; height:6px; background:rgba(255,255,255,.06); border-radius:6px; overflow:hidden; margin-top:4px;
+        }
+        .progress-fill { height:100%; border-radius:6px; }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.info { background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); color:var(--primary); }
+
+        @media(max-width:1200px) {
+            .charts-grid { grid-template-columns:1fr; }
+            .secondary-charts { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .metrics-grid { grid-template-columns:repeat(2,1fr); }
+            .secondary-charts { grid-template-columns:1fr; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .metrics-grid { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .date-filter { flex-wrap:wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link active"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Analytics & Reports</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Analytics</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="date-filter">
+                    <button class="df-btn" onclick="setDateRange('today', this)">Today</button>
+                    <button class="df-btn" onclick="setDateRange('7d', this)">7 Days</button>
+                    <button class="df-btn active" onclick="setDateRange('30d', this)">30 Days</button>
+                    <button class="df-btn" onclick="setDateRange('year', this)">This Year</button>
+                    <div style="width:1px;height:20px;background:var(--border);margin:0 4px;"></div>
+                    <div class="custom-date">
+                        <input type="date" id="dateStart">
+                        <span style="color:var(--text-muted);font-size:.8rem;">to</span>
+                        <input type="date" id="dateEnd">
+                        <button class="btn btn-outline" style="padding:6px 12px;font-size:.75rem;" onclick="applyCustomDate()">Apply</button>
+                    </div>
+                </div>
+                <button class="btn btn-outline" onclick="exportReport()"><i class="fas fa-file-export"></i> Export PDF Report</button>
+            </div>
+
+            <!-- Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon mi-blue"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="metric-trend up"><i class="fas fa-arrow-up"></i> 14.5%</div>
+                    </div>
+                    <div class="metric-lbl">Gross Gaming Revenue (GGR)</div>
+                    <div class="metric-val" id="metGgr">$1,245,600</div>
+                    <div class="metric-sub">Total bets minus total wins</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon mi-green"><i class="fas fa-hand-holding-dollar"></i></div>
+                        <div class="metric-trend up"><i class="fas fa-arrow-up"></i> 8.2%</div>
+                    </div>
+                    <div class="metric-lbl">Net Gaming Revenue (NGR)</div>
+                    <div class="metric-val" id="metNgr">$890,200</div>
+                    <div class="metric-sub">GGR minus bonuses & fees</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon mi-gold"><i class="fas fa-users"></i></div>
+                        <div class="metric-trend up"><i class="fas fa-arrow-up"></i> 12.4%</div>
+                    </div>
+                    <div class="metric-lbl">New Active Players</div>
+                    <div class="metric-val" id="metNewP">12,450</div>
+                    <div class="metric-sub">First-time depositors</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon mi-red"><i class="fas fa-user-minus"></i></div>
+                        <div class="metric-trend down"><i class="fas fa-arrow-down"></i> 2.1%</div>
+                    </div>
+                    <div class="metric-lbl">Player Churn Rate</div>
+                    <div class="metric-val" id="metChurn">4.2%</div>
+                    <div class="metric-sub">Inactive > 30 days</div>
+                </div>
+            </div>
+
+            <!-- Main Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-area"></i> Revenue & Deposits Trend</h3>
+                        <select id="revChartType" onchange="updateRevChart()">
+                            <option value="daily">Daily View</option>
+                            <option value="weekly">Weekly View</option>
+                            <option value="monthly" selected>Monthly View</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="mainRevenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie"></i> Payment Methods Volume</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="paymentPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Charts -->
+            <div class="secondary-charts">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-users"></i> Registration Funnel</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="funnelChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-gamepad"></i> Game Type Popularity</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="gamesPolarChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-clock"></i> Peak Playing Hours</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="hourlyBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Game Formats Table -->
+            <div class="data-card">
+                <div class="dc-header">
+                    <h3><i class="fas fa-table" style="color:var(--gold);margin-right:8px;"></i> Top Performing Tables (Last 30 Days)</h3>
+                    <button class="btn btn-sm btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i> CSV</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Table Format</th>
+                                <th>Stakes</th>
+                                <th>Total Hands</th>
+                                <th>Unique Players</th>
+                                <th>Total Rake</th>
+                                <th>% of Total Rake</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>NL Hold'em (Mid)</strong></td>
+                                <td style="color:var(--gold)">$5/$10</td>
+                                <td>452,890</td>
+                                <td>8,450</td>
+                                <td style="color:var(--green);font-family:'Orbitron';font-weight:700;">$145,200</td>
+                                <td style="width:200px;">
+                                    <div style="display:flex;justify-content:space-between;font-size:.7rem;"><span>35%</span></div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:35%;background:var(--primary)"></div></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>NL Hold'em (Low)</strong></td>
+                                <td style="color:var(--gold)">$1/$2</td>
+                                <td>892,100</td>
+                                <td>15,200</td>
+                                <td style="color:var(--green);font-family:'Orbitron';font-weight:700;">$98,500</td>
+                                <td>
+                                    <div style="display:flex;justify-content:space-between;font-size:.7rem;"><span>24%</span></div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:24%;background:var(--green)"></div></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>PL Omaha (Mid)</strong></td>
+                                <td style="color:var(--gold)">$5/$10</td>
+                                <td>125,400</td>
+                                <td>3,100</td>
+                                <td style="color:var(--green);font-family:'Orbitron';font-weight:700;">$65,800</td>
+                                <td>
+                                    <div style="display:flex;justify-content:space-between;font-size:.7rem;"><span>16%</span></div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:16%;background:var(--gold)"></div></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>NL Hold'em (High)</strong></td>
+                                <td style="color:var(--gold)">$25/$50</td>
+                                <td>45,200</td>
+                                <td>850</td>
+                                <td style="color:var(--green);font-family:'Orbitron';font-weight:700;">$55,400</td>
+                                <td>
+                                    <div style="display:flex;justify-content:space-between;font-size:.7rem;"><span>13%</span></div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:13%;background:var(--accent)"></div></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>NL Short Deck</strong></td>
+                                <td style="color:var(--gold)">$2/$5</td>
+                                <td>98,500</td>
+                                <td>2,400</td>
+                                <td style="color:var(--green);font-family:'Orbitron';font-weight:700;">$48,900</td>
+                                <td>
+                                    <div style="display:flex;justify-content:space-between;font-size:.7rem;"><span>12%</span></div>
+                                    <div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--purple)"></div></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  UI LOGIC
+// ═══════════════════════════════════════
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+function showToast(msg, type='info') {
+    const t = document.getElementById('toastBox');
+    document.getElementById('toastMsg').textContent = msg;
+    t.className = `toast ${type} show`;
+    const icons = { info:'fa-info-circle', success:'fa-check-circle', error:'fa-times-circle' };
+    t.querySelector('i').className = `fas ${icons[type]}`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── FILTERS ───
+function setDateRange(range, el) {
+    document.querySelectorAll('.df-btn').forEach(b => b.classList.remove('active'));
+    if(el) el.classList.add('active');
+    document.getElementById('dateStart').value = '';
+    document.getElementById('dateEnd').value = '';
+    
+    // Simulate data refresh
+    document.getElementById('metGgr').style.opacity = 0.5;
+    setTimeout(() => {
+        const mul = range==='today'?0.05 : range==='7d'?0.25 : range==='30d'?1 : 12;
+        document.getElementById('metGgr').textContent = '$' + (1245600 * mul).toLocaleString(undefined,{maximumFractionDigits:0});
+        document.getElementById('metNgr').textContent = '$' + (890200 * mul).toLocaleString(undefined,{maximumFractionDigits:0});
+        document.getElementById('metNewP').textContent = (12450 * mul).toLocaleString(undefined,{maximumFractionDigits:0});
+        document.getElementById('metGgr').style.opacity = 1;
+        updateCharts();
+    }, 400);
+}
+function applyCustomDate() {
+    const s = document.getElementById('dateStart').value;
+    const e = document.getElementById('dateEnd').value;
+    if(!s || !e) return showToast('Select both dates', 'error');
+    document.querySelectorAll('.df-btn').forEach(b => b.classList.remove('active'));
+    showToast('Custom date applied', 'success');
+    setDateRange('custom', null);
+}
+
+function exportReport() {
+    showToast('Generating PDF Report...', 'info');
+    setTimeout(() => showToast('Report downloaded successfully!', 'success'), 2000);
+}
+function exportCSV() {
+    showToast('Table exported to CSV', 'success');
+}
+
+// ═══════════════════════════════════════
+//  CHARTS (Chart.js)
+// ═══════════════════════════════════════
+Chart.defaults.color = '#9CA3AF';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = 'Inter, sans-serif';
+
+let charts = {};
+
+function initCharts() {
+    // 1. Main Revenue
+    const ctxRev = document.getElementById('mainRevenueChart');
+    charts.rev = new Chart(ctxRev, {
+        type: 'line',
+        data: {
+            labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+            datasets: [
+                { label: 'GGR', data: [85,92,88,110,105,125,140,135,150,165,160,180], borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
+                { label: 'NGR', data: [65,70,68,85,80,95,110,105,115,130,125,145], borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
+                { label: 'Bonus Cost', data: [15,18,16,20,19,22,25,24,28,30,29,32], borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.4 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v + 'K' } }, x: { grid: { display: false } } }
+        }
+    });
+
+    // 2. Payment Pie
+    const ctxPay = document.getElementById('paymentPieChart');
+    charts.pay = new Chart(ctxPay, {
+        type: 'doughnut',
+        data: {
+            labels: ['PayPal', 'Skrill', 'Bank Transfer', 'Visa', 'Crypto'],
+            datasets: [{ data: [40, 25, 15, 10, 10], backgroundColor: ['#003087','#862165','#0066B2','#1A1F71','#F7931A'], borderWidth: 0, hoverOffset: 8 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '65%',
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } } }
+        }
+    });
+
+    // 3. Funnel (Bar)
+    const ctxFunnel = document.getElementById('funnelChart');
+    charts.funnel = new Chart(ctxFunnel, {
+        type: 'bar',
+        data: {
+            labels: ['Visitors', 'Registered', 'KYC Verified', '1st Deposit', 'Retained (30d)'],
+            datasets: [{
+                data: [100000, 45000, 38000, 32000, 18000],
+                backgroundColor: ['rgba(6,182,212,0.8)', 'rgba(59,130,246,0.8)', 'rgba(123,47,247,0.8)', 'rgba(16,185,129,0.8)', 'rgba(255,215,0,0.8)'],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { display: false }, x: { grid: { display: false } } }
+        }
+    });
+
+    // 4. Polar Games
+    const ctxPolar = document.getElementById('gamesPolarChart');
+    charts.polar = new Chart(ctxPolar, {
+        type: 'polarArea',
+        data: {
+            labels: ["Hold'em Cash", 'MTT', 'SNG', 'Omaha', 'Short Deck'],
+            datasets: [{ data: [45, 25, 15, 10, 5], backgroundColor: ['rgba(16,185,129,0.7)', 'rgba(255,215,0,0.7)', 'rgba(59,130,246,0.7)', 'rgba(123,47,247,0.7)', 'rgba(239,68,68,0.7)'], borderWidth: 1, borderColor: 'var(--card-bg)' }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' } } },
+            plugins: { legend: { position: 'right', labels: { usePointStyle: true, font: { size: 10 } } } }
+        }
+    });
+
+    // 5. Hourly Activity
+    const ctxHour = document.getElementById('hourlyBarChart');
+    charts.hour = new Chart(ctxHour, {
+        type: 'line',
+        data: {
+            labels: ['12am','3am','6am','9am','12pm','3pm','6pm','9pm'],
+            datasets: [{
+                label: 'Active Players',
+                data: [8000, 4000, 2000, 3500, 6000, 8500, 12000, 14500],
+                borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.1)',
+                fill: true, tension: 0.4, pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { display: false }, x: { grid: { display: false } } }
+        }
+    });
+}
+
+function updateRevChart() {
+    const type = document.getElementById('revChartType').value;
+    // Just a visual re-render simulation
+    charts.rev.data.datasets.forEach(d => {
+        d.data = d.data.map(v => type==='daily'? v*0.03 : type==='weekly'? v*0.25 : v);
+    });
+    charts.rev.update();
+}
+
+function updateCharts() {
+    // Jiggle chart data to simulate date range change
+    charts.pay.data.datasets[0].data = [Math.random()*40+20, Math.random()*30+10, Math.random()*20+10, Math.random()*15+5, Math.random()*10+5];
+    charts.pay.update();
+    charts.funnel.data.datasets[0].data = [100000, Math.random()*20000+30000, Math.random()*10000+25000, Math.random()*10000+20000, Math.random()*10000+10000];
+    charts.funnel.update();
+}
+
+window.onload = initCharts;
+
+console.log('📈 PokerRoyale Admin — Analytics Loaded');
+</script>
+
+<!-- Optional Global Currency Override -->
+<script src="../currency-override.js"></script>
+</body>
+</html>

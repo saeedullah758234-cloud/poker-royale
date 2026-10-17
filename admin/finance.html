@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Management — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        /* CONTENT */
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats Row */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:20px; display:flex; align-items:center; gap:16px; transition:var(--transition);
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .ms-icon {
+            width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;
+        }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+
+        .ms-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; margin-top:2px; }
+
+        /* Tabs Navigation */
+        .finance-tabs {
+            display:flex; gap:6px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:50px; padding:4px; margin-bottom:24px; width:fit-content;
+        }
+        .ftab {
+            padding:9px 22px; border-radius:50px; background:transparent; border:none;
+            color:var(--text-muted); font-family:'Inter',sans-serif; font-size:.85rem; font-weight:600;
+            cursor:pointer; transition:var(--transition); display:flex; align-items:center; gap:8px;
+        }
+        .ftab:hover { color:var(--text); }
+        .ftab.active { background:var(--primary); color:#fff; box-shadow:0 4px 15px rgba(59,130,246,.3); }
+
+        /* Filter Controls */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:20px;
+            display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto; gap:12px; align-items:center;
+        }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:100%; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        .filter-select {
+            padding:10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            -webkit-appearance:none; appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center; padding-right:32px;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-sm { padding:6px 12px; font-size:.78rem; }
+
+        /* Table Card */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 16px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap;
+        }
+        .admin-table td {
+            padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .status-badge {
+            display:inline-flex; padding:3px 10px; border-radius:50px;
+            font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.completed { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.pending { background:rgba(245,158,11,.12); color:var(--warning); }
+        .status-badge.failed, .status-badge.cancelled { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-badge.processing { background:rgba(6,182,212,.12); color:var(--cyan); }
+
+        .action-btns { display:flex; gap:6px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.approve:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+        .action-btn.reject:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+
+        @media(max-width:1024px) {
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .filters-bar { grid-template-columns:1fr 1fr; }
+        }
+        @media(max-width:768px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:1fr; }
+            .filters-bar { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link active"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Financial Management</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Finance</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <div class="ms-icon green"><i class="fas fa-arrow-down"></i></div>
+                    <div><div class="ms-label">Total Deposits (30d)</div><div class="ms-value" style="color:var(--green)">$128,500</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon red"><i class="fas fa-arrow-up"></i></div>
+                    <div><div class="ms-label">Total Withdrawals (30d)</div><div class="ms-value" style="color:var(--danger)">$87,200</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-coins"></i></div>
+                    <div><div class="ms-label">Net Rake Revenue</div><div class="ms-value" style="color:var(--gold)">$12,450</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon cyan"><i class="fas fa-clock"></i></div>
+                    <div><div class="ms-label">Pending Cashouts</div><div class="ms-value" style="color:var(--cyan)">$18,750</div></div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="finance-tabs">
+                <button class="ftab active" onclick="switchTab('withdrawals', this)"><i class="fas fa-arrow-up"></i> Withdrawals (23)</button>
+                <button class="ftab" onclick="switchTab('deposits', this)"><i class="fas fa-arrow-down"></i> Deposits</button>
+                <button class="ftab" onclick="switchTab('all', this)"><i class="fas fa-list"></i> All Transactions</button>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search by Txn ID, User Name, Account..." oninput="filterTable()">
+                </div>
+                <select class="filter-select" id="filterMethod" onchange="filterTable()">
+                    <option value="">All Methods</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Skrill">Skrill</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Crypto">Crypto (USDT/BTC)</option>
+                    <option value="Visa">Visa / MasterCard</option>
+                </select>
+                <select class="filter-select" id="filterStatus" onchange="filterTable()">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled / Rejected</option>
+                </select>
+                <button class="btn btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i> Export CSV</button>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-money-bill-transfer"></i> Transaction Queue</h3>
+                    <button class="btn btn-sm btn-green" onclick="batchApprove()"><i class="fas fa-check-double"></i> Batch Approve Pending</button>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Txn Ref ID</th>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Payment Method</th>
+                                <th>Destination / Source</th>
+                                <th>Requested Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financeBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+const TXNS = [
+    { id:'TXN-94821', user:'Ali Khan', type:'withdrawal', amount:1250, method:'PayPal', account:'ali@paypal.com', date:'2025-01-20 14:32', status:'pending' },
+    { id:'TXN-94820', user:'Sara Malik', type:'withdrawal', amount:3200, method:'Bank Transfer', account:'PK36HABB0012345678', date:'2025-01-20 12:15', status:'pending' },
+    { id:'TXN-94819', user:'Ahmed Raza', type:'withdrawal', amount:750, method:'Skrill', account:'ahmed@skrill.com', date:'2025-01-20 10:45', status:'pending' },
+    { id:'TXN-94818', user:'Fatima Noor', type:'withdrawal', amount:5600, method:'Crypto', account:'0x1234...5678', date:'2025-01-19 22:10', status:'completed' },
+    { id:'TXN-D1001', user:'Ali Khan', type:'deposit', amount:500, method:'PayPal', account:'ali@paypal.com', date:'2025-01-20 14:00', status:'completed' },
+    { id:'TXN-D1002', user:'Sara Malik', type:'deposit', amount:1000, method:'Visa', account:'****4532', date:'2025-01-20 11:20', status:'completed' },
+    { id:'TXN-D1003', user:'Ahmed Raza', type:'deposit', amount:250, method:'Crypto', account:'0x9876...4321', date:'2025-01-19 16:45', status:'completed' }
+];
+
+let activeTab = 'withdrawals';
+
+function renderTable(data) {
+    const tbody = document.getElementById('financeBody');
+    tbody.innerHTML = data.map(t => `
+        <tr>
+            <td style="font-family:'Orbitron';font-weight:700;">${t.id}</td>
+            <td><strong>${t.user}</strong></td>
+            <td><span class="status-badge ${t.type === 'deposit' ? 'completed' : 'pending'}">${t.type.toUpperCase()}</span></td>
+            <td style="font-family:'Orbitron';font-weight:700;color:${t.type==='deposit'?'var(--green)':'var(--danger)'};">$${t.amount.toLocaleString()}</td>
+            <td>${t.method}</td>
+            <td style="font-size:.8rem;color:var(--text-muted);">${t.account}</td>
+            <td>${t.date}</td>
+            <td><span class="status-badge ${t.status}">${t.status}</span></td>
+            <td>
+                <div class="action-btns">
+                    ${t.status === 'pending' ? `
+                        <button class="action-btn approve" title="Approve" onclick="approveTxn('${t.id}')"><i class="fas fa-check"></i></button>
+                        <button class="action-btn reject" title="Reject" onclick="rejectTxn('${t.id}')"><i class="fas fa-times"></i></button>
+                    ` : '<span style="font-size:.75rem;color:var(--text-muted);">Processed</span>'}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const method = document.getElementById('filterMethod').value;
+    const status = document.getElementById('filterStatus').value;
+
+    let filtered = TXNS.filter(t => {
+        if (activeTab === 'withdrawals' && t.type !== 'withdrawal') return false;
+        if (activeTab === 'deposits' && t.type !== 'deposit') return false;
+        if (q && !(`${t.id} ${t.user} ${t.account}`).toLowerCase().includes(q)) return false;
+        if (method && !t.method.includes(method)) return false;
+        if (status && t.status !== status) return false;
+        return true;
+    });
+
+    renderTable(filtered);
+}
+
+function switchTab(tab, el) {
+    document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    activeTab = tab;
+    filterTable();
+}
+
+function approveTxn(id) {
+    const item = TXNS.find(t => t.id === id);
+    if (!item) return;
+    if (confirm(`Approve ${id} for $${item.amount}?`)) {
+        item.status = 'completed';
+        filterTable();
+        showToast(`${id} approved successfully!`, 'success');
+    }
+}
+
+function rejectTxn(id) {
+    const item = TXNS.find(t => t.id === id);
+    if (!item) return;
+    const reason = prompt('Rejection reason:');
+    if (reason) {
+        item.status = 'cancelled';
+        filterTable();
+        showToast(`${id} rejected & refunded`, 'error');
+    }
+}
+
+function batchApprove() {
+    const pendings = TXNS.filter(t => t.status === 'pending');
+    if (pendings.length === 0) return showToast('No pending withdrawals found', 'warning');
+    if (confirm(`Approve all ${pendings.length} pending withdrawals?`)) {
+        pendings.forEach(t => t.status = 'completed');
+        filterTable();
+        showToast(`Approved ${pendings.length} withdrawals successfully!`, 'success');
+    }
+}
+
+function exportCSV() {
+    const headers = ['Txn ID', 'User', 'Type', 'Amount', 'Method', 'Account', 'Date', 'Status'];
+    const rows = TXNS.map(t => [t.id, t.user, t.type, t.amount, t.method, t.account, t.date, t.status]);
+    let csv = headers.join(',') + '\n' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `financial_ledger_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV Exported!', 'success');
+}
+
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+function showToast(msg, type='success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle' };
+    t.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+});
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+
+// Init
+filterTable();
+</script>
+</body>
+</html>

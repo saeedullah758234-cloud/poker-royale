@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Tickets — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+        }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.warning { background:rgba(245,158,11,.15); color:var(--warning); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.red { background:rgba(239,68,68,.15); color:var(--danger); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.25rem; font-weight:900; margin-top:2px; }
+
+        /* Layout */
+        .support-layout {
+            display:grid; grid-template-columns:350px 1fr; gap:20px; align-items:start;
+        }
+
+        /* Ticket List */
+        .ticket-list-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            display:flex; flex-direction:column; height:calc(100vh - 240px); min-height:500px;
+        }
+        .tl-header {
+            padding:16px; border-bottom:1px solid var(--border);
+        }
+        .search-box { position:relative; margin-bottom:10px; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:100%; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        .tl-filters { display:flex; gap:8px; }
+        .tl-filter {
+            flex:1; padding:6px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px;
+            color:var(--text-muted); font-size:.75rem; text-align:center; cursor:pointer; transition:var(--transition);
+        }
+        .tl-filter.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+        .tickets-scroll { flex:1; overflow-y:auto; padding:10px; }
+        .tickets-scroll::-webkit-scrollbar { width:4px; }
+        .tickets-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+        .ticket-item {
+            padding:14px; border-radius:10px; border:1px solid transparent; border-bottom:1px solid rgba(255,255,255,.03);
+            cursor:pointer; transition:var(--transition); margin-bottom:4px;
+        }
+        .ticket-item:hover { background:rgba(255,255,255,.02); }
+        .ticket-item.active { background:rgba(59,130,246,.08); border-color:rgba(59,130,246,.3); border-bottom-color:rgba(59,130,246,.3); }
+        .ticket-item.unread { border-left:3px solid var(--primary); }
+        
+        .ti-top { display:flex; justify-content:space-between; margin-bottom:6px; }
+        .ti-id { font-family:'Orbitron',sans-serif; font-size:.7rem; font-weight:700; color:var(--text-muted); }
+        .ti-time { font-size:.7rem; color:var(--text-muted); }
+        .ti-subject { font-weight:600; font-size:.88rem; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ti-meta { display:flex; align-items:center; gap:8px; font-size:.75rem; }
+        .ti-user { color:var(--gold); }
+        
+        .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+        .status-dot.open { background:var(--warning); box-shadow:0 0 8px var(--warning); }
+        .status-dot.progress { background:var(--primary); }
+        .status-dot.resolved { background:var(--green); }
+        .status-dot.closed { background:var(--text-muted); }
+
+        .priority-badge { padding:2px 6px; border-radius:4px; font-size:.65rem; font-weight:700; text-transform:uppercase; }
+        .pb-low { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .pb-normal { background:rgba(59,130,246,.15); color:var(--primary); }
+        .pb-high { background:rgba(245,158,11,.15); color:var(--warning); }
+        .pb-critical { background:rgba(239,68,68,.15); color:var(--danger); }
+
+        /* Ticket View Panel */
+        .ticket-view-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            display:flex; flex-direction:column; height:calc(100vh - 240px); min-height:500px;
+        }
+        .tv-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; justify-content:space-between; align-items:flex-start;
+        }
+        .tv-title h2 { font-size:1.15rem; font-weight:700; margin-bottom:8px; }
+        .tv-meta { display:flex; gap:16px; font-size:.8rem; color:var(--text-muted); }
+        .tv-meta span { display:flex; align-items:center; gap:6px; }
+        .tv-actions { display:flex; gap:8px; }
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:8px 16px; border-radius:8px; font-family:'Inter',sans-serif;
+            font-size:.8rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--text); color:var(--text); }
+        .btn-danger { background:var(--danger); color:#fff; }
+
+        .tv-body {
+            flex:1; padding:24px; overflow-y:auto; display:flex; flex-direction:column; gap:20px;
+            background:rgba(0,0,0,.15);
+        }
+        .tv-body::-webkit-scrollbar { width:4px; }
+        .tv-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+        .msg-bubble { display:flex; gap:16px; max-width:85%; }
+        .msg-bubble.user { align-self:flex-start; }
+        .msg-bubble.admin { align-self:flex-end; flex-direction:row-reverse; }
+        
+        .msg-avatar {
+            width:40px; height:40px; border-radius:50%; flex-shrink:0; overflow:hidden;
+            display:flex; align-items:center; justify-content:center; font-weight:700;
+        }
+        .msg-bubble.user .msg-avatar { background:var(--glass); border:2px solid var(--border); color:var(--gold); }
+        .msg-bubble.admin .msg-avatar { background:rgba(59,130,246,.15); border:2px solid var(--primary); color:var(--primary); }
+        .msg-avatar img { width:100%; height:100%; object-fit:cover; }
+
+        .msg-content {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:12px;
+            padding:14px 18px; font-size:.88rem; line-height:1.6;
+        }
+        .msg-bubble.admin .msg-content { background:rgba(59,130,246,.05); border-color:rgba(59,130,246,.2); }
+        
+        .msg-info { display:flex; justify-content:space-between; font-size:.7rem; color:var(--text-muted); margin-bottom:8px; }
+        .msg-bubble.admin .msg-info { flex-direction:row-reverse; }
+        .msg-name { font-weight:700; color:var(--text); }
+
+        .tv-reply {
+            padding:16px 24px; border-top:1px solid var(--border); background:var(--card-bg);
+        }
+        .reply-box { position:relative; }
+        .reply-box textarea {
+            width:100%; height:100px; padding:12px 14px; background:rgba(0,0,0,.3);
+            border:1px solid var(--border); border-radius:10px; color:var(--text);
+            font-family:'Inter',sans-serif; font-size:.88rem; outline:none; resize:none; transition:var(--transition);
+        }
+        .reply-box textarea:focus { border-color:var(--primary); }
+        .reply-actions {
+            display:flex; justify-content:space-between; align-items:center; margin-top:10px;
+        }
+        .canned-responses { display:flex; gap:8px; }
+        .canned-btn {
+            padding:6px 10px; background:var(--glass); border:1px solid var(--border); border-radius:6px;
+            font-size:.7rem; color:var(--text-muted); cursor:pointer; transition:var(--transition);
+        }
+        .canned-btn:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+        /* Empty state */
+        .empty-view {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            height:100%; text-align:center; color:var(--text-muted);
+        }
+        .empty-view i { font-size:4rem; margin-bottom:16px; opacity:.2; }
+        .empty-view h3 { font-size:1.2rem; color:var(--text); margin-bottom:8px; }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+
+        @media(max-width:1200px) {
+            .support-layout { grid-template-columns:1fr; }
+            .ticket-list-card { height:400px; min-height:auto; }
+            .ticket-view-card { height:600px; min-height:auto; }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr 1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .tv-header { flex-direction:column; gap:16px; }
+            .tv-meta { flex-direction:column; gap:8px; }
+            .msg-bubble { max-width:95%; }
+            .canned-responses { display:none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link active"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge" id="navSupportBadge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Support Tickets</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Support</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="renderTickets()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat active-filter" data-status="open" onclick="filterByStatus('open', this)">
+                    <div class="ms-icon warning"><i class="fas fa-envelope-open"></i></div>
+                    <div><div class="ms-label">Open Tickets</div><div class="ms-value" id="statOpen" style="color:var(--warning)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="progress" onclick="filterByStatus('progress', this)">
+                    <div class="ms-icon blue"><i class="fas fa-spinner"></i></div>
+                    <div><div class="ms-label">In Progress</div><div class="ms-value" id="statProgress" style="color:var(--primary)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="critical" onclick="filterByStatus('critical', this)">
+                    <div class="ms-icon red"><i class="fas fa-fire"></i></div>
+                    <div><div class="ms-label">Critical Priority</div><div class="ms-value" id="statCrit" style="color:var(--danger)">0</div></div>
+                </div>
+                <div class="mini-stat" data-status="resolved" onclick="filterByStatus('resolved', this)">
+                    <div class="ms-icon green"><i class="fas fa-check-double"></i></div>
+                    <div><div class="ms-label">Resolved (Today)</div><div class="ms-value" id="statResolved" style="color:var(--green)">0</div></div>
+                </div>
+            </div>
+
+            <!-- Main Layout -->
+            <div class="support-layout">
+                
+                <!-- Ticket List -->
+                <div class="ticket-list-card">
+                    <div class="tl-header">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search ID, user, subject..." oninput="applyFilters()">
+                        </div>
+                        <div class="tl-filters">
+                            <div class="tl-filter active" data-type="all" onclick="filterByType('all', this)">All</div>
+                            <div class="tl-filter" data-type="finance" onclick="filterByType('finance', this)">Finance</div>
+                            <div class="tl-filter" data-type="game" onclick="filterByType('game', this)">Game</div>
+                            <div class="tl-filter" data-type="account" onclick="filterByType('account', this)">Account</div>
+                        </div>
+                    </div>
+                    <div class="tickets-scroll" id="ticketsList">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Ticket View -->
+                <div class="ticket-view-card" id="ticketView">
+                    
+                    <div class="empty-view" id="emptyView">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No Ticket Selected</h3>
+                        <p>Select a ticket from the left panel to view and reply.</p>
+                    </div>
+
+                    <div id="activeView" style="display:none; height:100%; flex-direction:column;">
+                        <div class="tv-header">
+                            <div class="tv-title">
+                                <h2 id="tvSubject">Subject</h2>
+                                <div class="tv-meta">
+                                    <span><i class="fas fa-hashtag"></i> <b id="tvId">TKT-1234</b></span>
+                                    <span><i class="fas fa-user"></i> <b id="tvUser">User</b></span>
+                                    <span><i class="fas fa-tag"></i> <span id="tvCategory">Category</span></span>
+                                    <span id="tvPriority"></span>
+                                </div>
+                            </div>
+                            <div class="tv-actions" id="tvActions">
+                                <!-- Actions rendered by JS -->
+                            </div>
+                        </div>
+                        
+                        <div class="tv-body" id="tvBody">
+                            <!-- Messages rendered by JS -->
+                        </div>
+
+                        <div class="tv-reply" id="tvReplyForm">
+                            <div class="reply-box">
+                                <textarea id="replyText" placeholder="Type your reply here..."></textarea>
+                            </div>
+                            <div class="reply-actions">
+                                <div class="canned-responses">
+                                    <button class="canned-btn" onclick="insertCanned('finance')">Withdrawal Delay</button>
+                                    <button class="canned-btn" onclick="insertCanned('kyc')">KYC Required</button>
+                                    <button class="canned-btn" onclick="insertCanned('closing')">Closing Ticket</button>
+                                </div>
+                                <button class="btn btn-primary" onclick="sendReply()"><i class="fas fa-paper-plane"></i> Send Reply</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  SUPPORT DATA
+// ═══════════════════════════════════════
+const TICKETS = [
+    { 
+        id: 'TKT-8901', user: 'Ali Khan', username: 'poker_king', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
+        subject: 'Withdrawal not received yet', category: 'finance', priority: 'high', status: 'open', unread: true, time: '10 mins ago',
+        messages: [
+            { sender: 'user', name: 'Ali Khan', time: '10 mins ago', text: 'Hi, I requested a withdrawal of $500 to my Skrill account yesterday, but it is still showing as pending. Can you please check?' }
+        ]
+    },
+    { 
+        id: 'TKT-8902', user: 'Sara Malik', username: 'bluff_queen', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
+        subject: 'Game disconnected during All-In', category: 'game', priority: 'critical', status: 'progress', unread: false, time: '1 hour ago',
+        messages: [
+            { sender: 'user', name: 'Sara Malik', time: '1 hour ago', text: 'I was playing on the High Roller table and went all-in for $2000. The game disconnected and when I came back my chips were gone but I dont see the hand in history.' },
+            { sender: 'admin', name: 'Support Agent', time: '45 mins ago', text: 'Hello Sara, we are investigating this hand ID right now. Please allow us a few minutes to check the server logs.' }
+        ]
+    },
+    { 
+        id: 'TKT-8903', user: 'Ahmed Raza', username: 'ace_master', avatar: '',
+        subject: 'How to verify KYC?', category: 'account', priority: 'normal', status: 'open', unread: true, time: '2 hours ago',
+        messages: [
+            { sender: 'user', name: 'Ahmed Raza', time: '2 hours ago', text: 'My ID card is expired. Can I upload my driving license instead for KYC verification?' }
+        ]
+    },
+    { 
+        id: 'TKT-8904', user: 'Fatima Noor', username: 'fatima_n', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80',
+        subject: 'Promo code not working', category: 'account', priority: 'low', status: 'resolved', unread: false, time: '1 day ago',
+        messages: [
+            { sender: 'user', name: 'Fatima Noor', time: '1 day ago', text: 'I tried to use WELCOME200 but it says invalid.' },
+            { sender: 'admin', name: 'Support Agent', time: '1 day ago', text: 'Hi Fatima, that code is only for first-time deposits. Since you deposited last month, you can use WEEKEND100 instead.' },
+            { sender: 'user', name: 'Fatima Noor', time: '1 day ago', text: 'Ah okay, it worked. Thanks!' }
+        ]
+    },
+    { 
+        id: 'TKT-8905', user: 'John Smith', username: 'johnny_poker', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
+        subject: 'Tournament payout missing', category: 'finance', priority: 'high', status: 'open', unread: false, time: '3 hours ago',
+        messages: [
+            { sender: 'user', name: 'John Smith', time: '3 hours ago', text: 'I finished 4th in the Daily Freeroll but didn\'t get my $50 prize.' }
+        ]
+    }
+];
+
+let filtered = [...TICKETS];
+let currentStatusFilter = 'open';
+let currentTypeFilter = 'all';
+let activeTicketId = null;
+
+// ─── RENDER ───
+function renderTickets() {
+    updateStats();
+    const list = document.getElementById('ticketsList');
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:.85rem;">No tickets found.</div>`;
+        return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+        const pBadge = t.priority === 'critical' ? 'pb-critical' : t.priority === 'high' ? 'pb-high' : t.priority === 'normal' ? 'pb-normal' : 'pb-low';
+        return `
+        <div class="ticket-item ${t.id === activeTicketId ? 'active' : ''} ${t.unread ? 'unread' : ''}" onclick="openTicket('${t.id}')">
+            <div class="ti-top">
+                <span class="ti-id">${t.id}</span>
+                <span class="ti-time">${t.time}</span>
+            </div>
+            <div class="ti-subject">${t.subject}</div>
+            <div class="ti-meta">
+                <span class="status-dot ${t.status}"></span>
+                <span class="ti-user">${t.user}</span>
+                <span class="priority-badge ${pBadge}">${t.priority}</span>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+function updateStats() {
+    const open = TICKETS.filter(t => t.status === 'open').length;
+    const prog = TICKETS.filter(t => t.status === 'progress').length;
+    const crit = TICKETS.filter(t => t.priority === 'critical' && t.status !== 'resolved' && t.status !== 'closed').length;
+    const res = TICKETS.filter(t => t.status === 'resolved').length;
+
+    document.getElementById('statOpen').textContent = open;
+    document.getElementById('statProgress').textContent = prog;
+    document.getElementById('statCrit').textContent = crit;
+    document.getElementById('statResolved').textContent = res;
+    
+    // Sidebar badge
+    const badge = document.getElementById('navSupportBadge');
+    if (open + prog > 0) {
+        badge.style.display = 'block';
+        badge.textContent = open + prog;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ─── FILTERS ───
+function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+
+    filtered = TICKETS.filter(t => {
+        if (currentStatusFilter === 'critical') {
+            if (t.priority !== 'critical' || t.status === 'resolved' || t.status === 'closed') return false;
+        } else if (currentStatusFilter && t.status !== currentStatusFilter) {
+            return false;
+        }
+
+        if (currentTypeFilter !== 'all' && t.category !== currentTypeFilter) return false;
+        if (q && !(`${t.id} ${t.user} ${t.subject}`).toLowerCase().includes(q)) return false;
+        return true;
+    });
+
+    renderTickets();
+}
+
+function filterByStatus(status, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if (el) el.classList.add('active-filter');
+    currentStatusFilter = status;
+    applyFilters();
+}
+
+function filterByType(type, el) {
+    document.querySelectorAll('.tl-filter').forEach(f => f.classList.remove('active'));
+    if (el) el.classList.add('active');
+    currentTypeFilter = type;
+    applyFilters();
+}
+
+// ─── TICKET VIEW ───
+function openTicket(id) {
+    const t = TICKETS.find(x => x.id === id);
+    if (!t) return;
+    
+    activeTicketId = id;
+    t.unread = false; // mark read
+    renderTickets(); // update active class & unread line
+
+    document.getElementById('emptyView').style.display = 'none';
+    document.getElementById('activeView').style.display = 'flex';
+
+    document.getElementById('tvSubject').textContent = t.subject;
+    document.getElementById('tvId').textContent = t.id;
+    document.getElementById('tvUser').textContent = t.user + ` (@${t.username})`;
+    document.getElementById('tvCategory').textContent = t.category.toUpperCase();
+    
+    const pBadge = t.priority === 'critical' ? 'pb-critical' : t.priority === 'high' ? 'pb-high' : t.priority === 'normal' ? 'pb-normal' : 'pb-low';
+    document.getElementById('tvPriority').innerHTML = `<span class="priority-badge ${pBadge}">${t.priority}</span>`;
+
+    let actions = '';
+    if (t.status !== 'resolved' && t.status !== 'closed') {
+        actions += `<button class="btn btn-green" onclick="changeStatus('${t.id}', 'resolved')"><i class="fas fa-check"></i> Mark Resolved</button>`;
+        if (t.status === 'open') {
+            actions += `<button class="btn btn-outline" onclick="changeStatus('${t.id}', 'progress')"><i class="fas fa-spinner"></i> In Progress</button>`;
+        }
+    } else {
+        actions += `<button class="btn btn-outline" onclick="changeStatus('${t.id}', 'open')"><i class="fas fa-folder-open"></i> Reopen Ticket</button>`;
+    }
+    document.getElementById('tvActions').innerHTML = actions;
+
+    const body = document.getElementById('tvBody');
+    body.innerHTML = t.messages.map(m => {
+        const isUser = m.sender === 'user';
+        const avatar = isUser ? (t.avatar ? `<img src="${t.avatar}">` : t.user[0]) : '<i class="fas fa-headset"></i>';
+        return `
+        <div class="msg-bubble ${isUser ? 'user' : 'admin'}">
+            <div class="msg-avatar">${avatar}</div>
+            <div class="msg-content-wrapper" style="flex:1">
+                <div class="msg-info">
+                    <span class="msg-name">${m.name}</span>
+                    <span>${m.time}</span>
+                </div>
+                <div class="msg-content">${m.text}</div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    // scroll to bottom
+    setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
+    
+    document.getElementById('tvReplyForm').style.display = (t.status === 'resolved' || t.status === 'closed') ? 'none' : 'block';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = document.getElementById('replyText').value.trim();
+    if (!text) return showToast('Please enter a message', 'error');
+
+    const t = TICKETS.find(x => x.id === activeTicketId);
+    if (!t) return;
+
+    t.messages.push({
+        sender: 'admin',
+        name: 'Support Agent',
+        time: 'Just now',
+        text: text
+    });
+    
+    if (t.status === 'open') t.status = 'progress';
+
+    document.getElementById('replyText').value = '';
+    openTicket(t.id); // re-render
+    showToast('Reply sent successfully', 'success');
+}
+
+function changeStatus(id, status) {
+    const t = TICKETS.find(x => x.id === id);
+    if (!t) return;
+    t.status = status;
+    openTicket(id);
+    applyFilters();
+    showToast(`Ticket marked as ${status}`, 'success');
+}
+
+// ─── CANNED RESPONSES ───
+const cannedTexts = {
+    finance: "Hello,\n\nWe apologize for the delay. Your withdrawal is currently being processed by our finance team and should reflect in your account within the next 1-3 hours. \n\nThank you for your patience.",
+    kyc: "Hello,\n\nYes, you can absolutely upload your driving license for KYC verification. Please go to your Profile -> KYC tab to upload it. Ensure all 4 corners are visible and the text is clear.\n\nLet us know if you need further help.",
+    closing: "Hello,\n\nAs this issue has been resolved, we will now close this ticket. If you have any other questions, feel free to open a new ticket.\n\nBest regards,\nPokerRoyale Support"
+};
+
+function insertCanned(key) {
+    document.getElementById('replyText').value = cannedTexts[key] || '';
+}
+
+// ─── HELPERS ───
+function showToast(msg, type='success') {
+    const t = document.getElementById('toastBox');
+    document.getElementById('toastMsg').textContent = msg;
+    t.className = `toast ${type} show`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle' };
+    t.querySelector('i').className = `fas ${icons[type]}`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Init
+renderTickets();
+console.log('💬 PokerRoyale Admin — Support Loaded');
+</script>
+<script src="../currency-override.js"></script>
+</body>
+</html>

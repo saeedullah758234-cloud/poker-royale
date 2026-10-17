@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management — PokerRoyale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        /* LAYOUT */
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:20px; display:flex; align-items:center; gap:16px;
+        }
+        .ms-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+        .ms-icon.blue { background:rgba(59,130,246,.15); color:var(--primary); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.purple { background:rgba(123,47,247,.15); color:var(--purple); }
+        .ms-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; }
+
+        /* Filters Bar */
+        .filters-bar {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:16px; margin-bottom:16px;
+            display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+        }
+        .filters-left { display:flex; gap:12px; align-items:center; flex-wrap:wrap; flex:1; }
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            width:240px; padding:10px 14px 10px 36px; background:rgba(0,0,0,.25); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+        
+        .filter-select {
+            padding:10px 32px 10px 14px; background:rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+            color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer;
+            -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); transform:translateY(-1px); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); transform:translateY(-1px); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--primary); color:var(--text); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        
+        /* Table */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+        }
+        .table-header {
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .table-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .table-header h3 i { color:var(--gold); }
+
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 16px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap;
+        }
+        .admin-table td {
+            padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .user-cell { display:flex; align-items:center; gap:12px; }
+        .user-avatar {
+            width:38px; height:38px; border-radius:50%; background:var(--glass); border:2px solid var(--border);
+            display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--gold); font-size:.9rem; overflow:hidden;
+        }
+        .user-avatar img { width:100%; height:100%; object-fit:cover; }
+        .user-info .name { font-weight:600; font-size:.88rem; display:flex; align-items:center; gap:6px; }
+        .user-info .email { font-size:.72rem; color:var(--text-muted); }
+        .you-badge { padding:2px 6px; background:var(--primary); color:#fff; border-radius:4px; font-size:.6rem; font-weight:800; }
+
+        .role-badge {
+            display:inline-flex; align-items:center; gap:4px;
+            padding:3px 10px; border-radius:6px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+            border:1px solid transparent;
+        }
+        .role-super { background:rgba(255,215,0,.15); color:var(--gold); border-color:rgba(255,215,0,.3); }
+        .role-finance { background:rgba(16,185,129,.15); color:var(--green); border-color:rgba(16,185,129,.3); }
+        .role-support { background:rgba(6,182,212,.15); color:var(--cyan); border-color:rgba(6,182,212,.3); }
+        .role-marketing { background:rgba(123,47,247,.15); color:var(--purple); border-color:rgba(123,47,247,.3); }
+
+        .status-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.active { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.inactive { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-badge .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+        .status-badge.active .dot { animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        .tfa-badge { font-size:.8rem; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+        .tfa-badge.on { color:var(--green); }
+        .tfa-badge.off { color:var(--danger); }
+
+        .action-btns { display:flex; gap:6px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.edit:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+        .action-btn.lock:hover { background:rgba(245,158,11,.15); color:var(--warning); border-color:var(--warning); }
+        .action-btn.delete:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:500px; width:100%; transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+        }
+
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-input, .form-select {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus, .form-select:focus { border-color:var(--primary); }
+        .form-select option { background:var(--card-bg); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+        /* Toast */
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .filters-bar { grid-template-columns:1fr; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .form-row { grid-template-columns:1fr; }
+            .admin-table { font-size:.78rem; }
+            .admin-table th, .admin-table td { padding:10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span></a>
+                <a href="promotions.html" class="nav-link"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link active"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Admin Management</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>System</span>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Admins</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="renderTable()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <div class="ms-icon blue"><i class="fas fa-user-shield"></i></div>
+                    <div><div class="ms-label">Total Admins</div><div class="ms-value" id="statTotal">5</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-crown"></i></div>
+                    <div><div class="ms-label">Super Admins</div><div class="ms-value" id="statSuper">2</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon green"><i class="fas fa-circle"></i></div>
+                    <div><div class="ms-label">Online Now</div><div class="ms-value" id="statOnline">3</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon purple"><i class="fas fa-shield-halved"></i></div>
+                    <div><div class="ms-label">2FA Enabled</div><div class="ms-value" id="stat2fa">4</div></div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filters-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search by name, email..." oninput="applyFilters()">
+                    </div>
+                    <select class="filter-select" id="filterRole" onchange="applyFilters()">
+                        <option value="">All Roles</option>
+                        <option value="super">Super Admin</option>
+                        <option value="finance">Finance Admin</option>
+                        <option value="support">Support Agent</option>
+                        <option value="marketing">Marketing Admin</option>
+                    </select>
+                    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="btn btn-gold" onclick="openAddModal()"><i class="fas fa-plus"></i> Add New Admin</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-users-cog"></i> Administrator Accounts</h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Admin User</th>
+                                <th>Role / Permissions</th>
+                                <th>Status</th>
+                                <th>2FA Security</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD/EDIT ADMIN -->
+<div class="modal-overlay" id="adminModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add New Admin</h3>
+            <button class="modal-close" onclick="closeModal('adminModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" class="form-input" id="adminName" placeholder="e.g. John Doe" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" class="form-input" id="adminEmail" placeholder="e.g. john@pokerroyale.com" required>
+            </div>
+            <div class="form-group" id="passGroup">
+                <label>Password *</label>
+                <input type="password" class="form-input" id="adminPass" placeholder="Min 12 characters" required>
+                <p style="font-size:.7rem;color:var(--text-muted);margin-top:4px;">Must contain uppercase, number, and special character.</p>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Assigned Role *</label>
+                    <select class="form-select" id="adminRole">
+                        <option value="super">Super Admin (Full Access)</option>
+                        <option value="finance">Finance Admin (Cashier/Withdrawals)</option>
+                        <option value="support">Support Agent (Tickets/Users)</option>
+                        <option value="marketing">Marketing Admin (Promos/Bonuses)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="statusGroup" style="display:none;">
+                    <label>Account Status</label>
+                    <select class="form-select" id="adminStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive / Suspended</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('adminModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveAdmin()" id="btnSave"><i class="fas fa-save"></i> Save Admin</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastBox"><i class="fas fa-info-circle"></i><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════
+//  ADMINS DATA
+// ═══════════════════════════════════════
+const ADMINS = [
+    { id: 1, name: 'Super Admin', email: 'admin@pokerroyale.com', role: 'super', roleLabel: 'Super Admin', status: 'active', tfa: true, lastLogin: 'Just now', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80', isYou: true },
+    { id: 2, name: 'Jason Finance', email: 'jason.f@pokerroyale.com', role: 'finance', roleLabel: 'Finance Admin', status: 'active', tfa: true, lastLogin: '2 hours ago', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80', isYou: false },
+    { id: 3, name: 'Sarah Support', email: 'sarah.s@pokerroyale.com', role: 'support', roleLabel: 'Support Agent', status: 'active', tfa: false, lastLogin: '5 mins ago', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80', isYou: false },
+    { id: 4, name: 'Mark Marketing', email: 'mark.m@pokerroyale.com', role: 'marketing', roleLabel: 'Marketing Admin', status: 'inactive', tfa: true, lastLogin: '3 days ago', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80', isYou: false },
+    { id: 5, name: 'Owner Account', email: 'owner@pokerroyale.com', role: 'super', roleLabel: 'Super Admin', status: 'active', tfa: true, lastLogin: '1 week ago', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&q=80', isYou: false }
+];
+
+let filtered = [...ADMINS];
+
+// ─── RENDER ───
+function renderTable() {
+    const tbody = document.getElementById('adminsBody');
+    
+    tbody.innerHTML = filtered.map(a => {
+        const statusHTML = a.status === 'active' 
+            ? `<span class="status-badge active"><span class="dot"></span> Active</span>` 
+            : `<span class="status-badge inactive">Inactive</span>`;
+            
+        const tfaHTML = a.tfa 
+            ? `<div class="tfa-badge on"><i class="fas fa-shield-check"></i> Enabled</div>` 
+            : `<div class="tfa-badge off"><i class="fas fa-shield-xmark"></i> Disabled</div>`;
+
+        let actionBtns = '';
+        if (a.isYou) {
+            actionBtns = `<span style="font-size:.75rem;color:var(--text-muted);">Current User</span>`;
+        } else {
+            actionBtns = `
+                <button class="action-btn edit" title="Edit" onclick="openEditModal(${a.id})"><i class="fas fa-pen"></i></button>
+                <button class="action-btn lock" title="Reset Password" onclick="resetPass(${a.id})"><i class="fas fa-key"></i></button>
+                <button class="action-btn delete" title="Deactivate" onclick="toggleStatus(${a.id})"><i class="fas fa-${a.status==='active'?'ban':'check'}"></i></button>
+            `;
+        }
+
+        return `
+        <tr>
+            <td>
+                <div class="user-cell">
+                    <div class="user-avatar">${a.avatar ? `<img src="${a.avatar}" alt="">` : a.name[0]}</div>
+                    <div class="user-info">
+                        <div class="name">${a.name} ${a.isYou ? '<span class="you-badge">YOU</span>' : ''}</div>
+                        <div class="email">${a.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="role-badge role-${a.role}"><i class="fas ${getRoleIcon(a.role)}"></i> ${a.roleLabel}</span></td>
+            <td>${statusHTML}</td>
+            <td>${tfaHTML}</td>
+            <td style="font-size:.8rem;">${a.lastLogin}</td>
+            <td><div class="action-btns">${actionBtns}</div></td>
+        </tr>
+        `;
+    }).join('');
+
+    updateStats();
+}
+
+function getRoleIcon(role) {
+    if(role==='super') return 'fa-crown';
+    if(role==='finance') return 'fa-dollar-sign';
+    if(role==='support') return 'fa-headset';
+    if(role==='marketing') return 'fa-gift';
+    return 'fa-user-shield';
+}
+
+function updateStats() {
+    document.getElementById('statTotal').textContent = ADMINS.length;
+    document.getElementById('statSuper').textContent = ADMINS.filter(a => a.role === 'super').length;
+    document.getElementById('statOnline').textContent = ADMINS.filter(a => a.lastLogin.includes('now') || a.lastLogin.includes('mins') || a.lastLogin.includes('hours')).length;
+    document.getElementById('stat2fa').textContent = ADMINS.filter(a => a.tfa).length;
+}
+
+// ─── FILTERS ───
+function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const role = document.getElementById('filterRole').value;
+    const status = document.getElementById('filterStatus').value;
+
+    filtered = ADMINS.filter(a => {
+        if (q && !(`${a.name} ${a.email}`).toLowerCase().includes(q)) return false;
+        if (role && a.role !== role) return false;
+        if (status && a.status !== status) return false;
+        return true;
+    });
+    renderTable();
+}
+
+// ─── MODAL LOGIC ───
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add New Admin';
+    document.getElementById('editId').value = '';
+    document.getElementById('adminName').value = '';
+    document.getElementById('adminEmail').value = '';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminRole').value = 'support';
+    document.getElementById('passGroup').style.display = 'block';
+    document.getElementById('statusGroup').style.display = 'none';
+    document.getElementById('btnSave').innerHTML = '<i class="fas fa-plus"></i> Create Admin';
+    openModal('adminModal');
+}
+
+function openEditModal(id) {
+    const a = ADMINS.find(x => x.id === id);
+    if (!a) return;
+
+    document.getElementById('modalTitle').textContent = 'Edit Admin';
+    document.getElementById('editId').value = a.id;
+    document.getElementById('adminName').value = a.name;
+    document.getElementById('adminEmail').value = a.email;
+    document.getElementById('adminRole').value = a.role;
+    document.getElementById('adminStatus').value = a.status;
+    
+    document.getElementById('passGroup').style.display = 'none';
+    document.getElementById('statusGroup').style.display = 'block';
+    document.getElementById('btnSave').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    
+    openModal('adminModal');
+}
+
+function saveAdmin() {
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('adminName').value.trim();
+    const email = document.getElementById('adminEmail').value.trim();
+    const role = document.getElementById('adminRole').value;
+    const roleLabel = document.getElementById('adminRole').options[document.getElementById('adminRole').selectedIndex].text.split('(')[0].trim();
+    const pass = document.getElementById('adminPass').value;
+
+    if (!name || !email) return showToast('Name and Email are required', 'error');
+
+    if (id) {
+        // Edit
+        const a = ADMINS.find(x => x.id == id);
+        if (a) {
+            a.name = name;
+            a.email = email;
+            a.role = role;
+            a.roleLabel = roleLabel;
+            a.status = document.getElementById('adminStatus').value;
+            showToast('Admin updated successfully', 'success');
+        }
+    } else {
+        // Create
+        if (!pass) return showToast('Password is required for new admins', 'error');
+        ADMINS.push({
+            id: Date.now(),
+            name, email, role, roleLabel, status: 'active', tfa: false, lastLogin: 'Never', isYou: false
+        });
+        showToast('New admin created successfully', 'success');
+    }
+
+    closeModal('adminModal');
+    applyFilters();
+}
+
+function toggleStatus(id) {
+    const a = ADMINS.find(x => x.id === id);
+    if (!a || a.isYou) return;
+    
+    if (a.role === 'super' && a.status === 'active') {
+        if (!confirm('Warning: You are deactivating a Super Admin. Continue?')) return;
+    }
+
+    a.status = a.status === 'active' ? 'inactive' : 'active';
+    applyFilters();
+    showToast(`${a.name} is now ${a.status}`, a.status==='active'?'success':'warning');
+}
+
+function resetPass(id) {
+    const a = ADMINS.find(x => x.id === id);
+    if (!a) return;
+    if (confirm(`Send password reset email to ${a.email}?`)) {
+        showToast(`Password reset link sent to ${a.name}`, 'info');
+    }
+}
+
+// ─── HELPERS ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => { o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
+
+function showToast(msg, type = 'success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', info:'fa-info-circle', warning:'fa-exclamation-triangle' };
+    t.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => { sidebar.classList.toggle('mobile-open'); });
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Init
+renderTable();
+console.log('🛡️ PokerRoyale Admin — Admins Loaded');
+</script>
+
+<script src="../currency-override.js"></script>
+</body>
+</html>

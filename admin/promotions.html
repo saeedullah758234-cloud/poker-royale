@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotions — PokerRoyale Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --main-bg: #111827;
+            --card-bg: #1F2937;
+            --primary: #3B82F6;
+            --accent: #E94560;
+            --gold: #FFD700;
+            --green: #10B981;
+            --cyan: #06B6D4;
+            --purple: #7B2FF7;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border: #374151;
+            --glass: rgba(255,255,255,0.04);
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--main-bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+
+        .admin-layout { display:flex; min-height:100vh; }
+        .admin-sidebar {
+            width:var(--sidebar-w); background:var(--sidebar-bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh; z-index:1000;
+            transition:var(--transition); overflow-y:auto; overflow-x:hidden;
+        }
+        .admin-sidebar.collapsed { width:var(--sidebar-collapsed); }
+        .admin-sidebar.collapsed .nav-text, .admin-sidebar.collapsed .nav-group-title,
+        .admin-sidebar.collapsed .sidebar-logo span, .admin-sidebar.collapsed .sidebar-footer-text { display:none; }
+        .admin-sidebar.collapsed .nav-link { justify-content:center; padding:14px; }
+        .admin-sidebar.collapsed .nav-badge { display:none; }
+
+        .sidebar-header { padding:20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+        .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Cinzel',serif; font-size:1.2rem; font-weight:900; color:var(--gold); }
+        .sidebar-logo i { font-size:1.4rem; color:var(--accent); }
+        .sidebar-logo span { color:var(--text); font-weight:400; }
+        .sidebar-toggle { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .sidebar-toggle:hover { color:var(--gold); border-color:var(--gold); }
+
+        .sidebar-nav { flex:1; padding:16px 12px; }
+        .nav-group { margin-bottom:8px; }
+        .nav-group-title { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; padding:8px 12px 6px; }
+        .nav-link { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; color:var(--text-muted); font-size:.88rem; font-weight:500; transition:var(--transition); margin-bottom:2px; }
+        .nav-link:hover { background:rgba(255,255,255,.04); color:var(--text); }
+        .nav-link.active { background:linear-gradient(135deg,rgba(30,136,229,.2),rgba(30,136,229,.08)); color:var(--primary); border:1px solid rgba(30,136,229,.25); }
+        .nav-link.active i { color:var(--primary); }
+        .nav-link i { width:20px; text-align:center; font-size:1rem; flex-shrink:0; }
+        .nav-badge { margin-left:auto; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:700; background:var(--accent); color:#fff; }
+        .nav-badge.green { background:var(--green); color:#000; }
+        .nav-badge.gold { background:var(--gold); color:#000; }
+
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-admin { display:flex; align-items:center; gap:10px; padding:10px; background:var(--glass); border-radius:10px; cursor:pointer; }
+        .sidebar-admin img { width:36px; height:36px; border-radius:50%; border:2px solid var(--gold); }
+        .sidebar-admin-info .name { font-size:.85rem; font-weight:600; }
+        .sidebar-admin-info .role { font-size:.68rem; color:var(--gold); text-transform:uppercase; }
+
+        .admin-main { flex:1; margin-left:var(--sidebar-w); transition:var(--transition); min-height:100vh; display:flex; flex-direction:column; }
+        .admin-main.expanded { margin-left:var(--sidebar-collapsed); }
+
+        .admin-topbar {
+            background:rgba(17,24,39,.95); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .page-title { font-family:'Cinzel',serif; font-size:1.3rem; font-weight:900; }
+        .breadcrumb { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text-muted); }
+        .breadcrumb a:hover { color:var(--gold); }
+        .breadcrumb i { font-size:.6rem; }
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+        .topbar-btn {
+            width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+            color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .topbar-btn:hover { color:var(--text); border-color:var(--primary); }
+        .mobile-sidebar-toggle {
+            display:none; width:40px; height:40px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); cursor:pointer; align-items:center; justify-content:center;
+        }
+
+        .page-content { padding:28px; flex:1; }
+
+        /* Stats */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:24px;
+        }
+        .mini-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            padding:18px; display:flex; align-items:center; gap:14px; transition:var(--transition); cursor:pointer;
+        }
+        .mini-stat:hover { transform:translateY(-2px); border-color:var(--primary); }
+        .mini-stat.active-filter { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary); }
+        .ms-icon {
+            width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;
+        }
+        .ms-icon.green { background:rgba(16,185,129,.15); color:var(--green); }
+        .ms-icon.gold { background:rgba(255,215,0,.15); color:var(--gold); }
+        .ms-icon.red { background:rgba(233,69,96,.15); color:var(--accent); }
+        .ms-icon.cyan { background:rgba(6,182,212,.15); color:var(--cyan); }
+        .ms-icon.purple { background:rgba(123,47,247,.15); color:var(--purple); }
+        .ms-label { font-size:.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+        .ms-value { font-family:'Orbitron',sans-serif; font-size:1.25rem; font-weight:900; margin-top:2px; }
+
+        /* Toolbar */
+        .toolbar {
+            display:flex; align-items:center; justify-content:space-between; gap:16px;
+            margin-bottom:20px; flex-wrap:wrap;
+        }
+        .toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .toolbar-right { display:flex; align-items:center; gap:10px; }
+
+        .search-box { position:relative; }
+        .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+        .search-box input {
+            padding:10px 14px 10px 36px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem;
+            outline:none; width:220px;
+        }
+        .search-box input:focus { border-color:var(--primary); }
+
+        .filter-select {
+            padding:10px 32px 10px 14px; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.85rem;
+            outline:none; cursor:pointer; appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat:no-repeat; background-position:right 10px center;
+        }
+        .filter-select option { background:var(--card-bg); }
+
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif;
+            font-size:.85rem; font-weight:600; cursor:pointer; transition:var(--transition); border:none; white-space:nowrap;
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { box-shadow:0 4px 15px rgba(59,130,246,.4); }
+        .btn-gold { background:linear-gradient(135deg,var(--gold),#FFA500); color:#000; font-weight:700; }
+        .btn-gold:hover { box-shadow:0 4px 15px rgba(255,215,0,.3); }
+        .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
+        .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-green { background:var(--green); color:#000; font-weight:700; }
+        .btn-sm { padding:7px 12px; font-size:.78rem; }
+        .btn:disabled { opacity:.55; cursor:not-allowed; }
+
+        /* Promo cards grid */
+        .promos-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));
+            gap:18px;
+            margin-bottom:28px;
+        }
+
+        .promo-card {
+            background:var(--card-bg);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            overflow:hidden;
+            transition:var(--transition);
+            display:flex;
+            flex-direction:column;
+        }
+        .promo-card:hover {
+            transform:translateY(-4px);
+            border-color:var(--gold);
+            box-shadow:0 12px 40px rgba(0,0,0,.35);
+        }
+        .promo-card.inactive { opacity:.65; }
+
+        .pc-banner {
+            height:110px;
+            background:linear-gradient(135deg, var(--accent), var(--purple));
+            position:relative;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            overflow:hidden;
+        }
+        .pc-banner.welcome { background:linear-gradient(135deg, #E94560, #7B2FF7); }
+        .pc-banner.reload { background:linear-gradient(135deg, #F59E0B, #E94560); }
+        .pc-banner.cashback { background:linear-gradient(135deg, #10B981, #06B6D4); }
+        .pc-banner.freeroll { background:linear-gradient(135deg, #3B82F6, #7B2FF7); }
+        .pc-banner.loyalty { background:linear-gradient(135deg, #FFD700, #F59E0B); }
+        .pc-banner.referral { background:linear-gradient(135deg, #06B6D4, #3B82F6); }
+        .pc-banner.custom { background:linear-gradient(135deg, #7B2FF7, #E94560); }
+
+        .pc-banner::before {
+            content:''; position:absolute; inset:0;
+            background:radial-gradient(circle at 80% 20%, rgba(255,255,255,.15), transparent 50%);
+        }
+        .pc-banner-icon {
+            font-size:2.5rem;
+            position:relative; z-index:1;
+            filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));
+        }
+        .pc-badge {
+            position:absolute; top:10px; left:10px;
+            padding:3px 10px; border-radius:50px;
+            font-size:.68rem; font-weight:800; text-transform:uppercase;
+            background:rgba(0,0,0,.45); backdrop-filter:blur(8px);
+            z-index:2;
+        }
+        .pc-badge.active { color:var(--green); }
+        .pc-badge.inactive { color:var(--text-muted); }
+        .pc-badge.expired { color:var(--danger); }
+        .pc-uses {
+            position:absolute; top:10px; right:10px;
+            padding:3px 10px; border-radius:50px;
+            font-size:.68rem; font-weight:700;
+            background:rgba(0,0,0,.45); color:#fff;
+            z-index:2;
+        }
+
+        .pc-body { padding:18px; flex:1; display:flex; flex-direction:column; }
+        .pc-body h3 { font-size:1.05rem; font-weight:700; margin-bottom:6px; }
+        .pc-body .desc {
+            font-size:.82rem; color:var(--text-muted); line-height:1.5;
+            margin-bottom:14px; flex:1;
+        }
+
+        .pc-meta {
+            display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;
+        }
+        .pc-meta-item {
+            background:rgba(255,255,255,.02); border:1px solid var(--border);
+            border-radius:8px; padding:8px 10px;
+        }
+        .pc-meta-item .lbl { font-size:.65rem; color:var(--text-muted); text-transform:uppercase; }
+        .pc-meta-item .val { font-size:.85rem; font-weight:700; color:var(--gold); font-family:'Orbitron',sans-serif; margin-top:2px; }
+
+        .pc-code {
+            display:flex; align-items:center; gap:8px;
+            background:rgba(255,215,0,.06); border:1px dashed rgba(255,215,0,.3);
+            border-radius:8px; padding:8px 12px; margin-bottom:14px;
+        }
+        .pc-code span {
+            font-family:'Orbitron',sans-serif; font-size:.85rem; font-weight:700;
+            color:var(--gold); letter-spacing:1px; flex:1;
+        }
+        .pc-code button {
+            background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:.85rem;
+        }
+        .pc-code button:hover { color:var(--gold); }
+
+        .pc-footer {
+            display:flex; gap:6px; padding-top:12px; border-top:1px solid var(--border);
+        }
+        .pc-footer .btn { flex:1; }
+
+        /* Table view toggle area */
+        .table-card {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+            overflow:hidden; display:none; margin-bottom:28px;
+        }
+        .table-card.show { display:block; }
+        .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .admin-table th {
+            padding:12px 14px; text-align:left; font-size:.72rem; font-weight:700; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:.5px; background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--border); white-space:nowrap;
+        }
+        .admin-table td {
+            padding:14px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle;
+        }
+        .admin-table tbody tr:hover { background:rgba(255,255,255,.02); }
+
+        .status-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:50px; font-size:.7rem; font-weight:700; text-transform:uppercase;
+        }
+        .status-badge.active { background:rgba(16,185,129,.12); color:var(--green); }
+        .status-badge.inactive { background:rgba(156,163,175,.12); color:var(--text-muted); }
+        .status-badge.expired { background:rgba(239,68,68,.12); color:var(--danger); }
+        .status-badge .dot {
+            width:6px; height:6px; border-radius:50%; background:currentColor;
+            animation:pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        .type-pill {
+            display:inline-flex; padding:2px 8px; border-radius:50px;
+            font-size:.65rem; font-weight:700; text-transform:uppercase;
+            background:rgba(123,47,247,.15); color:var(--purple);
+        }
+
+        .action-btns { display:flex; gap:4px; }
+        .action-btn {
+            width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+            background:var(--glass); color:var(--text-muted); cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; font-size:.78rem;
+            transition:var(--transition);
+        }
+        .action-btn:hover { color:var(--text); }
+        .action-btn.edit:hover { background:rgba(255,215,0,.15); color:var(--gold); border-color:var(--gold); }
+        .action-btn.toggle:hover { background:rgba(16,185,129,.15); color:var(--green); border-color:var(--green); }
+        .action-btn.delete:hover { background:rgba(239,68,68,.15); color:var(--danger); border-color:var(--danger); }
+        .action-btn.view:hover { background:rgba(59,130,246,.15); color:var(--primary); border-color:var(--primary); }
+
+        .view-toggle {
+            display:flex; background:var(--card-bg); border:1px solid var(--border);
+            border-radius:10px; overflow:hidden;
+        }
+        .view-btn {
+            width:38px; height:38px; border:none; background:transparent; color:var(--text-muted);
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .view-btn.active { background:var(--primary); color:#fff; }
+
+        /* Modal */
+        .modal-overlay {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(10,10,26,.85); backdrop-filter:blur(16px);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            padding:20px; opacity:0; pointer-events:none; transition:var(--transition);
+        }
+        .modal-overlay.open { opacity:1; pointer-events:auto; }
+        .modal-box {
+            background:#1a1f2e; border:1px solid var(--border); border-radius:20px;
+            max-width:680px; width:100%; max-height:90vh; overflow-y:auto;
+            transform:scale(.95); transition:var(--transition);
+            box-shadow:0 30px 80px rgba(0,0,0,.6);
+        }
+        .modal-overlay.open .modal-box { transform:scale(1); }
+        .modal-header {
+            padding:20px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; background:#1a1f2e; z-index:2;
+        }
+        .modal-header h3 { font-family:'Cinzel',serif; font-size:1.15rem; font-weight:900; }
+        .modal-close {
+            width:36px; height:36px; border-radius:50%; background:var(--glass);
+            border:1px solid var(--border); color:var(--text-muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { color:var(--accent); border-color:var(--accent); }
+        .modal-body { padding:24px; }
+        .modal-footer {
+            padding:16px 24px; border-top:1px solid var(--border);
+            display:flex; justify-content:flex-end; gap:10px;
+            position:sticky; bottom:0; background:#1a1f2e;
+        }
+
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .form-group label .req { color:var(--accent); }
+        .form-input, .form-select, .form-textarea {
+            width:100%; padding:11px 14px; background:rgba(0,0,0,.25); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:.9rem; outline:none;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--primary); }
+        .form-select { cursor:pointer; }
+        .form-select option { background:var(--card-bg); }
+        .form-textarea { min-height:80px; resize:vertical; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        .input-prefix { display:flex; align-items:center; }
+        .input-prefix .prefix {
+            padding:11px 12px; background:rgba(255,255,255,.04); border:1.5px solid var(--border);
+            border-right:none; border-radius:10px 0 0 10px; color:var(--gold);
+            font-family:'Orbitron',sans-serif; font-weight:700; font-size:.85rem;
+        }
+        .input-prefix .form-input { border-radius:0 10px 10px 0; }
+        .form-hint { font-size:.72rem; color:var(--text-muted); margin-top:4px; }
+
+        .section-title {
+            font-size:.9rem; font-weight:700; color:var(--gold); margin:18px 0 12px;
+            padding-bottom:8px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:8px;
+        }
+
+        .toggle-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:12px 0; border-bottom:1px solid rgba(255,255,255,.04);
+        }
+        .toggle-row:last-child { border-bottom:none; }
+        .toggle-info h4 { font-size:.88rem; font-weight:600; }
+        .toggle-info p { font-size:.75rem; color:var(--text-muted); }
+        .toggle-switch {
+            width:46px; height:24px; border-radius:50px;
+            background:var(--border); cursor:pointer; position:relative; transition:var(--transition); flex-shrink:0;
+        }
+        .toggle-switch.on { background:var(--green); }
+        .toggle-switch::after {
+            content:''; position:absolute; top:3px; left:3px;
+            width:18px; height:18px; border-radius:50%; background:#fff; transition:var(--transition);
+        }
+        .toggle-switch.on::after { left:25px; }
+
+        .empty-state { text-align:center; padding:50px 20px; display:none; }
+        .empty-state.show { display:block; }
+        .empty-state .icon { font-size:2.5rem; opacity:.3; margin-bottom:10px; }
+        .empty-state h3 { font-size:1.1rem; margin-bottom:4px; }
+        .empty-state p { color:var(--text-muted); font-size:.88rem; }
+
+        .toast {
+            position:fixed; top:20px; right:20px; padding:14px 22px; border-radius:12px;
+            display:flex; align-items:center; gap:10px; font-size:.88rem; font-weight:600;
+            z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.4,0,.2,1);
+            backdrop-filter:blur(20px);
+        }
+        .toast.show { transform:translateX(0); }
+        .toast.success { background:rgba(16,185,129,.15); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+        .toast.error { background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.3); color:var(--danger); }
+        .toast.warning { background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.3); color:var(--warning); }
+        .toast.info { background:rgba(6,182,212,.15); border:1px solid rgba(6,182,212,.3); color:var(--cyan); }
+
+        .ref-stats {
+            display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;
+        }
+        .ref-stat {
+            background:var(--card-bg); border:1px solid var(--border); border-radius:12px;
+            padding:16px; text-align:center;
+        }
+        .ref-stat .val { font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:900; color:var(--gold); }
+        .ref-stat .lbl { font-size:.72rem; color:var(--text-muted); margin-top:4px; }
+
+        @media(max-width:1200px) {
+            .stats-row { grid-template-columns:repeat(3,1fr); }
+        }
+        @media(max-width:992px) {
+            .admin-sidebar { transform:translateX(-100%); }
+            .admin-sidebar.mobile-open { transform:translateX(0); }
+            .admin-main { margin-left:0 !important; }
+            .mobile-sidebar-toggle { display:flex; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .promos-grid { grid-template-columns:1fr; }
+        }
+        @media(max-width:768px) {
+            .page-content { padding:16px; }
+            .stats-row { grid-template-columns:1fr; }
+            .toolbar { flex-direction:column; align-items:stretch; }
+            .form-row, .form-row-3 { grid-template-columns:1fr; }
+            .admin-topbar { padding:10px 16px; }
+            .ref-stats { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <i class="fas fa-crown"></i>
+                <span>Admin<span style="color:var(--text);font-weight:400">Panel</span></span>
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <div class="nav-group-title">Main</div>
+                <a href="index.html" class="nav-link"><i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span></a>
+                <a href="analytics.html" class="nav-link"><i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Management</div>
+                <a href="users.html" class="nav-link"><i class="fas fa-users"></i><span class="nav-text">Users</span><span class="nav-badge">52K</span></a>
+                <a href="finance.html" class="nav-link"><i class="fas fa-dollar-sign"></i><span class="nav-text">Finance</span></a>
+                <a href="withdrawals.html" class="nav-link"><i class="fas fa-arrow-up"></i><span class="nav-text">Withdrawals</span><span class="nav-badge">23</span></a>
+                <a href="deposits.html" class="nav-link"><i class="fas fa-arrow-down"></i><span class="nav-text">Deposits</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Games</div>
+                <a href="games.html" class="nav-link"><i class="fas fa-gamepad"></i><span class="nav-text">Live Games</span><span class="nav-badge green">156</span></a>
+                <a href="tables.html" class="nav-link"><i class="fas fa-border-all"></i><span class="nav-text">Tables</span></a>
+                <a href="tournaments.html" class="nav-link"><i class="fas fa-trophy"></i><span class="nav-text">Tournaments</span><span class="nav-badge gold">24</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Operations</div>
+                <a href="kyc.html" class="nav-link"><i class="fas fa-id-card"></i><span class="nav-text">KYC Queue</span><span class="nav-badge">8</span></a>
+                <a href="promotions.html" class="nav-link active"><i class="fas fa-gift"></i><span class="nav-text">Promotions</span></a>
+                <a href="support.html" class="nav-link"><i class="fas fa-headset"></i><span class="nav-text">Support</span><span class="nav-badge">12</span></a>
+                <a href="security.html" class="nav-link"><i class="fas fa-shield-halved"></i><span class="nav-text">Security</span></a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">System</div>
+                <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i><span class="nav-text">Settings</span></a>
+                <a href="admins.html" class="nav-link"><i class="fas fa-user-shield"></i><span class="nav-text">Admins</span></a>
+                <a href="audit-log.html" class="nav-link"><i class="fas fa-clipboard-list"></i><span class="nav-text">Audit Log</span></a>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-admin" onclick="adminLogout()">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="Admin">
+                <div class="sidebar-admin-info sidebar-footer-text">
+                    <div class="name">Super Admin</div>
+                    <div class="role">SUPER ADMIN</div>
+                </div>
+                <i class="fas fa-sign-out-alt" style="color:var(--accent);font-size:.9rem;"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main" id="adminMain">
+        <header class="admin-topbar">
+            <div class="topbar-left">
+                <button class="mobile-sidebar-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                <div>
+                    <div class="page-title">Promotions & Bonuses</div>
+                    <div class="breadcrumb">
+                        <a href="index.html">Admin</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Promotions</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" title="Refresh" onclick="renderPromos()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat active-filter" data-filter="all" onclick="filterByStat('all', this)">
+                    <div class="ms-icon purple"><i class="fas fa-gift"></i></div>
+                    <div><div class="ms-label">Total Promos</div><div class="ms-value" id="statTotal">0</div></div>
+                </div>
+                <div class="mini-stat" data-filter="active" onclick="filterByStat('active', this)">
+                    <div class="ms-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div><div class="ms-label">Active</div><div class="ms-value" id="statActive" style="color:var(--green)">0</div></div>
+                </div>
+                <div class="mini-stat" data-filter="inactive" onclick="filterByStat('inactive', this)">
+                    <div class="ms-icon cyan"><i class="fas fa-pause-circle"></i></div>
+                    <div><div class="ms-label">Paused</div><div class="ms-value" id="statInactive" style="color:var(--cyan)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon gold"><i class="fas fa-ticket"></i></div>
+                    <div><div class="ms-label">Total Claims</div><div class="ms-value" id="statClaims" style="color:var(--gold)">0</div></div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-icon red"><i class="fas fa-dollar-sign"></i></div>
+                    <div><div class="ms-label">Bonus Cost (30d)</div><div class="ms-value" id="statCost" style="color:var(--accent)">$0</div></div>
+                </div>
+            </div>
+
+            <!-- Referral quick stats -->
+            <div class="ref-stats">
+                <div class="ref-stat">
+                    <div class="val" id="refTotal">1,248</div>
+                    <div class="lbl">Total Referrals</div>
+                </div>
+                <div class="ref-stat">
+                    <div class="val" id="refPaid">$24,960</div>
+                    <div class="lbl">Referral Payouts</div>
+                </div>
+                <div class="ref-stat">
+                    <div class="val" id="refRate">$20</div>
+                    <div class="lbl">Per Successful Referral</div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search promos, codes...">
+                    </div>
+                    <select class="filter-select" id="filterType">
+                        <option value="">All Types</option>
+                        <option value="welcome">Welcome</option>
+                        <option value="reload">Reload / Deposit</option>
+                        <option value="cashback">Cashback</option>
+                        <option value="freeroll">Freeroll</option>
+                        <option value="loyalty">Loyalty / Rakeback</option>
+                        <option value="referral">Referral</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                    <select class="filter-select" id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="btnGrid" onclick="setView('grid')" title="Cards"><i class="fas fa-th-large"></i></button>
+                        <button class="view-btn" id="btnList" onclick="setView('list')" title="List"><i class="fas fa-list"></i></button>
+                    </div>
+                    <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-rotate-left"></i></button>
+                    <button class="btn btn-gold" onclick="openCreateModal()"><i class="fas fa-plus"></i> Create Promo</button>
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div class="promos-grid" id="promosGrid"></div>
+
+            <!-- List -->
+            <div class="table-card" id="promosList">
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Promo</th>
+                                <th>Type</th>
+                                <th>Code</th>
+                                <th>Bonus</th>
+                                <th>Max</th>
+                                <th>Wagering</th>
+                                <th>Uses</th>
+                                <th>Valid Until</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promosListBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="empty-state" id="emptyState">
+                <div class="icon">🎁</div>
+                <h3>No promotions found</h3>
+                <p>Create a new promo or adjust filters</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- CREATE / EDIT MODAL -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle"><i class="fas fa-gift" style="color:var(--gold);margin-right:8px;"></i>Create Promotion</h3>
+            <button class="modal-close" onclick="closeModal('createModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId" value="">
+
+            <div class="section-title"><i class="fas fa-info-circle"></i> Basic Info</div>
+            <div class="form-group">
+                <label>Promotion Name <span class="req">*</span></label>
+                <input class="form-input" id="pName" placeholder="e.g. Weekend Reload 100%">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea class="form-textarea" id="pDesc" placeholder="Shown to players on the promotions page..."></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Promo Type <span class="req">*</span></label>
+                    <select class="form-select" id="pType">
+                        <option value="welcome">Welcome Bonus</option>
+                        <option value="reload">Deposit / Reload Match</option>
+                        <option value="cashback">Cashback</option>
+                        <option value="freeroll">Freeroll Ticket</option>
+                        <option value="loyalty">Loyalty / Rakeback</option>
+                        <option value="referral">Referral Bonus</option>
+                        <option value="no_deposit">No-Deposit Bonus</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Promo Code</label>
+                    <input class="form-input" id="pCode" placeholder="e.g. WEEKEND100" style="text-transform:uppercase;font-family:'Orbitron',sans-serif;letter-spacing:1px;">
+                    <div class="form-hint">Leave empty for auto-apply promos</div>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-coins"></i> Bonus Amounts</div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Bonus %</label>
+                    <div class="input-prefix"><span class="prefix">%</span><input class="form-input" id="pPercent" type="number" value="100" min="0" max="500"></div>
+                </div>
+                <div class="form-group">
+                    <label>Fixed Bonus $</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="pAmount" type="number" value="0" min="0"></div>
+                </div>
+                <div class="form-group">
+                    <label>Max Bonus Cap</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="pMax" type="number" value="500" min="0"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Min Deposit Required</label>
+                    <div class="input-prefix"><span class="prefix">$</span><input class="form-input" id="pMinDep" type="number" value="20" min="0"></div>
+                </div>
+                <div class="form-group">
+                    <label>Wagering Requirement (x)</label>
+                    <input class="form-input" id="pWager" type="number" value="5" min="0" max="50" step="0.5">
+                    <div class="form-hint">e.g. 5 = play through 5× bonus before withdraw</div>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-calendar"></i> Validity & Limits</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Valid From</label>
+                    <input class="form-input" id="pFrom" type="datetime-local">
+                </div>
+                <div class="form-group">
+                    <label>Valid Until</label>
+                    <input class="form-input" id="pUntil" type="datetime-local">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Max Total Uses</label>
+                    <input class="form-input" id="pMaxUses" type="number" value="0" min="0" placeholder="0 = unlimited">
+                </div>
+                <div class="form-group">
+                    <label>Eligible Players</label>
+                    <select class="form-select" id="pEligible">
+                        <option value="all">All Players</option>
+                        <option value="new">New Players Only</option>
+                        <option value="vip">VIP Only</option>
+                        <option value="custom">Custom Segment</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-toggle-on"></i> Status</div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Promotion Active</h4>
+                    <p>Players can claim this promo when enabled</p>
+                </div>
+                <div class="toggle-switch on" id="pActive" onclick="this.classList.toggle('on')"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('createModal')">Cancel</button>
+            <button class="btn btn-gold" id="btnSave" onclick="savePromo()">
+                <i class="fas fa-check"></i> Create Promotion
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-box" style="max-width:520px;">
+        <div class="modal-header">
+            <h3 id="detailTitle">Promo Details</h3>
+            <button class="modal-close" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="detailBody"></div>
+        <div class="modal-footer" id="detailFooter"></div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  PROMOTIONS DATA
+// ═══════════════════════════════════════
+const PROMOS = [
+    { id:1, name:'200% Welcome Bonus', type:'welcome', code:'WELCOME200', desc:'Get 200% match on your first deposit up to $2,500. Instant credit.', percent:200, amount:0, max:2500, minDep:50, wager:5, uses:8420, maxUses:0, from:'2025-01-01T00:00', until:'2025-12-31T23:59', status:'active', eligible:'new', icon:'🎁' },
+    { id:2, name:'Weekend Reload 100%', type:'reload', code:'WEEKEND100', desc:'100% reload bonus every Fri–Sun. Stack chips for big weekend MTTs.', percent:100, amount:0, max:500, minDep:25, wager:5, uses:3120, maxUses:10000, from:'2025-01-01T00:00', until:'2025-06-30T23:59', status:'active', eligible:'all', icon:'🔥' },
+    { id:3, name:'Cashback Tuesdays 15%', type:'cashback', code:'', desc:'15% cashback on net losses every Tuesday. Auto-credited.', percent:15, amount:0, max:200, minDep:0, wager:1, uses:5640, maxUses:0, from:'2025-01-01T00:00', until:'2025-12-31T23:59', status:'active', eligible:'all', icon:'💰' },
+    { id:4, name:'VIP Rakeback up to 40%', type:'loyalty', code:'', desc:'Gold+ VIP players earn up to 40% rakeback on all cash hands.', percent:40, amount:0, max:0, minDep:0, wager:0, uses:1890, maxUses:0, from:'2025-01-01T00:00', until:'2025-12-31T23:59', status:'active', eligible:'vip', icon:'👑' },
+    { id:5, name:'Freeroll Festival $2,500', type:'freeroll', code:'FREEPLAY', desc:'10 freeroll events this week. No deposit required to enter.', percent:0, amount:0, max:2500, minDep:0, wager:0, uses:12800, maxUses:20000, from:'2025-03-01T00:00', until:'2025-03-31T23:59', status:'active', eligible:'all', icon:'🎫' },
+    { id:6, name:'Refer & Earn $20', type:'referral', code:'', desc:'Earn $20 for every friend who deposits $50+. They get $20 too.', percent:0, amount:20, max:20, minDep:50, wager:1, uses:1248, maxUses:0, from:'2025-01-01T00:00', until:'2025-12-31T23:59', status:'active', eligible:'all', icon:'🤝' },
+    { id:7, name:'Crypto First Deposit +$100', type:'reload', code:'CRYPTO100', desc:'Extra $100 bonus when first deposit is via BTC or USDT.', percent:0, amount:100, max:100, minDep:100, wager:3, uses:456, maxUses:5000, from:'2025-02-01T00:00', until:'2025-05-31T23:59', status:'active', eligible:'new', icon:'₿' },
+    { id:8, name:'No Deposit $10 Free', type:'no_deposit', code:'FREE10', desc:'$10 free chips on signup after phone verification. One per player.', percent:0, amount:10, max:10, minDep:0, wager:10, uses:9200, maxUses:0, from:'2025-01-01T00:00', until:'2025-12-31T23:59', status:'inactive', eligible:'new', icon:'🆕' },
+    { id:9, name:'March Madness Reload', type:'reload', code:'MARCH50', desc:'50% reload all March. Cap $250 per deposit.', percent:50, amount:0, max:250, minDep:20, wager:4, uses:2100, maxUses:0, from:'2025-03-01T00:00', until:'2025-03-31T23:59', status:'active', eligible:'all', icon:'🏀' },
+    { id:10, name:'Holiday Special 150%', type:'custom', code:'HOLIDAY150', desc:'Expired holiday campaign. 150% up to $1,000.', percent:150, amount:0, max:1000, minDep:50, wager:8, uses:4500, maxUses:0, from:'2024-12-01T00:00', until:'2024-12-31T23:59', status:'expired', eligible:'all', icon:'🎄' },
+];
+
+let filtered = [...PROMOS];
+let currentFilter = 'all';
+let currentView = 'grid';
+let nextId = 11;
+
+const TYPE_ICONS = {
+    welcome:'🎁', reload:'🔥', cashback:'💰', freeroll:'🎫',
+    loyalty:'👑', referral:'🤝', no_deposit:'🆕', custom:'⭐'
+};
+
+// ─── RENDER ───
+function renderPromos() {
+    applyFilters(false);
+    updateStats();
+
+    if (!filtered.length) {
+        document.getElementById('promosGrid').innerHTML = '';
+        document.getElementById('promosListBody').innerHTML = '';
+        document.getElementById('emptyState').classList.add('show');
+        return;
+    }
+    document.getElementById('emptyState').classList.remove('show');
+
+    // Grid
+    document.getElementById('promosGrid').innerHTML = filtered.map(p => {
+        const statusLabel = p.status;
+        const usesText = p.maxUses > 0 ? `${p.uses.toLocaleString()} / ${p.maxUses.toLocaleString()}` : p.uses.toLocaleString();
+        const bonusText = p.percent > 0
+            ? (p.amount > 0 ? `${p.percent}% + $${p.amount}` : `${p.percent}%`)
+            : (p.amount > 0 ? `$${p.amount}` : '—');
+        const until = formatDate(p.until);
+
+        return `
+        <div class="promo-card ${p.status === 'active' ? '' : 'inactive'}">
+            <div class="pc-banner ${p.type}">
+                <span class="pc-badge ${p.status}">${statusLabel}</span>
+                <span class="pc-uses">${usesText} claims</span>
+                <div class="pc-banner-icon">${p.icon || TYPE_ICONS[p.type] || '🎁'}</div>
+            </div>
+            <div class="pc-body">
+                <h3>${p.name}</h3>
+                <p class="desc">${p.desc}</p>
+                <div class="pc-meta">
+                    <div class="pc-meta-item"><div class="lbl">Bonus</div><div class="val">${bonusText}</div></div>
+                    <div class="pc-meta-item"><div class="lbl">Max Cap</div><div class="val">${p.max > 0 ? '$'+p.max.toLocaleString() : '∞'}</div></div>
+                    <div class="pc-meta-item"><div class="lbl">Min Deposit</div><div class="val">${p.minDep > 0 ? '$'+p.minDep : 'None'}</div></div>
+                    <div class="pc-meta-item"><div class="lbl">Wagering</div><div class="val">${p.wager > 0 ? p.wager+'x' : 'None'}</div></div>
+                </div>
+                ${p.code ? `
+                <div class="pc-code">
+                    <span>${p.code}</span>
+                    <button onclick="copyCode('${p.code}')" title="Copy"><i class="fas fa-copy"></i></button>
+                </div>` : '<div style="margin-bottom:14px;font-size:.75rem;color:var(--text-muted);">Auto-apply · no code</div>'}
+                <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:10px;">
+                    Valid until <b style="color:var(--text)">${until}</b> · ${p.eligible === 'new' ? 'New players' : p.eligible === 'vip' ? 'VIP only' : 'All players'}
+                </div>
+                <div class="pc-footer">
+                    <button class="btn btn-sm btn-primary" onclick="openDetail(${p.id})"><i class="fas fa-eye"></i> View</button>
+                    <button class="btn btn-sm btn-outline" onclick="openEdit(${p.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="togglePromo(${p.id})" title="Toggle">
+                        <i class="fas fa-${p.status==='active'?'pause':'play'}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deletePromo(${p.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // List
+    document.getElementById('promosListBody').innerHTML = filtered.map(p => {
+        const bonusText = p.percent > 0 ? p.percent + '%' : (p.amount > 0 ? '$'+p.amount : '—');
+        return `
+        <tr>
+            <td>
+                <strong>${p.icon || ''} ${p.name}</strong>
+                <div style="font-size:.72rem;color:var(--text-muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.desc}</div>
+            </td>
+            <td><span class="type-pill">${p.type}</span></td>
+            <td style="font-family:'Orbitron';font-size:.78rem;color:var(--gold);">${p.code || '—'}</td>
+            <td style="font-family:'Orbitron';font-weight:700;color:var(--gold);">${bonusText}</td>
+            <td>${p.max > 0 ? '$'+p.max.toLocaleString() : '∞'}</td>
+            <td>${p.wager > 0 ? p.wager+'x' : '—'}</td>
+            <td>${p.uses.toLocaleString()}${p.maxUses > 0 ? ' / '+p.maxUses.toLocaleString() : ''}</td>
+            <td style="font-size:.8rem;">${formatDate(p.until)}</td>
+            <td><span class="status-badge ${p.status}"><span class="dot"></span>${p.status}</span></td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn view" onclick="openDetail(${p.id})"><i class="fas fa-eye"></i></button>
+                    <button class="action-btn edit" onclick="openEdit(${p.id})"><i class="fas fa-pen"></i></button>
+                    <button class="action-btn toggle" onclick="togglePromo(${p.id})"><i class="fas fa-${p.status==='active'?'pause':'play'}"></i></button>
+                    <button class="action-btn delete" onclick="deletePromo(${p.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function updateStats() {
+    const active = PROMOS.filter(p => p.status === 'active').length;
+    const inactive = PROMOS.filter(p => p.status === 'inactive').length;
+    const claims = PROMOS.reduce((s, p) => s + p.uses, 0);
+    // rough bonus cost estimate
+    const cost = PROMOS.reduce((s, p) => s + (p.max > 0 ? Math.min(p.uses, p.maxUses || p.uses) * (p.max * 0.15) : p.uses * 5), 0);
+
+    document.getElementById('statTotal').textContent = PROMOS.length;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statInactive').textContent = inactive;
+    document.getElementById('statClaims').textContent = claims.toLocaleString();
+    document.getElementById('statCost').textContent = '$' + Math.round(cost).toLocaleString();
+}
+
+// ─── FILTERS ───
+function applyFilters(reset = true) {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const type = document.getElementById('filterType').value;
+    const status = document.getElementById('filterStatus').value;
+
+    filtered = PROMOS.filter(p => {
+        if (currentFilter === 'active' && p.status !== 'active') return false;
+        if (currentFilter === 'inactive' && p.status !== 'inactive') return false;
+        if (status && p.status !== status) return false;
+        if (type && p.type !== type) return false;
+        if (q && !(`${p.name} ${p.code} ${p.desc} ${p.type}`).toLowerCase().includes(q)) return false;
+        // mark expired by date
+        if (p.until && new Date(p.until) < new Date() && p.status === 'active') {
+            // visual only in filter if status expired selected
+        }
+        return true;
+    });
+}
+
+function filterByStat(f, el) {
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    if (el) el.classList.add('active-filter');
+    currentFilter = f;
+    applyFilters();
+    renderPromos();
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterStatus').value = '';
+    currentFilter = 'all';
+    document.querySelectorAll('.mini-stat').forEach(s => s.classList.remove('active-filter'));
+    document.querySelector('.mini-stat[data-filter="all"]')?.classList.add('active-filter');
+    applyFilters();
+    renderPromos();
+}
+
+document.getElementById('searchInput').addEventListener('input', debounce(() => { applyFilters(); renderPromos(); }, 250));
+document.getElementById('filterType').addEventListener('change', () => { applyFilters(); renderPromos(); });
+document.getElementById('filterStatus').addEventListener('change', () => { applyFilters(); renderPromos(); });
+
+function setView(v) {
+    currentView = v;
+    document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
+    document.getElementById('btnList').classList.toggle('active', v === 'list');
+    document.getElementById('promosGrid').style.display = v === 'grid' ? 'grid' : 'none';
+    document.getElementById('promosList').classList.toggle('show', v === 'list');
+}
+
+// ─── CRUD ───
+function openCreateModal() {
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-gift" style="color:var(--gold);margin-right:8px;"></i>Create Promotion';
+    document.getElementById('btnSave').innerHTML = '<i class="fas fa-check"></i> Create Promotion';
+    document.getElementById('pName').value = '';
+    document.getElementById('pDesc').value = '';
+    document.getElementById('pType').value = 'welcome';
+    document.getElementById('pCode').value = '';
+    document.getElementById('pPercent').value = 100;
+    document.getElementById('pAmount').value = 0;
+    document.getElementById('pMax').value = 500;
+    document.getElementById('pMinDep').value = 20;
+    document.getElementById('pWager').value = 5;
+    document.getElementById('pMaxUses').value = 0;
+    document.getElementById('pEligible').value = 'all';
+    document.getElementById('pActive').classList.add('on');
+
+    const now = new Date();
+    const later = new Date(); later.setMonth(later.getMonth() + 3);
+    document.getElementById('pFrom').value = toLocal(now);
+    document.getElementById('pUntil').value = toLocal(later);
+
+    openModal('createModal');
+}
+
+function openEdit(id) {
+    const p = PROMOS.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('editId').value = p.id;
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Edit Promotion';
+    document.getElementById('btnSave').innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pDesc').value = p.desc;
+    document.getElementById('pType').value = p.type;
+    document.getElementById('pCode').value = p.code || '';
+    document.getElementById('pPercent').value = p.percent;
+    document.getElementById('pAmount').value = p.amount;
+    document.getElementById('pMax').value = p.max;
+    document.getElementById('pMinDep').value = p.minDep;
+    document.getElementById('pWager').value = p.wager;
+    document.getElementById('pMaxUses').value = p.maxUses;
+    document.getElementById('pEligible').value = p.eligible;
+    document.getElementById('pActive').classList.toggle('on', p.status === 'active');
+    document.getElementById('pFrom').value = p.from ? p.from.slice(0, 16) : '';
+    document.getElementById('pUntil').value = p.until ? p.until.slice(0, 16) : '';
+    openModal('createModal');
+}
+
+function savePromo() {
+    const name = document.getElementById('pName').value.trim();
+    if (!name) return showToast('Promotion name is required', 'error');
+
+    const type = document.getElementById('pType').value;
+    const data = {
+        name,
+        type,
+        code: (document.getElementById('pCode').value || '').trim().toUpperCase(),
+        desc: document.getElementById('pDesc').value.trim(),
+        percent: parseFloat(document.getElementById('pPercent').value) || 0,
+        amount: parseFloat(document.getElementById('pAmount').value) || 0,
+        max: parseFloat(document.getElementById('pMax').value) || 0,
+        minDep: parseFloat(document.getElementById('pMinDep').value) || 0,
+        wager: parseFloat(document.getElementById('pWager').value) || 0,
+        maxUses: parseInt(document.getElementById('pMaxUses').value) || 0,
+        eligible: document.getElementById('pEligible').value,
+        from: document.getElementById('pFrom').value,
+        until: document.getElementById('pUntil').value,
+        status: document.getElementById('pActive').classList.contains('on') ? 'active' : 'inactive',
+        icon: TYPE_ICONS[type] || '🎁',
+        uses: 0
+    };
+
+    // expire check
+    if (data.until && new Date(data.until) < new Date() && data.status === 'active') {
+        data.status = 'expired';
+    }
+
+    const editId = document.getElementById('editId').value;
+    if (editId) {
+        const p = PROMOS.find(x => x.id === parseInt(editId));
+        if (p) {
+            const prevUses = p.uses;
+            Object.assign(p, data, { id: p.id, uses: prevUses });
+            showToast(`Promotion #${p.id} updated`, 'success');
+        }
+    } else {
+        data.id = nextId++;
+        PROMOS.unshift(data);
+        showToast(`Promotion "${name}" created!`, 'success');
+    }
+
+    closeModal('createModal');
+    applyFilters();
+    renderPromos();
+}
+
+function togglePromo(id) {
+    const p = PROMOS.find(x => x.id === id);
+    if (!p) return;
+    if (p.status === 'expired') return showToast('Cannot activate an expired promo. Extend the end date first.', 'warning');
+    p.status = p.status === 'active' ? 'inactive' : 'active';
+    renderPromos();
+    showToast(`${p.name} is now ${p.status}`, p.status === 'active' ? 'success' : 'info');
+}
+
+function deletePromo(id) {
+    const p = PROMOS.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm(`Delete "${p.name}"?\nThis cannot be undone.`)) return;
+    const idx = PROMOS.findIndex(x => x.id === id);
+    if (idx >= 0) PROMOS.splice(idx, 1);
+    applyFilters();
+    renderPromos();
+    showToast('Promotion deleted', 'error');
+}
+
+function openDetail(id) {
+    const p = PROMOS.find(x => x.id === id);
+    if (!p) return;
+
+    const bonusText = p.percent > 0
+        ? (p.amount > 0 ? `${p.percent}% + $${p.amount}` : `${p.percent}%`)
+        : (p.amount > 0 ? `$${p.amount}` : '—');
+
+    document.getElementById('detailTitle').textContent = p.name;
+    document.getElementById('detailBody').innerHTML = `
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:2.5rem;margin-bottom:8px;">${p.icon || '🎁'}</div>
+            <span class="status-badge ${p.status}"><span class="dot"></span>${p.status}</span>
+            <span class="type-pill" style="margin-left:8px;">${p.type}</span>
+        </div>
+        <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:16px;text-align:center;">${p.desc}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;">
+                <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;">Bonus</div>
+                <div style="font-family:'Orbitron';font-weight:700;color:var(--gold);font-size:1.1rem;">${bonusText}</div>
+            </div>
+            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;">
+                <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;">Max Cap</div>
+                <div style="font-family:'Orbitron';font-weight:700;color:var(--gold);font-size:1.1rem;">${p.max > 0 ? '$'+p.max.toLocaleString() : '∞'}</div>
+            </div>
+            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;">
+                <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;">Min Deposit</div>
+                <div style="font-weight:700;">${p.minDep > 0 ? '$'+p.minDep : 'None'}</div>
+            </div>
+            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;">
+                <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;">Wagering</div>
+                <div style="font-weight:700;">${p.wager > 0 ? p.wager + 'x' : 'None'}</div>
+            </div>
+            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;">
+                <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;">Claims</div>
+                <div style="font-weight:700;">${p.uses.toLocaleString()}${p.maxUses > 0 ? ' / '+p.maxUses.toLocaleString() : ''}</div>
+            </div>
+            <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;">
+                <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;">Eligible</div>
+                <div style="font-weight:700;text-transform:capitalize;">${p.eligible}</div>
+            </div>
+        </div>
+        ${p.code ? `<div style="margin-top:14px;text-align:center;"><div class="pc-code" style="display:inline-flex;"><span>${p.code}</span><button onclick="copyCode('${p.code}')"><i class="fas fa-copy"></i></button></div></div>` : ''}
+        <div style="margin-top:14px;font-size:.8rem;color:var(--text-muted);text-align:center;">
+            ${formatDate(p.from)} → ${formatDate(p.until)}
+        </div>
+    `;
+    document.getElementById('detailFooter').innerHTML = `
+        <button class="btn btn-outline" onclick="closeModal('detailModal')">Close</button>
+        <button class="btn btn-outline" onclick="closeModal('detailModal');openEdit(${p.id})"><i class="fas fa-pen"></i> Edit</button>
+        <button class="btn btn-gold" onclick="togglePromo(${p.id});closeModal('detailModal')">
+            <i class="fas fa-${p.status==='active'?'pause':'play'}"></i> ${p.status==='active'?'Pause':'Activate'}
+        </button>
+    `;
+    openModal('detailModal');
+}
+
+function copyCode(code) {
+    navigator.clipboard?.writeText(code).then(() => showToast('Code copied: ' + code, 'success'))
+        .catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = code; document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); ta.remove();
+            showToast('Code copied: ' + code, 'success');
+        });
+}
+
+// ─── HELPERS ───
+function formatDate(str) {
+    if (!str) return '—';
+    try {
+        return new Date(str).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    } catch { return str; }
+}
+function toLocal(d) {
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+function showToast(msg, type='success') {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-times-circle', warning:'fa-exclamation-triangle', info:'fa-info-circle' };
+    t.innerHTML = `<i class="fas ${icons[type]||icons.success}"></i> ${msg}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+}
+function debounce(fn, wait) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
+}
+
+// Sidebar
+const sidebar = document.getElementById('sidebar');
+const adminMain = document.getElementById('adminMain');
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    adminMain.classList.toggle('expanded');
+    localStorage.setItem('pr_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+});
+if (localStorage.getItem('pr_sidebar_collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    adminMain.classList.add('expanded');
+}
+document.getElementById('mobileToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+});
+function adminLogout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('pr_admin_token');
+        window.location.href = 'login.html';
+    }
+}
+
+// Auto-expire by date on load
+PROMOS.forEach(p => {
+    if (p.until && new Date(p.until) < new Date() && p.status === 'active') {
+        p.status = 'expired';
+    }
+});
+
+setView('grid');
+applyFilters();
+renderPromos();
+console.log('🎁 PokerRoyale Admin — Promotions Loaded');
+</script>
+<script src="../currency-override.js"></script>
+</body>
+</html>
